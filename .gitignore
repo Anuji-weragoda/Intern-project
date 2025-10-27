@@ -1,0 +1,106 @@
+# OS files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+
+# Node (admin_frontend)
+admin_frontend/node_modules/
+admin_frontend/dist/
+admin_frontend/build/
+admin_frontend/.vite/
+admin_frontend/.parcel-cache/
+admin_frontend/.turbo/
+admin_frontend/.pnp.*
+admin_frontend/.env
+admin_frontend/.env.local
+admin_frontend/.env.*.local
+admin_frontend/npm-debug.log*
+admin_frontend/yarn-debug.log*
+admin_frontend/yarn-error.log*
+admin_frontend/pnpm-debug.log*
+
+# Vite / TypeScript
+*.tsbuildinfo
+admin_frontend/.cache/
+
+# Java / Build
+target/
+build/
+out/
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+hs_err_pid*
+*.log
+
+# Maven
+dependency-reduced-pom.xml
+release.properties
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+
+# Gradle
+.gradle/
+gradle-app.setting
+gradle-wrapper.jar
+.gradle-test-kit
+
+# IDEs / editors
+.vscode/
+.idea/
+*.iml
+*.ipr
+*.iws
+.project
+.classpath
+.settings/
+*.sublime-project
+*.sublime-workspace
+
+# Logs / runtime
+logs/
+*.log
+*.out
+*.err
+
+# Test / coverage
+coverage/
+coverage-final.json
+lcov-report/
+test-results/
+
+# Environment / secrets
+*.env
+.env.*
+secrets.properties
+credentials.properties
+*.jks
+*.keystore
+*.pem
+*.key
+
+# Databases
+*.db
+*.sqlite
+*.sql
+
+# Package managers
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS generated files
+Icon?
+*.lock
+
+# Misc
+.Dockerfile.swp
+*.cache
+dist/
+dist-*/
+*.properties
