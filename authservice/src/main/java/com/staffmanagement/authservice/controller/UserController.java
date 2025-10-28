@@ -16,11 +16,8 @@ import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
-
 
 import jakarta.servlet.http.HttpServletRequest;
-import java.security.Principal;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -34,7 +31,7 @@ public class UserController {
     private final AuditService auditService;
 
     // ==========================
-    // JWT-based endpoint
+    // JWT-based endpoint (for Flutter/mobile apps)
     // ==========================
     @GetMapping
     public ResponseEntity<UserProfileDTO> getCurrentUser(
@@ -44,8 +41,12 @@ public class UserController {
         String cognitoSub = jwt.getClaimAsString("sub");
         String email = jwt.getClaimAsString("email");
 
+        log.info("JWT Login detected for user: {} ({})", email, cognitoSub);
+
+        // THIS IS THE KEY FIX: Create or update user in DB
         userService.createOrUpdateUserFromJwt(jwt);
 
+        // Log the audit event
         auditService.logLoginAsync(
                 cognitoSub,
                 email,
@@ -56,6 +57,7 @@ public class UserController {
                 null
         );
 
+        // Get the user profile (will now exist in DB)
         UserProfileDTO profile = userService.getCurrentUser(cognitoSub);
         log.info("User profile retrieved for {}", email);
 
@@ -66,7 +68,7 @@ public class UserController {
     // Session-based endpoint (works for React navbar)
     // ==========================
     @GetMapping("/session")
-   public ResponseEntity<Map<String, Object>> getCurrentUserSession(Authentication authentication) {
+    public ResponseEntity<Map<String, Object>> getCurrentUserSession(Authentication authentication) {
         Map<String, Object> userInfo = new HashMap<>();
 
         if (authentication != null) {
@@ -80,8 +82,7 @@ public class UserController {
         }
 
         return ResponseEntity.ok(userInfo);
-     }
-
+    }
 
     // ==========================
     // Update profile
@@ -121,7 +122,6 @@ public class UserController {
         Map<String, Object> tokens = new HashMap<>();
         OidcUser oidcUser = (OidcUser) authentication.getPrincipal();
         tokens.put("id_token", oidcUser.getIdToken().getTokenValue());
-
         tokens.put("access_token", client.getAccessToken().getTokenValue());
         return tokens;
     }

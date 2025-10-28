@@ -28,6 +28,7 @@ public class UserService {
      */
     public UserProfileDTO getCurrentUser(String cognitoSub) {
         AppUser user = appUserRepository.findByCognitoSub(cognitoSub)
+        
                 .orElseThrow(() -> new RuntimeException("User not found"));
         
         return convertToDTO(user);

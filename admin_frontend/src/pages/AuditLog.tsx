@@ -146,7 +146,7 @@ const AuditLog: React.FC = () => {
 
           <div className="overflow-x-auto shadow-md rounded-lg border border-gray-200">
             <table className="min-w-full bg-white">
-              <thead className="bg-gray-500 text-white">
+              <thead className="bg-blue-500 text-white">
                 <tr>
                   <th className="px-4 py-3 text-left text-sm font-semibold">ID</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold">Cognito Sub</th>
