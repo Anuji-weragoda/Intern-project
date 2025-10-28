@@ -223,4 +223,80 @@ class ApiService {
       return false;
     }
   }
+
+  /// Log logout event to backend
+static Future<void> logoutUser() async {
+  try {
+    final result = await Amplify.Auth.fetchAuthSession();
+    final cognitoSession = result as CognitoAuthSession;
+
+    if (!cognitoSession.isSignedIn) {
+      safePrint('User not signed in, skipping logout log');
+      return;
+    }
+
+    final tokens = cognitoSession.userPoolTokensResult.value;
+    final idToken = tokens.idToken.toJson();
+
+    final response = await http.post(
+      Uri.parse('$baseUrl/api/v1/auth/logout'),
+      headers: {
+        'Authorization': 'Bearer $idToken',
+        'Content-Type': 'application/json',
+      },
+    ).timeout(
+      const Duration(seconds: 5),
+      onTimeout: () {
+        throw Exception('Logout request timed out');
+      },
+    );
+
+    safePrint('Logout Response Status: ${response.statusCode}');
+    
+    if (response.statusCode != 200) {
+      throw Exception('Logout failed: ${response.statusCode}');
+    }
+  } catch (e) {
+    safePrint('Error logging logout: $e');
+    rethrow;
+  }
+}
+
+/// Request password reset code
+static Future<void> requestPasswordReset(String email) async {
+  try {
+    safePrint('Requesting password reset for: $email');
+    
+    await Amplify.Auth.resetPassword(
+      username: email.trim(),
+    );
+    
+    safePrint('✓ Password reset code sent to email');
+  } catch (e) {
+    safePrint('✗ Error requesting password reset: $e');
+    rethrow;
+  }
+}
+
+/// Confirm password reset with code
+static Future<void> confirmPasswordReset({
+  required String email,
+  required String newPassword,
+  required String confirmationCode,
+}) async {
+  try {
+    safePrint('Confirming password reset for: $email');
+    
+    await Amplify.Auth.confirmResetPassword(
+      username: email.trim(),
+      newPassword: newPassword.trim(),
+      confirmationCode: confirmationCode.trim(),
+    );
+    
+    safePrint('✓ Password reset successful');
+  } catch (e) {
+    safePrint('✗ Error confirming password reset: $e');
+    rethrow;
+  }
+}
 }

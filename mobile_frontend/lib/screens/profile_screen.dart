@@ -13,15 +13,34 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   bool _loading = true;
   bool _signingOut = false;
+  bool _isEditing = false;
+  bool _isSaving = false;
+  
   Map<String, dynamic>? _profileData;
   String? _error;
   String? _userEmail;
   String? _userId;
+  List<String>? _userRoles;
+
+  // Editable controllers
+  final _nameController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _departmentController = TextEditingController();
+  final _positionController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _loadProfile();
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _phoneController.dispose();
+    _departmentController.dispose();
+    _positionController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadProfile() async {
@@ -31,11 +50,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
 
     try {
-      // Get user attributes from Cognito
       final attributes = await Amplify.Auth.fetchUserAttributes();
       final user = await Amplify.Auth.getCurrentUser();
       
-      // Extract email from attributes
       for (var attribute in attributes) {
         if (attribute.userAttributeKey == CognitoUserAttributeKey.email) {
           _userEmail = attribute.value;
@@ -44,18 +61,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
       
       _userId = user.userId;
       
-      // Try to fetch profile from backend
       try {
         final profile = await ApiService.getUserProfile();
         
         if (mounted) {
           setState(() {
             _profileData = profile;
+            _userRoles = profile['roles'] != null 
+                ? List<String>.from(profile['roles']) 
+                : [];
+            _populateControllers();
             _loading = false;
           });
         }
       } catch (apiError) {
-        // If API fails, use Cognito data
         safePrint('API Error: $apiError');
         if (mounted) {
           setState(() {
@@ -65,6 +84,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               'userId': _userId,
               'username': user.username,
             };
+            _populateControllers();
             _loading = false;
           });
         }
@@ -80,28 +100,126 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  void _populateControllers() {
+    _nameController.text = _profileData?['name'] ?? 
+                          _profileData?['fullName'] ?? 
+                          _userEmail?.split('@')[0] ?? '';
+    _phoneController.text = _profileData?['phone'] ?? 
+                           _profileData?['phoneNumber'] ?? '';
+    _departmentController.text = _profileData?['department'] ?? '';
+    _positionController.text = _profileData?['position'] ?? 
+                              _profileData?['title'] ?? '';
+  }
+
+  Future<void> _saveProfile() async {
+    setState(() => _isSaving = true);
+
+    try {
+      final updates = {
+        'name': _nameController.text.trim(),
+        'phone': _phoneController.text.trim(),
+        'department': _departmentController.text.trim(),
+        'position': _positionController.text.trim(),
+      };
+
+      await ApiService.updateUserProfile(updates);
+
+      if (mounted) {
+        setState(() {
+          _isEditing = false;
+          _isSaving = false;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.white),
+                SizedBox(width: 12),
+                Text('Profile updated successfully'),
+              ],
+            ),
+            backgroundColor: Colors.green.shade600,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            margin: const EdgeInsets.all(16),
+          ),
+        );
+
+        await _loadProfile();
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isSaving = false);
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.error_outline, color: Colors.white),
+                const SizedBox(width: 12),
+                Expanded(child: Text('Failed to update: ${e.toString()}')),
+              ],
+            ),
+            backgroundColor: Colors.red.shade600,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            margin: const EdgeInsets.all(16),
+          ),
+        );
+      }
+    }
+  }
+
+  void _cancelEdit() {
+    setState(() {
+      _isEditing = false;
+      _populateControllers();
+    });
+  }
+
   Future<void> _signOut() async {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Sign Out'),
-        content: const Text('Are you sure you want to sign out?'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: const Row(
+          children: [
+            Icon(Icons.logout, color: Colors.red, size: 28),
+            SizedBox(width: 12),
+            Text('Sign Out'),
+          ],
+        ),
+        content: const Text(
+          'Are you sure you want to sign out?',
+          style: TextStyle(fontSize: 16),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(
+              'Cancel',
+              style: TextStyle(
+                color: Colors.grey.shade700,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
+              backgroundColor: Colors.red.shade600,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(12),
               ),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             ),
-            child: const Text('Sign Out'),
+            child: const Text('Sign Out', style: TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -112,21 +230,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
     setState(() => _signingOut = true);
 
     try {
+      try {
+        await ApiService.logoutUser();
+        safePrint('✓ Logout recorded in backend');
+      } catch (e) {
+        safePrint('⚠ Backend logout failed (continuing anyway): $e');
+      }
+      
       await Amplify.Auth.signOut();
       
       if (mounted) {
         Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
-        
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Successfully signed out'),
-            backgroundColor: Colors.green,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-          ),
-        );
       }
     } catch (e) {
       if (mounted) {
@@ -137,9 +251,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             content: Text('Error signing out: $e'),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
           ),
         );
       }
@@ -156,216 +267,327 @@ class _ProfileScreenState extends State<ProfileScreen> {
             end: Alignment.bottomRight,
             colors: [
               Colors.blue.shade900,
-              Colors.blue.shade600,
-              Colors.purple.shade400,
+              Colors.blue.shade700,
+              Colors.purple.shade500,
             ],
           ),
         ),
         child: SafeArea(
           child: _loading
               ? const Center(
-                  child: CircularProgressIndicator(color: Colors.white),
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 3,
+                  ),
                 )
               : RefreshIndicator(
                   onRefresh: _loadProfile,
                   color: Colors.blue.shade700,
-                  child: SingleChildScrollView(
+                  child: CustomScrollView(
                     physics: const AlwaysScrollableScrollPhysics(),
-                    child: Padding(
-                      padding: const EdgeInsets.all(24.0),
-                      child: Column(
-                        children: [
-                          const SizedBox(height: 20),
-                          
-                          // Profile Avatar
-                          Container(
-                            width: 120,
-                            height: 120,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.2),
-                                  blurRadius: 20,
-                                  offset: const Offset(0, 10),
-                                ),
-                              ],
-                            ),
-                            child: Icon(
-                              Icons.person,
-                              size: 60,
-                              color: Colors.blue.shade700,
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-
-                          // User Name/Email
-                          Text(
-                            _profileData?['name'] ?? 
-                            _profileData?['fullName'] ?? 
-                            _userEmail?.split('@')[0] ?? 
-                            'User',
-                            style: const TextStyle(
-                              fontSize: 28,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          
-                          Text(
-                            _userEmail ?? _profileData?['email'] ?? 'No email',
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Colors.white.withOpacity(0.8),
-                            ),
-                          ),
-                          const SizedBox(height: 40),
-
-                          // Profile Information Card
-                          Container(
-                            width: double.infinity,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(20),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.1),
-                                  blurRadius: 20,
-                                  offset: const Offset(0, 10),
-                                ),
-                              ],
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.all(24.0),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                    slivers: [
+                      // Custom App Bar
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24.0),
+                          child: Column(
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
                                   const Text(
-                                    'Profile Information',
+                                    'Profile',
                                     style: TextStyle(
-                                      fontSize: 20,
+                                      fontSize: 32,
                                       fontWeight: FontWeight.bold,
-                                      color: Colors.black87,
+                                      color: Colors.white,
                                     ),
                                   ),
-                                  const SizedBox(height: 20),
-
-                                  if (_error != null) ...[
-                                    Container(
-                                      padding: const EdgeInsets.all(12),
-                                      decoration: BoxDecoration(
-                                        color: Colors.blue.shade50,
-                                        borderRadius: BorderRadius.circular(10),
-                                        border: Border.all(
-                                          color: Colors.blue.shade200,
+                                  if (!_isEditing)
+                                    IconButton(
+                                      onPressed: () {
+                                        setState(() => _isEditing = true);
+                                      },
+                                      icon: Container(
+                                        padding: const EdgeInsets.all(8),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white.withOpacity(0.2),
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: const Icon(
+                                          Icons.edit,
+                                          color: Colors.white,
+                                          size: 20,
                                         ),
                                       ),
-                                      child: Row(
-                                        children: [
-                                          Icon(
-                                            Icons.info_outline,
-                                            color: Colors.blue.shade700,
-                                          ),
-                                          const SizedBox(width: 12),
-                                          Expanded(
-                                            child: Text(
-                                              'Showing Cognito profile data',
-                                              style: TextStyle(
-                                                color: Colors.blue.shade900,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
                                     ),
-                                    const SizedBox(height: 20),
-                                  ],
-
-                                  // Always show email
-                                  _buildInfoTile(
-                                    'Email',
-                                    _userEmail ?? _profileData?['email'] ?? 'N/A',
-                                    Icons.email_outlined,
-                                  ),
-
-                                  // Show User ID
-                                  _buildInfoTile(
-                                    'User ID',
-                                    _userId ?? 'N/A',
-                                    Icons.fingerprint,
-                                  ),
-
-                                  // Display other profile fields
-                                  if (_profileData != null)
-                                    ..._profileData!.entries.where((entry) => 
-                                      entry.key != 'email' && 
-                                      entry.key != 'userId' &&
-                                      entry.key != 'username'
-                                    ).map((entry) {
-                                      if (entry.key == 'roles' && entry.value is List) {
-                                        final roles = (entry.value as List);
-                                        if (roles.isNotEmpty) {
-                                          return _buildInfoTile(
-                                            'Roles',
-                                            roles.join(', '),
-                                            Icons.shield_outlined,
-                                          );
-                                        }
-                                        return const SizedBox.shrink();
-                                      }
-                                      if (entry.value != null && entry.value.toString().isNotEmpty) {
-                                        return _buildInfoTile(
-                                          _formatFieldName(entry.key),
-                                          entry.value.toString(),
-                                          _getIconForField(entry.key),
-                                        );
-                                      }
-                                      return const SizedBox.shrink();
-                                    }).toList(),
                                 ],
                               ),
-                            ),
-                          ),
-                          const SizedBox(height: 30),
+                              const SizedBox(height: 40),
 
-                          // Sign Out Button
-                          SizedBox(
-                            width: double.infinity,
-                            height: 56,
-                            child: ElevatedButton.icon(
-                              onPressed: _signingOut ? null : _signOut,
-                              icon: _signingOut
-                                  ? const SizedBox(
-                                      width: 20,
-                                      height: 20,
-                                      child: CircularProgressIndicator(
+                              // Profile Avatar with Status Badge
+                              Stack(
+                                children: [
+                                  Container(
+                                    width: 130,
+                                    height: 130,
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      shape: BoxShape.circle,
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.3),
+                                          blurRadius: 30,
+                                          offset: const Offset(0, 15),
+                                        ),
+                                      ],
+                                      border: Border.all(
                                         color: Colors.white,
-                                        strokeWidth: 2,
+                                        width: 4,
                                       ),
-                                    )
-                                  : const Icon(Icons.logout),
-                              label: Text(
-                                _signingOut ? 'Signing Out...' : 'Sign Out',
+                                    ),
+                                    child: Icon(
+                                      Icons.person,
+                                      size: 70,
+                                      color: Colors.blue.shade700,
+                                    ),
+                                  ),
+                                  Positioned(
+                                    bottom: 5,
+                                    right: 5,
+                                    child: Container(
+                                      width: 30,
+                                      height: 30,
+                                      decoration: BoxDecoration(
+                                        color: Colors.green.shade500,
+                                        shape: BoxShape.circle,
+                                        border: Border.all(
+                                          color: Colors.white,
+                                          width: 3,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 20),
+
+                              // User Name
+                              Text(
+                                _nameController.text.isEmpty 
+                                    ? 'User' 
+                                    : _nameController.text,
                                 style: const TextStyle(
-                                  fontSize: 16,
+                                  fontSize: 28,
                                   fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                  letterSpacing: 0.5,
                                 ),
                               ),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.red.shade600,
-                                foregroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
+                              const SizedBox(height: 8),
+
+                              // Role Badge
+                              if (_userRoles != null && _userRoles!.isNotEmpty)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 6,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.2),
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(
+                                      color: Colors.white.withOpacity(0.3),
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.shield_outlined,
+                                        color: Colors.white,
+                                        size: 16,
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        _userRoles!.first.toUpperCase(),
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 12,
+                                          letterSpacing: 1,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                                elevation: 5,
-                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                      // Content Card
+                      SliverToBoxAdapter(
+                        child: Container(
+                          margin: const EdgeInsets.only(top: 20),
+                          decoration: const BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.only(
+                              topLeft: Radius.circular(40),
+                              topRight: Radius.circular(40),
                             ),
                           ),
-                        ],
+                          child: Padding(
+                            padding: const EdgeInsets.all(28.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                if (_isEditing)
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: OutlinedButton.icon(
+                                          onPressed: _isSaving ? null : _cancelEdit,
+                                          icon: const Icon(Icons.close),
+                                          label: const Text('Cancel'),
+                                          style: OutlinedButton.styleFrom(
+                                            foregroundColor: Colors.grey.shade700,
+                                            side: BorderSide(color: Colors.grey.shade300),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius: BorderRadius.circular(12),
+                                            ),
+                                            padding: const EdgeInsets.symmetric(vertical: 16),
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: ElevatedButton.icon(
+                                          onPressed: _isSaving ? null : _saveProfile,
+                                          icon: _isSaving
+                                              ? const SizedBox(
+                                                  width: 16,
+                                                  height: 16,
+                                                  child: CircularProgressIndicator(
+                                                    color: Colors.white,
+                                                    strokeWidth: 2,
+                                                  ),
+                                                )
+                                              : const Icon(Icons.check),
+                                          label: Text(_isSaving ? 'Saving...' : 'Save'),
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.blue.shade700,
+                                            foregroundColor: Colors.white,
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius: BorderRadius.circular(12),
+                                            ),
+                                            padding: const EdgeInsets.symmetric(vertical: 16),
+                                            elevation: 0,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                if (_isEditing) const SizedBox(height: 24),
+
+                                const Text(
+                                  'Personal Information',
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black87,
+                                    letterSpacing: 0.3,
+                                  ),
+                                ),
+                                const SizedBox(height: 24),
+
+                                // Email (Non-editable)
+                                _buildInfoField(
+                                  label: 'Email Address',
+                                  value: _userEmail ?? 'N/A',
+                                  icon: Icons.email_outlined,
+                                  isEditable: false,
+                                ),
+                                const SizedBox(height: 20),
+
+                                // Full Name
+                                _buildInfoField(
+                                  label: 'Full Name',
+                                  controller: _nameController,
+                                  icon: Icons.person_outline,
+                                  isEditable: _isEditing,
+                                ),
+                                const SizedBox(height: 20),
+
+                                // Phone
+                                _buildInfoField(
+                                  label: 'Phone Number',
+                                  controller: _phoneController,
+                                  icon: Icons.phone_outlined,
+                                  isEditable: _isEditing,
+                                  keyboardType: TextInputType.phone,
+                                ),
+                                const SizedBox(height: 20),
+
+                                // Department
+                                _buildInfoField(
+                                  label: 'Department',
+                                  controller: _departmentController,
+                                  icon: Icons.business_outlined,
+                                  isEditable: _isEditing,
+                                ),
+                                const SizedBox(height: 20),
+
+                                // Position
+                                _buildInfoField(
+                                  label: 'Position',
+                                  controller: _positionController,
+                                  icon: Icons.work_outline,
+                                  isEditable: _isEditing,
+                                ),
+                                const SizedBox(height: 40),
+
+                                // Sign Out Button
+                                SizedBox(
+                                  width: double.infinity,
+                                  height: 56,
+                                  child: ElevatedButton.icon(
+                                    onPressed: _signingOut ? null : _signOut,
+                                    icon: _signingOut
+                                        ? const SizedBox(
+                                            width: 20,
+                                            height: 20,
+                                            child: CircularProgressIndicator(
+                                              color: Colors.white,
+                                              strokeWidth: 2,
+                                            ),
+                                          )
+                                        : const Icon(Icons.logout),
+                                    label: Text(
+                                      _signingOut ? 'Signing Out...' : 'Sign Out',
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.red.shade600,
+                                      foregroundColor: Colors.white,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
+                                      elevation: 0,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 20),
+                              ],
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
+                    ],
                   ),
                 ),
         ),
@@ -373,96 +595,86 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildInfoTile(String label, String value, IconData icon) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.blue.shade50,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(
+  Widget _buildInfoField({
+    required String label,
+    String? value,
+    TextEditingController? controller,
+    required IconData icon,
+    required bool isEditable,
+    TextInputType? keyboardType,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(
               icon,
+              size: 18,
               color: Colors.blue.shade700,
-              size: 20,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey.shade600,
+                letterSpacing: 0.3,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        Container(
+          decoration: BoxDecoration(
+            color: isEditable ? Colors.white : Colors.grey.shade50,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isEditable ? Colors.blue.shade200 : Colors.grey.shade200,
+              width: isEditable ? 2 : 1,
             ),
           ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey.shade600,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  value,
+          child: isEditable && controller != null
+              ? TextField(
+                  controller: controller,
+                  keyboardType: keyboardType,
                   style: const TextStyle(
                     fontSize: 16,
                     color: Colors.black87,
                     fontWeight: FontWeight.w500,
                   ),
+                  decoration: InputDecoration(
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 18,
+                    ),
+                    hintText: 'Enter $label',
+                    hintStyle: TextStyle(
+                      color: Colors.grey.shade400,
+                      fontWeight: FontWeight.normal,
+                    ),
+                  ),
+                )
+              : Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 18,
+                  ),
+                  child: Text(
+                    value ?? controller?.text ?? 'Not set',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: (value ?? controller?.text ?? '').isEmpty 
+                          ? Colors.grey.shade400 
+                          : Colors.black87,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
                 ),
-              ],
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
-  }
-
-  String _formatFieldName(String key) {
-    return key
-        .replaceAllMapped(
-          RegExp(r'([A-Z])'),
-          (match) => ' ${match.group(1)}',
-        )
-        .replaceAll('_', ' ')
-        .split(' ')
-        .map((word) => word.isEmpty
-            ? ''
-            : word[0].toUpperCase() + word.substring(1).toLowerCase())
-        .join(' ')
-        .trim();
-  }
-
-  IconData _getIconForField(String key) {
-    switch (key.toLowerCase()) {
-      case 'email':
-        return Icons.email_outlined;
-      case 'name':
-      case 'username':
-      case 'fullname':
-        return Icons.person_outline;
-      case 'phone':
-      case 'phonenumber':
-        return Icons.phone_outlined;
-      case 'roles':
-      case 'role':
-        return Icons.shield_outlined;
-      case 'userid':
-      case 'id':
-        return Icons.fingerprint;
-      case 'createdat':
-      case 'updatedat':
-        return Icons.calendar_today_outlined;
-      case 'department':
-        return Icons.business_outlined;
-      case 'position':
-      case 'title':
-        return Icons.work_outline;
-      default:
-        return Icons.info_outline;
-    }
   }
 }
