@@ -24,6 +24,7 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true,
   "isolatedModules": true,
+  
 
     /* Fix for default React import in tests */
     "esModuleInterop": true

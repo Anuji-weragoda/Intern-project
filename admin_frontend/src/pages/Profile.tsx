@@ -1,90 +1,41 @@
-import React, { useEffect, useState } from "react";
-
-interface UserProfile {
-  id?: number;
-  email: string;
-  username?: string;
-  displayName?: string;
-  phoneNumber?: string;
-  locale?: string;
-  roles: string[];
-  isActive?: boolean;
-  emailVerified?: boolean;
-  phoneVerified?: boolean;
-  mfaEnabled?: boolean;
-  createdAt?: string;
-  lastLoginAt?: string | null;
-}
-
-interface UpdateProfileRequest {
-  displayName?: string;
-  username?: string;
-  phoneNumber?: string;
-  locale?: string;
-}
-
-// Function to get JWT from URL or cookies
-const getJWT = (): string | null => {
-  const urlParams = new URLSearchParams(window.location.search);
-  const urlToken = urlParams.get("jwt");
-  if (urlToken) return urlToken;
-
-  const cookies = document.cookie.split(";");
-  for (let cookie of cookies) {
-    const [name, value] = cookie.trim().split("=");
-    if (name === "jwt_token") return decodeURIComponent(value);
-  }
-  return null;
-};
+import React, { useEffect, useState } from 'react';
+import { Mail, User, Phone, Globe, Shield, CheckCircle, XCircle, Edit2, Save, X } from 'lucide-react';
+import { authService } from '../api/services/auth.service';
+import { useApi } from '../hooks/useApi';
+import { useToast } from '../hooks/useToast';
+import { Card } from '../components/Card';
+import { Button } from '../components/Button';
+import { Input } from '../components/Input';
+import { Select } from '../components/Select';
+import { Badge } from '../components/Badge';
+import { LoadingSpinner } from '../components/LoadingSpinner';
+import { ErrorAlert } from '../components/ErrorAlert';
+import { PageHeader } from '../components/PageHeader';
+import type { UserProfile } from '../types/user.types';
 
 const Profile: React.FC = () => {
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [editMode, setEditMode] = useState(false);
-  const [formData, setFormData] = useState<UpdateProfileRequest>({});
-  const [updateSuccess, setUpdateSuccess] = useState(false);
+  const [formData, setFormData] = useState<Partial<UserProfile>>({});
+  
+  const { data: profile, loading, error, execute: fetchProfile } = useApi(authService.getCurrentUser);
+  const { execute: updateProfile, loading: updating } = useApi(authService.updateProfile);
+  
+  const toast = useToast();
 
   useEffect(() => {
     fetchProfile();
   }, []);
 
-  const fetchProfile = async () => {
-    setLoading(true);
-    setError(null);
-    const token = getJWT();
-
-    if (!token) {
-      setError("No JWT token found. Please log in.");
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const response = await fetch("http://localhost:8081/api/v1/me", {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        credentials: "include",
-      });
-
-      if (!response.ok) throw new Error(`Error ${response.status}`);
-
-      const data: UserProfile = await response.json();
-      setProfile(data);
+  useEffect(() => {
+    if (profile) {
       setFormData({
-        displayName: data.displayName || "",
-        username: data.username || "",
-        phoneNumber: data.phoneNumber || "",
-        locale: data.locale || "en",
+        displayName: profile.displayName || '',
+        username: profile.username || '',
+        phoneNumber: profile.phoneNumber || '',
+        locale: profile.locale || 'en',
       });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Unknown error");
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [profile]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -93,193 +44,126 @@ const Profile: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const token = getJWT();
-    if (!token) return alert("No JWT token! Please log in again.");
-
-    try {
-      const response = await fetch("http://localhost:8081/api/v1/me", {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        credentials: "include",
-        body: JSON.stringify(formData),
-      });
-
-      if (!response.ok) throw new Error(await response.text());
-      const updated: UserProfile = await response.json();
-      setProfile(updated);
+    const result = await updateProfile(formData);
+    
+    if (result) {
+      toast.success('Profile updated successfully!');
       setEditMode(false);
-      setUpdateSuccess(true);
-      setTimeout(() => setUpdateSuccess(false), 3000);
-    } catch (err) {
-      alert(err instanceof Error ? err.message : "Unknown error");
+      fetchProfile();
+    } else {
+      toast.error('Failed to update profile');
+    }
+  };
+
+  const handleCancel = () => {
+    setEditMode(false);
+    if (profile) {
+      setFormData({
+        displayName: profile.displayName || '',
+        username: profile.username || '',
+        phoneNumber: profile.phoneNumber || '',
+        locale: profile.locale || 'en',
+      });
     }
   };
 
   if (loading) {
-    return (
-      <div className="flex justify-center items-center min-h-screen text-gray-600 text-lg font-medium">
-        Loading profile...
-      </div>
-    );
+    return <LoadingSpinner size="lg" message="Loading your profile..." />;
   }
 
   if (error) {
     return (
-      <div className="p-4 max-w-xl mx-auto">
-        <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded shadow">
-          <p className="text-red-700 font-semibold">{error}</p>
-        </div>
+      <div className="max-w-4xl mx-auto">
+        <ErrorAlert message={error} onRetry={() => fetchProfile()} />
       </div>
     );
   }
 
-  if (!profile) return <div className="p-4 max-w-xl mx-auto">No profile data found.</div>;
+  if (!profile) return null;
 
   return (
-    <div className="p-6 max-w-2xl mx-auto">
-      <h2 className="text-3xl font-extrabold mb-6 text-gray-800">User Profile</h2>
+    <div className="max-w-4xl mx-auto">
+      <PageHeader
+        title="My Profile"
+        description="Manage your account settings and preferences"
+        action={
+          !editMode && (
+            <Button onClick={() => setEditMode(true)} icon={<Edit2 className="w-4 h-4" />}>
+              Edit Profile
+            </Button>
+          )
+        }
+      />
 
-      {updateSuccess && (
-        <div className="mb-4 bg-green-50 border-l-4 border-green-500 p-4 rounded shadow">
-          <p className="text-green-700 font-medium">✅ Profile updated successfully!</p>
-        </div>
-      )}
-
-      {!editMode ? (
-        <div className="bg-white shadow-lg rounded-xl p-6 transition-transform transform hover:scale-105 duration-300">
-          <div className="grid grid-cols-2 gap-4 mb-4">
-            <div>
-              <p className="text-sm text-gray-500">Email</p>
-              <p className="font-medium text-gray-800">{profile.email}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Username</p>
-              <p className="font-medium text-gray-800">{profile.username || "-"}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Display Name</p>
-              <p className="font-medium text-gray-800">{profile.displayName || "-"}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Phone Number</p>
-              <p className="font-medium text-gray-800">{profile.phoneNumber || "-"}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Locale</p>
-              <p className="font-medium text-gray-800">{profile.locale || "en"}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Roles</p>
-              <div className="flex flex-wrap gap-2 mt-1">
-                {profile.roles.length
-                  ? profile.roles.map((role) => (
-                      <span
-                        key={role}
-                        className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-semibold"
-                      >
-                        {role}
-                      </span>
-                    ))
-                  : "None"}
+      <div className="grid gap-6">
+        <Card>
+          {editMode ? (
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="grid md:grid-cols-2 gap-6">
+                <Input label="Display Name" name="displayName" value={formData.displayName || ''} onChange={handleChange} icon={<User className="w-5 h-5" />} placeholder="Enter your display name" />
+                <Input label="Username" name="username" value={formData.username || ''} onChange={handleChange} icon={<User className="w-5 h-5" />} placeholder="Enter your username" />
+                <Input label="Phone Number" name="phoneNumber" type="tel" value={formData.phoneNumber || ''} onChange={handleChange} icon={<Phone className="w-5 h-5" />} placeholder="+1 (555) 000-0000" />
+                <Select label="Language" name="locale" value={formData.locale || 'en'} onChange={handleChange} options={[
+                  { value: 'en', label: 'English' },
+                  { value: 'es', label: 'Spanish' },
+                  { value: 'fr', label: 'French' },
+                  { value: 'de', label: 'German' },
+                ]} />
               </div>
-            </div>
-          </div>
 
-          <div className="border-t pt-4 flex flex-wrap gap-4 text-sm">
-            <span className={`px-2 py-1 rounded ${profile.emailVerified ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>
-              Email Verified: {profile.emailVerified ? "✅ Yes" : "❌ No"}
-            </span>
-            <span className={`px-2 py-1 rounded ${profile.isActive ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>
-              Active: {profile.isActive ? "✅ Yes" : "❌ No"}
-            </span>
-            <span className={`px-2 py-1 rounded ${profile.mfaEnabled ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600"}`}>
-              MFA: {profile.mfaEnabled ? "✅ Enabled" : "Disabled"}
-            </span>
-          </div>
+              <div className="flex gap-3 pt-4 border-t">
+                <Button type="submit" variant="success" loading={updating} icon={<Save className="w-4 h-4" />}>Save Changes</Button>
+                <Button type="button" variant="ghost" onClick={handleCancel} disabled={updating} icon={<X className="w-4 h-4" />}>Cancel</Button>
+              </div>
+            </form>
+          ) : (
+            <div className="space-y-6">
+              <div className="grid md:grid-cols-2 gap-6">
+                <InfoField icon={<Mail className="w-5 h-5" />} label="Email" value={profile.email} />
+                <InfoField icon={<User className="w-5 h-5" />} label="Username" value={profile.username || '-'} />
+                <InfoField icon={<User className="w-5 h-5" />} label="Display Name" value={profile.displayName || '-'} />
+                <InfoField icon={<Phone className="w-5 h-5" />} label="Phone Number" value={profile.phoneNumber || '-'} />
+                <InfoField icon={<Globe className="w-5 h-5" />} label="Language" value={profile.locale || 'en'} />
+                <InfoField icon={<Shield className="w-5 h-5" />} label="Roles" value={
+                  <div className="flex flex-wrap gap-2">
+                    {profile.roles.length > 0 ? profile.roles.map((role) => <Badge key={role} variant="primary">{role}</Badge>) : <span className="text-gray-500">No roles</span>}
+                  </div>
+                } />
+              </div>
 
-          {profile.lastLoginAt && (
-            <div className="mt-4 text-sm text-gray-500 border-t pt-2">
-              Last login: {new Date(profile.lastLoginAt).toLocaleString()}
+              <div className="flex flex-wrap gap-3 pt-6 border-t">
+                <StatusBadge icon={profile.emailVerified ? <CheckCircle /> : <XCircle />} label="Email" verified={profile.emailVerified} />
+                <StatusBadge icon={profile.isActive ? <CheckCircle /> : <XCircle />} label="Account Active" verified={profile.isActive} />
+                <StatusBadge icon={profile.mfaEnabled ? <CheckCircle /> : <XCircle />} label="MFA" verified={profile.mfaEnabled} />
+              </div>
+
+              {profile.lastLoginAt && (
+                <div className="pt-4 border-t">
+                  <p className="text-sm text-gray-500">
+                    Last login: <span className="font-medium text-gray-700">{new Date(profile.lastLoginAt).toLocaleString()}</span>
+                  </p>
+                </div>
+              )}
             </div>
           )}
-
-          <button
-            onClick={() => setEditMode(true)}
-            className="mt-6 bg-gradient-to-r from-blue-600 to-blue-500 text-white font-semibold px-6 py-2 rounded-xl shadow hover:scale-105 transition-transform"
-          >
-            Edit Profile
-          </button>
-        </div>
-      ) : (
-        <form onSubmit={handleSubmit} className="bg-white shadow-lg rounded-xl p-6 space-y-4 transition-transform transform hover:scale-105 duration-300">
-          <div className="grid grid-cols-1 gap-4">
-            <InputField label="Display Name" name="displayName" value={formData.displayName || ""} onChange={handleChange} />
-            <InputField label="Username" name="username" value={formData.username || ""} onChange={handleChange} />
-            <InputField label="Phone Number" name="phoneNumber" value={formData.phoneNumber || ""} onChange={handleChange} type="tel" />
-            <SelectField label="Locale" name="locale" value={formData.locale || "en"} onChange={handleChange} />
-          </div>
-
-          <div className="flex gap-3 pt-4">
-            <button
-              type="submit"
-              className="bg-green-600 text-white font-semibold px-6 py-2 rounded-xl shadow hover:scale-105 transition-transform"
-            >
-              Save Changes
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setEditMode(false);
-                setFormData({
-                  displayName: profile.displayName || "",
-                  username: profile.username || "",
-                  phoneNumber: profile.phoneNumber || "",
-                  locale: profile.locale || "en",
-                });
-              }}
-              className="bg-gray-500 text-white font-semibold px-6 py-2 rounded-xl shadow hover:scale-105 transition-transform"
-            >
-              Cancel
-            </button>
-          </div>
-        </form>
-      )}
+        </Card>
+      </div>
     </div>
   );
 };
 
-// Reusable input component
-const InputField: React.FC<{ label: string; name: string; value: string; onChange: any; type?: string }> = ({ label, name, value, onChange, type = "text" }) => (
+// Helper Components
+const InfoField: React.FC<{ icon: React.ReactNode; label: string; value: React.ReactNode; }> = ({ icon, label, value }) => (
   <div>
-    <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
-    <input
-      type={type}
-      name={name}
-      value={value}
-      onChange={onChange}
-      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-    />
+    <div className="flex items-center gap-2 text-sm text-gray-500 mb-1">{icon}<span>{label}</span></div>
+    <div className="text-base font-medium text-gray-900">{value}</div>
   </div>
 );
 
-// Reusable select component
-const SelectField: React.FC<{ label: string; name: string; value: string; onChange: any }> = ({ label, name, value, onChange }) => (
-  <div>
-    <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
-    <select
-      name={name}
-      value={value}
-      onChange={onChange}
-      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-    >
-      <option value="en">English</option>
-      <option value="es">Spanish</option>
-      <option value="fr">French</option>
-      <option value="de">German</option>
-    </select>
+const StatusBadge: React.FC<{ icon: React.ReactNode; label: string; verified?: boolean; }> = ({ icon, label, verified }) => (
+  <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${verified ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
+    <span className="w-4 h-4">{icon}</span>
+    <span className="text-sm font-medium">{label}</span>
   </div>
 );
 

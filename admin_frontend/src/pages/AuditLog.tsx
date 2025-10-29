@@ -1,192 +1,250 @@
-import React, { useEffect, useState } from "react";
-
-interface Audit {
-  id: number;
-  cognitoSub: string;
-  userId: number;
-  email: string;
-  eventType: string;
-  ipAddress: string;
-  success: boolean;
-  failureReason?: string;
-  userAgent: string;
-  createdAt: string;
-}
-
-// GET JWT TOKEN from URL or cookies
-const getJWT = (): string | null => {
-  const urlParams = new URLSearchParams(window.location.search);
-  const urlToken = urlParams.get("jwt");
-  if (urlToken) return urlToken;
-
-  const cookies = document.cookie.split(";");
-  for (let cookie of cookies) {
-    const [name, value] = cookie.trim().split("=");
-    if (name === "jwt_token") return decodeURIComponent(value);
-  }
-
-  return null;
-};
+import React, { useEffect, useState } from 'react';
+import { FileText, CheckCircle, XCircle, Search, Filter } from 'lucide-react';
+import { auditService } from '../api/services/audit.service';
+import { useApi } from '../hooks/useApi';
+import { useDebounce } from '../hooks/useDebounce';
+import { Card } from '../components/Card';
+import { Input } from '../components/Input';
+import { Badge } from '../components/Badge';
+import { Table } from '../components/Table';
+import type { Column } from '../components/Table';
+import { LoadingSpinner } from '../components/LoadingSpinner';
+import { ErrorAlert } from '../components/ErrorAlert';
+import { EmptyState } from '../components/EmptyState';
+import { PageHeader } from '../components/PageHeader';
+import type { AuditLog as AuditLogType } from '../types/audit.types';
 
 const AuditLog: React.FC = () => {
-  const [logs, setLogs] = useState<Audit[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterSuccess, setFilterSuccess] = useState<boolean | null>(null);
+  const [filteredLogs, setFilteredLogs] = useState<AuditLogType[]>([]);
+  const debouncedSearch = useDebounce(searchQuery, 300);
+  
+  const { data: logs, loading, error, execute: fetchLogs } = useApi(
+    auditService.getAuditLogs
+  );
 
   useEffect(() => {
-    const fetchLogs = async () => {
-      setLoading(true);
-      setError(null);
-
-      const token = getJWT();
-
-      if (!token) {
-        setError("No JWT token found! Please log in via Cognito.");
-        setLoading(false);
-        return;
-      }
-
-      try {
-        const response = await fetch(
-          "http://localhost:8081/api/v1/admin/audit-log",
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            credentials: "include",
-          }
-        );
-
-        if (response.status === 403) {
-          setError("403 Forbidden - Admin access required!");
-          setLoading(false);
-          return;
-        }
-
-        if (response.status === 401) {
-          setError("401 Unauthorized - Please log in again!");
-          setLoading(false);
-          return;
-        }
-
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`);
-        }
-
-        const data = await response.json();
-        console.log("✅ Audit logs received:", data);
-        console.log("Total logs:", data.length);
-
-        if (Array.isArray(data)) {
-          const transformedLogs: Audit[] = data.map((log: any) => ({
-            id: log.id,
-            cognitoSub: log.cognitoSub || "N/A",  // Use from DTO directly
-            userId: log.userId || 0,              // Use from DTO directly
-            email: log.email || "N/A",            // Use from DTO directly
-            eventType: log.eventType || "UNKNOWN",
-            ipAddress: log.ipAddress || "N/A",
-            success: log.success ?? true,
-            failureReason: log.failureReason || undefined,
-            userAgent: log.userAgent || "N/A",
-            createdAt: log.createdAt || "N/A",
-          }));
-          setLogs(transformedLogs);
-        } else {
-          console.error("Data is not an array:", data);
-          setError("Invalid response format from server");
-        }
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : "Unknown error";
-        console.error("Failed to fetch audit logs:", err);
-        setError(msg);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchLogs();
   }, []);
 
-  return (
-    <div className="p-6 max-w-full">
-      <h1 className="text-3xl font-bold mb-6">Audit Log</h1>
+  useEffect(() => {
+    if (logs) {
+      let filtered = [...logs];
 
-      {loading && (
-        <div className="text-center py-12">
-          <div className="text-gray-600 text-lg">
-            ⏳ Loading audit logs...
+      // Apply search filter
+      if (debouncedSearch) {
+        const query = debouncedSearch.toLowerCase().trim();
+        filtered = filtered.filter((log) => {
+          const searchableFields = [
+            log.email?.toLowerCase() || '',
+            log.eventType?.toLowerCase() || '',
+            log.ipAddress?.toLowerCase() || '',
+            log.cognitoSub?.toLowerCase() || '',
+            log.userId?.toString() || '',
+            log.failureReason?.toLowerCase() || '',
+            log.userAgent?.toLowerCase() || '',
+          ];
+          
+          return searchableFields.some(field => field.includes(query));
+        });
+      }
+
+      // Apply success/failure filter
+      if (filterSuccess !== null) {
+        filtered = filtered.filter((log) => log.success === filterSuccess);
+      }
+
+      setFilteredLogs(filtered);
+    } else {
+      setFilteredLogs([]);
+    }
+  }, [logs, debouncedSearch, filterSuccess]);
+
+  const columns: Column<AuditLogType>[] = [
+    {
+      key: 'id',
+      header: 'ID',
+      className: 'font-mono text-xs text-gray-600',
+    },
+    {
+      key: 'email',
+      header: 'User',
+      render: (log) => (
+        <div>
+          <div className="font-medium text-gray-900">{log.email}</div>
+          <div className="text-xs text-gray-500 font-mono">
+            ID: {log.userId}
           </div>
         </div>
-      )}
-
-      {error && (
-        <div className="bg-red-50 border-l-4 border-red-500 rounded p-4 mb-6">
-          <p className="text-red-700 font-semibold text-lg">❌ Error</p>
-          <p className="text-red-600 mt-1">{error}</p>
+      ),
+    },
+    {
+      key: 'eventType',
+      header: 'Event',
+      render: (log) => (
+        <Badge variant="info" size="sm">
+          {log.eventType}
+        </Badge>
+      ),
+    },
+    {
+      key: 'success',
+      header: 'Status',
+      render: (log) => (
+        <div className="flex items-center gap-2">
+          {log.success ? (
+            <>
+              <CheckCircle className="w-4 h-4 text-green-600" />
+              <Badge variant="success" size="sm">
+                Success
+              </Badge>
+            </>
+          ) : (
+            <>
+              <XCircle className="w-4 h-4 text-red-600" />
+              <Badge variant="danger" size="sm">
+                Failed
+              </Badge>
+            </>
+          )}
         </div>
-      )}
-
-      {!loading && !error && logs.length === 0 && (
-        <div className="bg-yellow-50 border-l-4 border-yellow-400 rounded p-4">
-          <p className="text-yellow-800 font-medium">ℹ️ No audit logs found</p>
+      ),
+    },
+    {
+      key: 'ipAddress',
+      header: 'IP Address',
+      className: 'font-mono text-sm text-gray-700',
+    },
+    {
+      key: 'failureReason',
+      header: 'Details',
+      render: (log) => (
+        <span className="text-sm text-red-600">
+          {log.failureReason || '-'}
+        </span>
+      ),
+    },
+    {
+      key: 'createdAt',
+      header: 'Timestamp',
+      render: (log) => (
+        <div className="text-sm text-gray-600">
+          <div>{new Date(log.createdAt).toLocaleDateString()}</div>
+          <div className="text-xs text-gray-500">
+            {new Date(log.createdAt).toLocaleTimeString()}
+          </div>
         </div>
-      )}
+      ),
+    },
+  ];
 
-      {!loading && !error && logs.length > 0 && (
-        <div>
-          <div className="mb-4 flex items-center justify-between">
-            <div className="text-gray-700">
-              Showing{" "}
-              <span className="font-bold text-lg">{logs.length}</span> audit
-              log{logs.length !== 1 ? "s" : ""}
+  if (loading) {
+    return <LoadingSpinner size="lg" message="Loading audit logs..." />;
+  }
+
+  if (error) {
+    return (
+      <div className="max-w-7xl mx-auto">
+        <ErrorAlert message={error} onRetry={() => fetchLogs()} />
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <PageHeader
+        title="Audit Log"
+        description="Track all system activities and security events"
+      />
+
+      <Card padding="none">
+        {/* Filters */}
+        <div className="p-6 border-b border-gray-200 space-y-4">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex-1">
+              <Input
+                placeholder="Search by email, event type, IP address..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                icon={<Search className="w-5 h-5" />}
+              />
+            </div>
+            
+            <div className="flex gap-2">
+              <button
+                onClick={() =>
+                  setFilterSuccess(filterSuccess === true ? null : true)
+                }
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  filterSuccess === true
+                    ? 'bg-green-100 text-green-800'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                <CheckCircle className="w-4 h-4 inline mr-1" />
+                Success
+              </button>
+              <button
+                onClick={() =>
+                  setFilterSuccess(filterSuccess === false ? null : false)
+                }
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  filterSuccess === false
+                    ? 'bg-red-100 text-red-800'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                <XCircle className="w-4 h-4 inline mr-1" />
+                Failed
+              </button>
             </div>
           </div>
 
-          <div className="overflow-x-auto shadow-md rounded-lg border border-gray-200">
-            <table className="min-w-full bg-white">
-              <thead className="bg-gray-500 text-white">
-                <tr>
-                  <th className="px-4 py-3 text-left text-sm font-semibold">ID</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold">Cognito Sub</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold">User ID</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold">Email</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold">Event Type</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold">IP Address</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold">Success</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold">Failure Reason</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold">User Agent</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold">Created At</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {logs.map((log, index) => (
-                  <tr
-                    key={log.id}
-                    className={`hover:bg-blue-50 transition-colors ${
-                      index % 2 === 0 ? "bg-white" : "bg-gray-50"
-                    }`}
-                  >
-                    <td className="px-4 py-3 text-sm text-gray-900">{log.id}</td>
-                    <td className="px-4 py-3 text-sm text-gray-900">{log.cognitoSub}</td>
-                    <td className="px-4 py-3 text-sm text-gray-900">{log.userId}</td>
-                    <td className="px-4 py-3 text-sm font-medium text-gray-900">{log.email}</td>
-                    <td className="px-4 py-3 text-sm">{log.eventType}</td>
-                    <td className="px-4 py-3 text-sm font-mono text-gray-700">{log.ipAddress}</td>
-                    <td className="px-4 py-3 text-sm">{log.success ? "✅" : "❌"}</td>
-                    <td className="px-4 py-3 text-sm text-red-600">{log.failureReason || "-"}</td>
-                    <td className="px-4 py-3 text-sm text-gray-600 max-w-xs">
-                      <div className="truncate" title={log.userAgent}>{log.userAgent}</div>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">{log.createdAt}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-gray-600">
+              Showing {filteredLogs.length} of {logs?.length || 0} events
+            </span>
+            {(searchQuery || filterSuccess !== null) && (
+              <button
+                onClick={() => {
+                  setSearchQuery('');
+                  setFilterSuccess(null);
+                }}
+                className="text-primary-600 hover:text-primary-700 font-medium"
+              >
+                Clear filters
+              </button>
+            )}
           </div>
         </div>
-      )}
+
+        {/* Table or Empty State */}
+        {filteredLogs.length > 0 ? (
+          <Table
+            data={filteredLogs}
+            columns={columns}
+            keyExtractor={(log) => log.id}
+            compact
+          />
+        ) : searchQuery || filterSuccess !== null ? (
+          <div className="p-12">
+            <EmptyState
+              icon={<Filter className="w-12 h-12" />}
+              title="No events found"
+              description="Try adjusting your filters to see more results."
+            />
+          </div>
+        ) : (
+          <div className="p-12">
+            <EmptyState
+              icon={<FileText className="w-12 h-12" />}
+              title="No audit logs yet"
+              description="System events and user activities will appear here."
+            />
+          </div>
+        )}
+      </Card>
     </div>
   );
 };
