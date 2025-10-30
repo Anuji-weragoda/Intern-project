@@ -34,7 +34,8 @@ public class AuditService {
                               String ipAddress,
                               String userAgent,
                               boolean success,
-                              String failureReason) {
+                              String failureReason,
+                              java.time.LocalDateTime eventTime) {
         try {
             log.debug("Starting to save login audit for user: {} - event: {}", email, eventType);
             
@@ -63,6 +64,13 @@ public class AuditService {
                     .success(success)
                     .failureReason(failureReason)
                     .build();
+            // Ensure the event timestamp is set to the actual event time (to preserve ordering
+            // even if the async persistence runs later).
+            if (eventTime != null) {
+                audit.setCreatedAt(eventTime);
+            } else {
+                audit.setCreatedAt(java.time.LocalDateTime.now());
+            }
 
             // Save and flush to DB immediately
             entityManager.persist(audit);

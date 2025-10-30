@@ -1,5 +1,3 @@
-import React from "react";
-
 export default function Home() {
   const backendUrl = "http://localhost:8081";
 

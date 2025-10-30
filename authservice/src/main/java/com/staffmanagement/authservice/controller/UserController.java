@@ -20,7 +20,6 @@ import org.springframework.security.core.GrantedAuthority;
 
 
 import jakarta.servlet.http.HttpServletRequest;
-import java.security.Principal;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -46,15 +45,18 @@ public class UserController {
 
         userService.createOrUpdateUserFromJwt(jwt);
 
-        auditService.logLoginAsync(
-                cognitoSub,
-                email,
-                "PROFILE_FETCH",
-                request.getRemoteAddr(),
-                request.getHeader("User-Agent"),
-                true,
-                null
-        );
+    // Capture event time to keep audit ordering accurate even when logged asynchronously
+    java.time.LocalDateTime eventTime = java.time.LocalDateTime.now();
+    auditService.logLoginAsync(
+        cognitoSub,
+        email,
+        "PROFILE_FETCH",
+        request.getRemoteAddr(),
+        request.getHeader("User-Agent"),
+        true,
+        null,
+        eventTime
+    );
 
         UserProfileDTO profile = userService.getCurrentUser(cognitoSub);
         log.info("User profile retrieved for {}", email);
@@ -97,15 +99,17 @@ public class UserController {
 
         UserProfileDTO updatedProfile = userService.updateProfile(cognitoSub, request);
 
-        auditService.logLoginAsync(
-                cognitoSub,
-                email,
-                "PROFILE_UPDATE",
-                httpRequest.getRemoteAddr(),
-                httpRequest.getHeader("User-Agent"),
-                true,
-                null
-        );
+    java.time.LocalDateTime eventTime = java.time.LocalDateTime.now();
+    auditService.logLoginAsync(
+        cognitoSub,
+        email,
+        "PROFILE_UPDATE",
+        httpRequest.getRemoteAddr(),
+        httpRequest.getHeader("User-Agent"),
+        true,
+        null,
+        eventTime
+    );
 
         log.info("User profile updated for {}", email);
 

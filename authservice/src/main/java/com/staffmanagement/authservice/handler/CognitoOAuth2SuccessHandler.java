@@ -9,7 +9,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
@@ -68,7 +67,9 @@ public class CognitoOAuth2SuccessHandler implements AuthenticationSuccessHandler
 
         // AUDIT LOG
         try {
-            auditService.logLoginAsync(cognitoSub, email, "LOGIN", ipAddress, userAgent, true, null);
+            // Capture the event time immediately so the persisted audit keeps correct ordering
+            java.time.LocalDateTime eventTime = java.time.LocalDateTime.now();
+            auditService.logLoginAsync(cognitoSub, email, "LOGIN", ipAddress, userAgent, true, null, eventTime);
         } catch (Exception e) {
             log.error("Failed to log audit for user: {}", email, e);
         }

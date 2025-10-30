@@ -219,8 +219,13 @@ const UserManagement: React.FC = () => {
   return (
     <div className="p-4">
       <h2 className="text-xl font-bold mb-4">User Management</h2>
-
       
+      {/* Debug information (only shown when present) */}
+      {debugInfo && (
+        <div className="mb-4 text-sm text-gray-600">
+          <strong>Debug:</strong> {debugInfo}
+        </div>
+      )}
 
       {/* Loading State */}
       {loading && (
