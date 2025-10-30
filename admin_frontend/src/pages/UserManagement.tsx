@@ -117,6 +117,7 @@ const UserManagement: React.FC = () => {
   const [roleFilter, setRoleFilter] = useState<string>("");
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
   const [showRoleModal, setShowRoleModal] = useState(false);
+  const [showUserDetailsModal, setShowUserDetailsModal] = useState(false);
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
   const [isUpdating, setIsUpdating] = useState(false);
 
@@ -208,6 +209,17 @@ const UserManagement: React.FC = () => {
     setSelectedUser(user);
     setSelectedRoles([...user.roles]);
     setShowRoleModal(true);
+  };
+
+  const openUserDetailsModal = (user: AdminUser) => {
+    setSelectedUser(user);
+    setShowUserDetailsModal(true);
+  };
+
+  const openRoleModalFromDetails = () => {
+    setShowUserDetailsModal(false);
+    setShowRoleModal(true);
+    setSelectedRoles(selectedUser ? [...selectedUser.roles] : []);
   };
 
   const toggleRole = (role: string) => {
@@ -316,24 +328,12 @@ const UserManagement: React.FC = () => {
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
-            <div className="p-3 bg-blue-600 rounded-xl">
-              <Users className="w-8 h-8 text-white" />
-            </div>
             <div>
               <h1 className="text-4xl font-bold text-slate-900">User Management</h1>
               <p className="text-slate-600 mt-1">Manage user roles and permissions across your organization</p>
             </div>
           </div>
         </div>
-
-        {/* Debug Info */}
-        {debugInfo && (
-          <div className="mb-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <p className="text-sm font-mono text-blue-900">
-              <strong>Debug:</strong> {debugInfo}
-            </p>
-          </div>
-        )}
 
         {/* Stats Cards */}
         {!loading && !error && users.length > 0 && (
@@ -532,7 +532,7 @@ const UserManagement: React.FC = () => {
                     {filteredUsers.map(user => {
                       const IconComponent = getRoleIcon(user.roles[0] || "USER");
                       return (
-                        <tr key={user.id} className="hover:bg-slate-50 transition-colors">
+                        <tr key={user.id} className="hover:bg-slate-50 transition-colors cursor-pointer" onClick={() => openUserDetailsModal(user)}>
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-3">
                               <div className={`p-2 rounded-lg bg-${getRoleColor(user.roles[0] || "USER")}-100`}>
@@ -575,7 +575,10 @@ const UserManagement: React.FC = () => {
                           </td>
                           <td className="px-6 py-4 text-right">
                             <button
-                              onClick={() => openRoleModal(user)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openRoleModal(user);
+                              }}
                               className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
                             >
                               <Shield className="w-4 h-4" />
@@ -590,6 +593,182 @@ const UserManagement: React.FC = () => {
               </div>
             </div>
           </>
+        )}
+
+        {/* User Details Modal */}
+        {showUserDetailsModal && selectedUser && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-6 border-b border-slate-200 sticky top-0 bg-white">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className={`p-3 rounded-xl bg-${getRoleColor(selectedUser.roles[0] || "USER")}-100`}>
+                      {(() => {
+                        const Icon = getRoleIcon(selectedUser.roles[0] || "USER");
+                        return <Icon className={`w-8 h-8 text-${getRoleColor(selectedUser.roles[0] || "USER")}-600`} />;
+                      })()}
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-bold text-slate-900">{selectedUser.username || "N/A"}</h3>
+                      <p className="text-sm text-slate-600">{selectedUser.email}</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setShowUserDetailsModal(false)}
+                    className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                  >
+                    <X className="w-5 h-5 text-slate-500" />
+                  </button>
+                </div>
+              </div>
+
+              <div className="p-6 space-y-6">
+                {/* Quick Stats */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 border border-blue-200">
+                    <p className="text-sm font-medium text-blue-600 mb-1">Account Status</p>
+                    <div className="flex items-center gap-2">
+                      <span className={`w-3 h-3 rounded-full ${selectedUser.isActive ? 'bg-green-500' : 'bg-red-500'}`}></span>
+                      <p className="text-lg font-bold text-blue-900">{selectedUser.isActive ? "Active" : "Inactive"}</p>
+                    </div>
+                  </div>
+                  <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-4 border border-purple-200">
+                    <p className="text-sm font-medium text-purple-600 mb-1">Assigned Roles</p>
+                    <p className="text-lg font-bold text-purple-900">{selectedUser.roles.length} Role{selectedUser.roles.length !== 1 ? 's' : ''}</p>
+                  </div>
+                </div>
+
+                {/* User Information */}
+                <div className="bg-slate-50 rounded-xl p-5 border border-slate-200">
+                  <h4 className="font-semibold text-slate-900 mb-4 flex items-center gap-2">
+                    <User className="w-5 h-5 text-slate-600" />
+                    User Information
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">User ID</p>
+                      <p className="text-sm font-mono text-slate-900 bg-white px-3 py-2 rounded-lg border border-slate-200">{selectedUser.id}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Username</p>
+                      <p className="text-sm text-slate-900 bg-white px-3 py-2 rounded-lg border border-slate-200">{selectedUser.username || "Not set"}</p>
+                    </div>
+                    <div className="md:col-span-2">
+                      <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Email Address</p>
+                      <p className="text-sm text-slate-900 bg-white px-3 py-2 rounded-lg border border-slate-200 break-all">{selectedUser.email}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Activity Information */}
+                <div className="bg-slate-50 rounded-xl p-5 border border-slate-200">
+                  <h4 className="font-semibold text-slate-900 mb-4 flex items-center gap-2">
+                    <AlertCircle className="w-5 h-5 text-slate-600" />
+                    Activity Information
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Account Created</p>
+                      <p className="text-sm text-slate-900 bg-white px-3 py-2 rounded-lg border border-slate-200">
+                        {new Date(selectedUser.createdAt).toLocaleString('en-US', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Last Login</p>
+                      <p className="text-sm text-slate-900 bg-white px-3 py-2 rounded-lg border border-slate-200">
+                        {selectedUser.lastLoginAt 
+                          ? new Date(selectedUser.lastLoginAt).toLocaleString('en-US', {
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })
+                          : "Never logged in"
+                        }
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Current Roles */}
+                <div className="bg-slate-50 rounded-xl p-5 border border-slate-200">
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="font-semibold text-slate-900 flex items-center gap-2">
+                      <Shield className="w-5 h-5 text-slate-600" />
+                      Current Roles & Permissions
+                    </h4>
+                    <button
+                      onClick={openRoleModalFromDetails}
+                      className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
+                    >
+                      <Shield className="w-4 h-4" />
+                      Edit Roles
+                    </button>
+                  </div>
+                  
+                  {selectedUser.roles.length > 0 ? (
+                    <div className="space-y-3">
+                      {selectedUser.roles.map(role => {
+                        const roleConfig = AVAILABLE_ROLES.find(r => r.value === role);
+                        const Icon = roleConfig?.icon || User;
+                        const color = roleConfig?.color || "gray";
+                        
+                        return (
+                          <div key={role} className="bg-white rounded-lg p-4 border-2 border-slate-200">
+                            <div className="flex items-center gap-3">
+                              <div className={`p-2 rounded-lg bg-${color}-100`}>
+                                <Icon className={`w-5 h-5 text-${color}-600`} />
+                              </div>
+                              <div className="flex-1">
+                                <p className="font-semibold text-slate-900">{roleConfig?.label || role}</p>
+                                <p className="text-xs text-slate-500">
+                                  {role === "ADMIN" && "Full system access and user management"}
+                                  {role === "HR" && "HR management and employee access"}
+                                  {role === "USER" && "Basic user access and features"}
+                                </p>
+                              </div>
+                              <span className={`px-3 py-1 rounded-full text-xs font-medium bg-${color}-100 text-${color}-700 border border-${color}-200`}>
+                                {role}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-center">
+                      <AlertCircle className="w-8 h-8 text-yellow-600 mx-auto mb-2" />
+                      <p className="text-sm text-yellow-800 font-medium">No roles assigned</p>
+                      <p className="text-xs text-yellow-600 mt-1">Click "Edit Roles" to assign roles to this user</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="p-6 border-t border-slate-200 bg-slate-50 flex gap-3 sticky bottom-0">
+                <button
+                  onClick={() => setShowUserDetailsModal(false)}
+                  className="flex-1 px-4 py-2.5 border border-slate-300 text-slate-700 rounded-lg hover:bg-white transition-colors font-medium"
+                >
+                  Close
+                </button>
+                <button
+                  onClick={openRoleModalFromDetails}
+                  className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center justify-center gap-2"
+                >
+                  <Shield className="w-4 h-4" />
+                  Manage Roles
+                </button>
+              </div>
+            </div>
+          </div>
         )}
 
         {/* Role Management Modal */}

@@ -1,7 +1,18 @@
 import { User, Shield, Users, BarChart3, ArrowRight, CheckCircle } from "lucide-react";
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import useAuth from "../hooks/useAuth";
 
 export default function Home() {
   const backendUrl = "http://localhost:8081";
+  const navigate = useNavigate();
+  const { user, loading } = useAuth();
+
+  useEffect(() => {
+    if (user && !loading) {
+      navigate("/admin/dashboard");
+    }
+  }, [user, loading, navigate]);
 
   const handleLogin = () => {
     window.location.href = `${backendUrl}/oauth2/authorization/cognito`;
