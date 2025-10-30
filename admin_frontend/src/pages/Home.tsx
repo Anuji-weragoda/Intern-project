@@ -22,25 +22,25 @@ export default function Home() {
     {
       icon: Users,
       title: "User Management",
-      description: "Efficiently manage staff members and their roles"
+      description: "Add, edit, and organize staff profiles with custom fields and bulk operations"
     },
     {
       icon: Shield,
       title: "Secure Access",
-      description: "Enterprise-grade security with AWS Cognito"
+      description: "Multi-factor authentication and role-based access powered by AWS Cognito"
     },
     {
       icon: BarChart3,
-      title: "Analytics",
-      description: "Track and monitor staff performance metrics"
+      title: "Analytics & Reporting",
+      description: "Generate insights on team structure, access patterns, and system usage"
     }
   ];
 
   const benefits = [
-    "Centralized staff data management",
-    "Role-based access control",
-    "Comprehensive audit logging",
-    "Real-time updates and notifications"
+    "Centralized employee database with real-time sync",
+    "Granular role-based permissions for security",
+    "Complete audit trail of all system activities",
+    "Instant updates across all departments"
   ];
 
   return (
@@ -88,67 +88,28 @@ export default function Home() {
 
           {/* Subheading */}
           <p className="text-xl md:text-2xl text-blue-200/80 mb-12 max-w-3xl mx-auto leading-relaxed animate-in fade-in slide-in-from-bottom duration-700 delay-200">
-            Streamline your workforce operations with powerful tools for managing staff, tracking activities, and ensuring security.
-          </p>
+           Track, secure, and organize with ease.</p>
 
-          {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16 animate-in fade-in slide-in-from-bottom duration-700 delay-300">
+          {/* Single CTA Button */}
+          <div className="flex items-center justify-center mb-16 animate-in fade-in slide-in-from-bottom duration-700 delay-300">
             <button
               onClick={handleLogin}
               className="group relative px-8 py-4 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-2xl font-semibold shadow-2xl shadow-blue-500/50 hover:shadow-blue-500/70 transition-all duration-300 hover:scale-105 flex items-center gap-2 text-lg"
             >
               <User className="w-5 h-5" />
-              Get Started
+              Sign In to Dashboard
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </button>
-            <button
-              className="px-8 py-4 bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl font-semibold hover:bg-white/20 transition-all duration-300 text-lg"
-            >
-              Learn More
-            </button>
           </div>
 
-          {/* Benefits List */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-2xl mx-auto mb-20 animate-in fade-in slide-in-from-bottom duration-700 delay-400">
-            {benefits.map((benefit, index) => (
-              <div
-                key={index}
-                className="flex items-center gap-3 px-4 py-3 bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl"
-              >
-                <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0" />
-                <span className="text-sm text-blue-100">{benefit}</span>
-              </div>
-            ))}
-          </div>
-
-          {/* Features Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto animate-in fade-in slide-in-from-bottom duration-700 delay-500">
-            {features.map((feature, index) => {
-              const Icon = feature.icon;
-              return (
-                <div
-                  key={index}
-                  className="group relative p-8 bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl hover:bg-white/10 hover:border-white/20 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/20"
-                >
-                  <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300 shadow-lg">
-                    <Icon className="w-7 h-7 text-white" />
-                  </div>
-                  <h3 className="text-xl font-bold mb-2">{feature.title}</h3>
-                  <p className="text-blue-200/70 leading-relaxed">
-                    {feature.description}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </main>
+      </div>
+      </main> 
 
       {/* Footer */}
       <footer className="relative z-10 border-t border-white/10 py-8">
         <div className="max-w-7xl mx-auto px-6 text-center">
           <p className="text-blue-200/60 text-sm">
-            © 2025 Staff Management System. Powered by AWS Cognito.
+            © 2025 Staff Management System. All rights reserved.
           </p>
         </div>
       </footer>
