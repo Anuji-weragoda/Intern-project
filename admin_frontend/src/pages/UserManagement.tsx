@@ -243,9 +243,7 @@ const UserManagement: React.FC = () => {
     setIsUpdating(true);
 
     try {
-      const addRoles = selectedRoles.filter(r => !selectedUser.roles.includes(r));
-      const removeRoles = selectedUser.roles.filter(r => !selectedRoles.includes(r));
-
+      // Send only the roleNames array as per the backend API
       const response = await fetch(
         `http://localhost:8081/api/v1/admin/users/${selectedUser.id}/roles`,
         {
@@ -255,7 +253,14 @@ const UserManagement: React.FC = () => {
             "Content-Type": "application/json",
             "Authorization": `Bearer ${token}`
           },
-          body: JSON.stringify({ addRoles, removeRoles }),
+          body: JSON.stringify({
+            userId: selectedUser.id,
+            roleNames: selectedRoles,
+            // addRoles and removeRoles are handled server-side by comparing current roles with requested roles
+            addRoles: [],
+            removeRoles: [],
+            assignedBy: null // this will be set from JWT on server
+          }),
         }
       );
 
@@ -338,7 +343,7 @@ const UserManagement: React.FC = () => {
         {/* Stats Cards */}
         {!loading && !error && users.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+            <div className="bg-white rounded-xl shadow-md p-5 border-l-4 border-blue-500 ">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-slate-600">Total Users</p>
@@ -350,7 +355,7 @@ const UserManagement: React.FC = () => {
               </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-sm border border-blue-200 p-5">
+            <div className="bg-white rounded-xl shadow-md p-5 border-l-4 border-red-500">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-blue-600">Admins</p>
@@ -362,7 +367,7 @@ const UserManagement: React.FC = () => {
               </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-sm border border-purple-200 p-5">
+            <div className="bg-white rounded-xl shadow-md p-5 border-l-4 border-purple-500">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-purple-600">HR Staff</p>
@@ -374,7 +379,7 @@ const UserManagement: React.FC = () => {
               </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+            <div className="bg-white rounded-xl shadow-md p-5 border-l-4 border-green-500">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-slate-600">Regular Users</p>

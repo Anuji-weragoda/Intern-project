@@ -10,6 +10,7 @@ import {
   Menu,
   X,
   ChevronDown,
+  LayoutDashboard,
 } from "lucide-react";
 
 interface NavLinkProps {
@@ -82,6 +83,9 @@ const Navbar: React.FC = () => {
             {!loading && user ? (
               <>
                 <div className="flex items-center gap-1 mr-4">
+                  <NavLink to="/dashboard" icon={LayoutDashboard}>
+                    Dashboard
+                  </NavLink>
                   <NavLink to="/admin/users" icon={Users}>
                     Users
                   </NavLink>
@@ -200,6 +204,9 @@ const Navbar: React.FC = () => {
 
               <NavLink to="/profile" icon={User}>
                 Profile
+              </NavLink>
+              <NavLink to="/dashboard" icon={LayoutDashboard}>
+                Dashboard
               </NavLink>
               <NavLink to="/admin/users" icon={Users}>
                 Users
