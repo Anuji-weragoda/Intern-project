@@ -1,0 +1,1 @@
+{"uuid":"a221e8aa-e6af-419a-b3b9-dd45b89c0099","name":"updateProfile updates fields and returns DTO","children":["8bea34e1-7f05-4457-98bd-0a984ae3a845"],"befores":[{"name":"setUp","status":"passed","stage":"finished","steps":[],"attachments":[],"parameters":[],"start":1762032629800,"stop":1762032629800}],"afters":[],"start":1762032629790,"stop":1762032629809}

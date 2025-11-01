@@ -1,0 +1,1 @@
+{"uuid":"eccbee54-9ca9-45f8-aa92-31e0b0af0c55","name":"getCurrentUser returns DTO when user exists","children":["380964d8-955e-441e-a3d5-aae04ec5f938"],"befores":[{"name":"setUp","status":"passed","stage":"finished","steps":[],"attachments":[],"parameters":[],"start":1762034124078,"stop":1762034124078}],"afters":[],"start":1762034124069,"stop":1762034124089}
