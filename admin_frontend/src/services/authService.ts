@@ -23,9 +23,23 @@ export async function getSession(): Promise<User | null> {
           }
           // Heuristics: valid session should have at least one of these identifiers
           const hasIdentity = Boolean(
-            data.username || data.displayName || data.name || data.email || data.sub
+            data.username || data.displayName || data.name || data.email || data.sub || data.cognitoSub
           );
           if (!hasIdentity) return null;
+
+          // If server returned only a cognito sub (or name that's actually a sub), fetch full profile from DB
+          const sub = data.sub || data.cognitoSub || data.name;
+          if ((!data.displayName || !data.email) && sub) {
+            try {
+              const profileRes = await apiFetch(`/api/v1/me/by-sub/${encodeURIComponent(sub)}`, { method: "GET" });
+              if (profileRes.ok) {
+                const profile = await profileRes.json();
+                return profile as User;
+              }
+            } catch (e) {
+              // fallback to original data
+            }
+          }
 
           return data as User;
         } catch {

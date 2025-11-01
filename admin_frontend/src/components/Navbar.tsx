@@ -97,15 +97,15 @@ const Navbar: React.FC = () => {
                     className="flex items-center gap-3 pl-4 pr-3 py-2 rounded-xl hover:bg-gray-50 transition-all duration-200 group border border-transparent hover:border-gray-200"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-md">
+                      <div className="h-9 w-9 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-md">
                         <User className="h-5 w-5 text-white" />
                       </div>
                       <div className="text-left">
                         <span className="block text-sm font-semibold text-gray-900">
-                          {user.displayName || "User"}
+                          {user.displayName || (user as any).name || user.username || (user.email ? user.email.split('@')[0] : 'User')}
                         </span>
                         <span className="block text-xs text-gray-500">
-                          {user.email}
+                          {user.email || (user as any).userEmail || ''}
                         </span>
                       </div>
                     </div>
