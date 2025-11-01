@@ -13,6 +13,8 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.logout.LogoutHandler;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.security.web.util.matcher.OrRequestMatcher;
 
 @Configuration
 @EnableWebSecurity
@@ -40,9 +42,11 @@ public class SecurityConfiguration {
                 .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter()))
             )
             .logout(logout -> logout
-                .addLogoutHandler(cognitoLogoutHandler)
-                .logoutSuccessUrl("/")
-            );
+            .logoutUrl("/logout")                
+            .logoutSuccessUrl("/")                
+            .addLogoutHandler(cognitoLogoutHandler) 
+            .permitAll()                         
+        );
 
         return http.build();
     }

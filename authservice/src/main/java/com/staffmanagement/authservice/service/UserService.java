@@ -5,6 +5,9 @@ import com.staffmanagement.authservice.dto.response.UserProfileDTO;
 import com.staffmanagement.authservice.entity.AppUser;
 import com.staffmanagement.authservice.entity.Role;
 import com.staffmanagement.authservice.repository.AppUserRepository;
+import com.staffmanagement.authservice.repository.RoleRepository;
+import com.staffmanagement.authservice.repository.UserRoleRepository;
+import com.staffmanagement.authservice.entity.UserRole;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -22,6 +25,8 @@ import java.util.stream.Collectors;
 public class UserService {
 
     private final AppUserRepository appUserRepository;
+    private final RoleRepository roleRepository;
+    private final UserRoleRepository userRoleRepository;
 
     /**
      * Get current user profile
@@ -45,12 +50,31 @@ public class UserService {
         AppUser user = appUserRepository.findByCognitoSub(cognitoSub)
                 .orElseGet(() -> {
                     log.info("Creating new user for cognitoSub: {}", cognitoSub);
-                    return AppUser.builder()
+                    AppUser created = AppUser.builder()
                             .cognitoSub(cognitoSub)
                             .email(email)
                             .emailVerified(emailVerified != null && emailVerified)
                             .isActive(true)
                             .build();
+
+                    AppUser saved = appUserRepository.save(created);
+
+                    // Assign default USER role if present
+                    try {
+                        roleRepository.findByRoleName("USER").ifPresent(role -> {
+                            if (userRoleRepository.findByUserAndRole(saved, role).isEmpty()) {
+                                UserRole ur = new UserRole();
+                                ur.setUser(saved);
+                                ur.setRole(role);
+                                ur.setAssignedBy(email);
+                                userRoleRepository.save(ur);
+                            }
+                        });
+                    } catch (Exception ex) {
+                        log.warn("Failed to assign default role to new user {}: {}", email, ex.getMessage());
+                    }
+
+                    return saved;
                 });
 
         // Update email and verification status on each login

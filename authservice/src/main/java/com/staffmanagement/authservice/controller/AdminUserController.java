@@ -41,4 +41,10 @@ public class AdminUserController {
         adminUserService.assignRolesToUser(userId, request, jwt);
         return ResponseEntity.ok().build();
     }
+
+    @PostMapping("/{id}/resync-groups")
+    public ResponseEntity<Void> resyncGroups(@PathVariable("id") Long userId) {
+        adminUserService.resyncUserGroups(userId);
+        return ResponseEntity.ok().build();
+    }
 }

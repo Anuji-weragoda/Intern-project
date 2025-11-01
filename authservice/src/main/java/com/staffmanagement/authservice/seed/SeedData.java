@@ -27,16 +27,17 @@ public class SeedData implements CommandLineRunner {
     @Transactional
     public void run(String... args) throws Exception {
         // Check if roles already exist and create if missing
-        Role adminRole = roleRepository.findByRoleName("ROLE_ADMIN")
+        // Store canonical role names in DB WITHOUT the Spring Security "ROLE_" prefix
+        Role adminRole = roleRepository.findByRoleName("ADMIN")
                 .orElseGet(() -> roleRepository.save(Role.builder()
-                        .roleName("ROLE_ADMIN") // add ROLE_ prefix
+                        .roleName("ADMIN")
                         .description("Administrator role")
                         .isSystemRole(true)
                         .build()));
 
-        Role userRole = roleRepository.findByRoleName("ROLE_USER")
+        Role userRole = roleRepository.findByRoleName("USER")
                 .orElseGet(() -> roleRepository.save(Role.builder()
-                        .roleName("ROLE_USER") // add ROLE_ prefix
+                        .roleName("USER")
                         .description("Regular user role")
                         .isSystemRole(false)
                         .build()));

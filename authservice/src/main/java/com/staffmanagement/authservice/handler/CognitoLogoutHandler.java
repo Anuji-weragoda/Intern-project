@@ -27,22 +27,32 @@ public class CognitoLogoutHandler implements LogoutHandler {
     public void logout(HttpServletRequest request, HttpServletResponse response,
                        Authentication authentication) {
         try {
-            // Log the logout event before redirecting
-            if (authentication != null && authentication.getPrincipal() instanceof OidcUser) {
-                OidcUser oidcUser = (OidcUser) authentication.getPrincipal();
-                String cognitoSub = oidcUser.getSubject();
-                String email = oidcUser.getEmail();
-                
-                String ipAddress = request.getRemoteAddr();
-                String userAgent = request.getHeader("User-Agent");
+            String ipAddress = request.getRemoteAddr();
+            String userAgent = request.getHeader("User-Agent");
 
-                // Log the logout event
+            String cognitoSub = null;
+            String email = null;
+
+            if (authentication != null) {
+                Object principal = authentication.getPrincipal();
+                if (principal instanceof OidcUser oidcUser) {
+                    cognitoSub = oidcUser.getSubject();
+                    email = oidcUser.getEmail();
+                } else {
+                    // Fallback: record at least the principal name if available
+                    email = authentication.getName();
+                }
+            }
+
+            try {
                 auditService.logLogout(
                     cognitoSub,
                     email,
                     ipAddress,
                     userAgent
                 );
+            } catch (Exception ex) {
+                log.error("Failed to save logout audit: {}", ex.getMessage(), ex);
             }
 
             // Redirect to Cognito logout

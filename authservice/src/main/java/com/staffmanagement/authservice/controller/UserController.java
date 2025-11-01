@@ -7,7 +7,6 @@ import com.staffmanagement.authservice.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
 import org.springframework.security.oauth2.client.annotation.RegisteredOAuth2AuthorizedClient;
@@ -16,6 +15,7 @@ import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.core.Authentication;
+
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.HashMap;
@@ -46,16 +46,18 @@ public class UserController {
         // THIS IS THE KEY FIX: Create or update user in DB
         userService.createOrUpdateUserFromJwt(jwt);
 
-        // Log the audit event
-        auditService.logLoginAsync(
-                cognitoSub,
-                email,
-                "PROFILE_FETCH",
-                request.getRemoteAddr(),
-                request.getHeader("User-Agent"),
-                true,
-                null
-        );
+    // Capture event time to keep audit ordering accurate even when logged asynchronously
+    java.time.LocalDateTime eventTime = java.time.LocalDateTime.now();
+    auditService.logLoginAsync(
+        cognitoSub,
+        email,
+        "PROFILE_FETCH",
+        request.getRemoteAddr(),
+        request.getHeader("User-Agent"),
+        true,
+        null,
+        eventTime
+    );
 
         // Get the user profile (will now exist in DB)
         UserProfileDTO profile = userService.getCurrentUser(cognitoSub);
@@ -66,22 +68,41 @@ public class UserController {
 
     // ==========================
     // Session-based endpoint (works for React navbar)
+    // Returns full UserProfile when a session is active so SPA can show displayName/email
     // ==========================
     @GetMapping("/session")
-    public ResponseEntity<Map<String, Object>> getCurrentUserSession(Authentication authentication) {
-        Map<String, Object> userInfo = new HashMap<>();
-
-        if (authentication != null) {
-            userInfo.put("name", authentication.getName());
-            userInfo.put("roles", authentication.getAuthorities()
-                    .stream()
-                    .map(GrantedAuthority::getAuthority)
-                    .toList());
-        } else {
-            userInfo.put("error", "No active session");
+    public ResponseEntity<?> getCurrentUserSession(Authentication authentication) {
+        if (authentication == null) {
+            return ResponseEntity.status(401).body(Map.of("error", "No active session"));
         }
 
-        return ResponseEntity.ok(userInfo);
+        try {
+            String cognitoSub = null;
+            Object principal = authentication.getPrincipal();
+
+            // Common principal types: OidcUser (when session), Jwt (when resource server), OAuth2User
+            if (principal instanceof OidcUser oidcUser) {
+                cognitoSub = oidcUser.getSubject();
+            } else if (principal instanceof org.springframework.security.oauth2.jwt.Jwt jwt) {
+                cognitoSub = jwt.getClaimAsString("sub");
+            } else if (principal instanceof org.springframework.security.core.userdetails.UserDetails) {
+                // fallback: try authentication name
+                cognitoSub = authentication.getName();
+            } else {
+                // last resort: authentication name (may be username or sub)
+                cognitoSub = authentication.getName();
+            }
+
+            if (cognitoSub == null) {
+                return ResponseEntity.status(401).body(Map.of("error", "Unable to resolve user identity"));
+            }
+
+            UserProfileDTO profile = userService.getCurrentUser(cognitoSub);
+            return ResponseEntity.ok(profile);
+        } catch (Exception e) {
+            log.error("Failed to resolve session user: {}", e.getMessage(), e);
+            return ResponseEntity.status(500).body(Map.of("error", "Failed to fetch user profile"));
+        }
     }
 
     // ==========================
@@ -98,15 +119,17 @@ public class UserController {
 
         UserProfileDTO updatedProfile = userService.updateProfile(cognitoSub, request);
 
-        auditService.logLoginAsync(
-                cognitoSub,
-                email,
-                "PROFILE_UPDATE",
-                httpRequest.getRemoteAddr(),
-                httpRequest.getHeader("User-Agent"),
-                true,
-                null
-        );
+    java.time.LocalDateTime eventTime = java.time.LocalDateTime.now();
+    auditService.logLoginAsync(
+        cognitoSub,
+        email,
+        "PROFILE_UPDATE",
+        httpRequest.getRemoteAddr(),
+        httpRequest.getHeader("User-Agent"),
+        true,
+        null,
+        eventTime
+    );
 
         log.info("User profile updated for {}", email);
 
@@ -124,5 +147,14 @@ public class UserController {
         tokens.put("id_token", oidcUser.getIdToken().getTokenValue());
         tokens.put("access_token", client.getAccessToken().getTokenValue());
         return tokens;
+    }
+
+    // ==========================
+    // Lookup user by cognito sub (useful for SPA when principal exposes sub only)
+    // ==========================
+    @GetMapping("/by-sub/{cognitoSub}")
+    public ResponseEntity<UserProfileDTO> getUserBySub(@PathVariable("cognitoSub") String cognitoSub) {
+        UserProfileDTO profile = userService.getCurrentUser(cognitoSub);
+        return ResponseEntity.ok(profile);
     }
 }

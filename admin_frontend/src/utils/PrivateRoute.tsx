@@ -1,22 +1,19 @@
-import { useEffect, useState } from "react";
+import React from "react";
+import useAuth from "../hooks/useAuth";
+import { API_BASE_URL } from "../api/index";
 
 type PrivateRouteProps = {
   children: React.ReactNode;
 };
 
 const PrivateRoute = ({ children }: PrivateRouteProps) => {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const { isAuthenticated, loading } = useAuth();
 
-  useEffect(() => {
-    fetch("/api/v1/me", { credentials: "include" })
-      .then((res) => setIsAuthenticated(res.status === 200))
-      .catch(() => setIsAuthenticated(false));
-  }, []);
-
-  if (isAuthenticated === null) return <div className="p-8 text-gray-600">Checking session...</div>;
+  if (loading) return <div className="p-8 text-gray-600">Checking session...</div>;
 
   if (!isAuthenticated) {
-    window.location.href = "/oauth2/authorization/cognito";
+    // Redirect to backend OAuth login endpoint; API_BASE_URL falls back to localhost in dev
+    window.location.href = `${API_BASE_URL}/oauth2/authorization/cognito`;
     return null;
   }
 
