@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import UserManagement from "./pages/UserManagement";
+import Unauthorized from "./pages/Unauthorized";
 import AuditLog from "./pages/AuditLog";
 import Profile from "./pages/Profile";
 import Home from "./pages/Home";
@@ -13,8 +14,9 @@ const AppContent: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { isAuthenticated, refreshSession, loading } = useAuth();
-  // Show navbar on all pages except unauthenticated home page
-  const showNavbar = location.pathname !== "/" || isAuthenticated;
+  // Show navbar on all pages except unauthenticated home page and the unauthorized page
+  // Keep behavior where authenticated users see navbar on the home page
+  const showNavbar = location.pathname !== "/unauthorized" && (location.pathname !== "/" || isAuthenticated);
 
   // Clean ?jwt from the URL if backend added it, but do not store it
   useEffect(() => {
@@ -49,6 +51,7 @@ const AppContent: React.FC = () => {
           <Route path="/dashboard" element={<PrivateRoute><Dashboard/></PrivateRoute>} />
           <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
           <Route path="/admin/users" element={<PrivateRoute><UserManagement /></PrivateRoute>} />
+          <Route path="/unauthorized" element={<Unauthorized />} />
           <Route path="/admin/audit-log" element={<PrivateRoute><AuditLog /></PrivateRoute>} />
         </Routes>
       </div>

@@ -17,6 +17,10 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Component
@@ -25,6 +29,10 @@ public class CognitoOAuth2SuccessHandler implements AuthenticationSuccessHandler
 
     private final CognitoUserService cognitoUserService;
     private final AuditService auditService;
+    private final com.staffmanagement.authservice.service.UserService userService;
+
+    @org.springframework.beans.factory.annotation.Value("${cognito.allowed-groups:}")
+    private String allowedGroupsCsv;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request,
@@ -36,8 +44,66 @@ public class CognitoOAuth2SuccessHandler implements AuthenticationSuccessHandler
 
         cognitoUserService.processOAuthPostLogin(oAuth2User);
 
-        String email = oAuth2User.getAttribute("email");
+        // Determine whether this user belongs to an allowed Cognito group (or has a DB role that is allowed)
         String cognitoSub = oAuth2User.getAttribute("sub");
+        Set<String> allowedGroups = Arrays.stream((allowedGroupsCsv == null ? "" : allowedGroupsCsv).split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.toSet());
+
+        // Extract groups from OIDC principal if present
+        Set<String> userGroups = new HashSet<>();
+        Object groupsObj = oAuth2User.getAttribute("cognito:groups");
+        if (groupsObj instanceof java.util.Collection) {
+            for (Object o : (java.util.Collection<?>) groupsObj) {
+                if (o != null) userGroups.add(o.toString());
+            }
+        } else if (groupsObj instanceof String) {
+            String g = (String) groupsObj;
+            for (String part : g.split(",")) {
+                if (!part.isBlank()) userGroups.add(part.trim());
+            }
+        }
+
+        // If no groups present in token, fallback to DB roles for the user
+        if (userGroups.isEmpty() && cognitoSub != null) {
+            try {
+                com.staffmanagement.authservice.dto.response.UserProfileDTO profile = userService.getCurrentUser(cognitoSub);
+                if (profile != null && profile.getRoles() != null) {
+                    userGroups.addAll(profile.getRoles());
+                }
+            } catch (Exception e) {
+                log.debug("No DB profile found for sub {} while checking login groups", cognitoSub);
+            }
+        }
+
+        boolean allowed = false;
+        for (String g : userGroups) {
+            if (allowedGroups.contains(g)) {
+                allowed = true;
+                break;
+            }
+        }
+
+        if (!allowed) {
+            log.warn("User {} (sub={}) attempted login but is not a member of allowed groups {}. Present groups/roles: {}",
+                    oAuth2User.getAttribute("email"), cognitoSub, allowedGroups, userGroups);
+
+            // Audit attempted login as failed
+            try {
+                java.time.LocalDateTime eventTime = java.time.LocalDateTime.now();
+                auditService.logLoginAsync(cognitoSub, oAuth2User.getAttribute("email"), "LOGIN", request.getRemoteAddr(), request.getHeader("User-Agent"), false, "NOT_IN_ALLOWED_GROUP", eventTime);
+            } catch (Exception e) {
+                log.error("Failed to log failed login attempt for {}: {}", oAuth2User.getAttribute("email"), e.getMessage());
+            }
+
+            // Redirect to frontend unauthorized page without issuing session cookie
+            response.sendRedirect("http://localhost:5173/unauthorized");
+            return;
+        }
+
+    String email = oAuth2User.getAttribute("email");
+    // cognitoSub already extracted earlier
         String ipAddress = request.getRemoteAddr();
         String userAgent = request.getHeader("User-Agent");
 

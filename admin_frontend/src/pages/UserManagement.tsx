@@ -26,11 +26,27 @@ interface SpringPageResponse<T> {
   empty: boolean;
 }
 
-const AVAILABLE_ROLES = [
+const DEFAULT_ROLES = [
   { value: "ADMIN", label: "Admin", icon: Shield, color: "blue" },
   { value: "HR", label: "HR", icon: Briefcase, color: "purple" },
-  { value: "USER", label: "User", icon: User, color: "gray" }
+  { value: "USER", label: "User", icon: User, color: "gray" },
+  { value: "ML1", label: "Management Level 1", icon: Briefcase, color: "green" },
+  { value: "ML2", label: "Management Level 2", icon: Briefcase, color: "green" },
+  { value: "ML3", label: "Management Level 3", icon: Briefcase, color: "green" }
 ];
+
+// Will be populated from backend at runtime
+const AVAILABLE_ROLES: Array<{ value: string; label: string; icon: any; color: string }> = [];
+
+// Friendly labels for role codes (map ML1/ML2/ML3 to human-readable)
+const ROLE_LABELS: Record<string, string> = {
+  ADMIN: 'Admin',
+  HR: 'HR',
+  USER: 'User',
+  ML1: 'Management Level 1',
+  ML2: 'Management Level 2',
+  ML3: 'Management Level 3',
+};
 
 // In-memory token storage
 let cachedToken: string | null = null;
@@ -119,10 +135,58 @@ const UserManagement: React.FC = () => {
   const [showUserDetailsModal, setShowUserDetailsModal] = useState(false);
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [availableRoles, setAvailableRoles] = useState<Array<{ value: string; label: string; icon: any; color: string }>>(DEFAULT_ROLES);
 
   useEffect(() => {
     fetchUsers();
+    fetchAvailableRoles();
   }, []);
+
+  const fetchAvailableRoles = async () => {
+    // try backend first
+    try {
+      const token = getJWT();
+      const res = await fetch('http://localhost:8081/api/v1/admin/roles', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        credentials: 'include'
+      });
+
+      if (!res.ok) {
+        console.warn('Failed to load roles from backend, using defaults');
+        setAvailableRoles(DEFAULT_ROLES);
+        return;
+      }
+
+      const roles = await res.json();
+      if (!Array.isArray(roles)) {
+        setAvailableRoles(DEFAULT_ROLES);
+        return;
+      }
+
+      // Map backend roles to UI roles and keep icons/colors for known roles
+      const uiRoles = roles.map((r: any) => {
+        const val = r.roleName;
+        let color = 'gray';
+        let icon = User;
+        if (val === 'ADMIN') { color = 'blue'; icon = Shield; }
+        if (val === 'HR') { color = 'purple'; icon = Briefcase; }
+        if (val === 'USER') { color = 'gray'; icon = User; }
+        // ML roles get green shades
+        if (val && val.startsWith('ML')) { color = 'green'; icon = Briefcase; }
+        const label = ROLE_LABELS[val] || val;
+        return { value: val, label, icon, color };
+      });
+
+      setAvailableRoles(uiRoles);
+    } catch (e) {
+      console.warn('Error fetching available roles, using defaults', e);
+      setAvailableRoles(DEFAULT_ROLES);
+    }
+  };
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -156,7 +220,7 @@ const UserManagement: React.FC = () => {
 
       // Handle 401 - Token expired
       if (response.status === 401) {
-        console.error('❌ Token expired or invalid - clearing storage');
+        console.error('Token expired or invalid - clearing storage');
         cachedToken = null;
         try {
           localStorage.clear();
@@ -196,7 +260,7 @@ const UserManagement: React.FC = () => {
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Unknown error";
-      console.error("❌ Error fetching users:", err);
+      console.error("Error fetching users:", err);
       setError(msg);
   // Error while fetching users
     } finally {
@@ -234,7 +298,7 @@ const UserManagement: React.FC = () => {
 
     const token = getJWT();
     if (!token) {
-      alert("❌ No authentication token! Please log in again.");
+      alert("No authentication token! Please log in again.");
       window.location.href = '/';
       return;
     }
@@ -271,13 +335,13 @@ const UserManagement: React.FC = () => {
         } catch (e) {
           console.warn('Cannot clear storage');
         }
-        alert("❌ Session expired. Please log in again.");
+        alert("Session expired. Please log in again.");
         window.location.href = '/';
         return;
       }
 
       if (response.status === 403) {
-        alert("❌ Access denied. You don't have permission to modify roles.");
+        alert("Access denied. You don't have permission to modify roles.");
         return;
       }
 
@@ -492,9 +556,9 @@ const UserManagement: React.FC = () => {
                       onChange={(e) => setRoleFilter(e.target.value)}
                     >
                       <option value="">All Roles</option>
-                      {AVAILABLE_ROLES.map(role => (
-                        <option key={role.value} value={role.value}>{role.label}</option>
-                      ))}
+                          {availableRoles.map(role => (
+                            <option key={role.value} value={role.value}>{role.label}</option>
+                          ))}
                     </select>
                   </div>
                 </div>
@@ -522,7 +586,7 @@ const UserManagement: React.FC = () => {
             {/* Users Table */}
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
               <div className="overflow-x-auto">
-                <table className="w-full">
+                <table className="w-full table-fixed">
                   <thead className="bg-slate-50 border-b border-slate-200">
                     <tr>
                       <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">User</th>
@@ -539,12 +603,12 @@ const UserManagement: React.FC = () => {
                         <tr key={user.id} className="hover:bg-slate-50 transition-colors cursor-pointer" onClick={() => openUserDetailsModal(user)}>
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-3">
-                              <div className={`p-2 rounded-lg bg-${getRoleColor(user.roles[0] || "USER")}-100`}>
+                              <div className={`p-2 rounded-lg bg-${getRoleColor(user.roles[0] || "USER")}-100`}> 
                                 <IconComponent className={`w-5 h-5 text-${getRoleColor(user.roles[0] || "USER")}-600`} />
                               </div>
-                              <div>
-                                <p className="font-medium text-slate-900">{user.username || "N/A"}</p>
-                                <p className="text-sm text-slate-500">ID: {user.id}</p>
+                              <div className="min-w-0">
+                                <p className="font-medium text-slate-900 truncate max-w-[14rem]">{user.username || "N/A"}</p>
+                                <p className="text-sm text-slate-500 truncate max-w-[14rem]">ID: {user.id}</p>
                               </div>
                             </div>
                           </td>
@@ -552,15 +616,17 @@ const UserManagement: React.FC = () => {
                             <p className="text-sm text-slate-900">{user.email}</p>
                           </td>
                           <td className="px-6 py-4">
-                            <div className="flex flex-wrap gap-1.5">
+                            <div className="flex flex-wrap gap-1.5 items-center">
                               {user.roles.length > 0 ? user.roles.map(role => {
+                                const roleConfig = AVAILABLE_ROLES.find(r => r.value === role) || { label: (ROLE_LABELS && ROLE_LABELS[role]) || role };
                                 const color = getRoleColor(role);
                                 return (
                                   <span
                                     key={role}
-                                    className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-${color}-100 text-${color}-700 border border-${color}-200`}
+                                    title={roleConfig.label || role}
+                                    className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-${color}-100 text-${color}-700 border border-${color}-200 max-w-[10rem] truncate`}
                                   >
-                                    {role}
+                                    {roleConfig.label || role}
                                   </span>
                                 );
                               }) : (
@@ -736,6 +802,9 @@ const UserManagement: React.FC = () => {
                                   {role === "ADMIN" && "Full system access and user management"}
                                   {role === "HR" && "HR management and employee access"}
                                   {role === "USER" && "Basic user access and features"}
+                                  {role === "ML1" && "Management Level 1 — supervises level 2 and operational teams"}
+                                  {role === "ML2" && "Management Level 2 — mid-level management responsibilities"}
+                                  {role === "ML3" && "Management Level 3 — senior management responsibilities"}
                                 </p>
                               </div>
                               <span className={`px-3 py-1 rounded-full text-xs font-medium bg-${color}-100 text-${color}-700 border border-${color}-200`}>
@@ -778,8 +847,8 @@ const UserManagement: React.FC = () => {
         {/* Role Management Modal */}
         {showRoleModal && selectedUser && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full">
-              <div className="p-6 border-b border-slate-200">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-6 border-b border-slate-200 sticky top-0 bg-white z-10">
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="text-xl font-bold text-slate-900">Manage User Roles</h3>
@@ -795,7 +864,7 @@ const UserManagement: React.FC = () => {
               </div>
 
               <div className="p-6 space-y-3">
-                {AVAILABLE_ROLES.map(role => {
+                {availableRoles.map(role => {
                   const Icon = role.icon;
                   const isSelected = selectedRoles.includes(role.value);
                   return (
@@ -841,7 +910,7 @@ const UserManagement: React.FC = () => {
                 })}
               </div>
 
-              <div className="p-6 border-t border-slate-200 flex gap-3">
+              <div className="p-6 border-t border-slate-200 sticky bottom-0 bg-white z-10 flex gap-3">
                 <button
                   onClick={() => setShowRoleModal(false)}
                   disabled={isUpdating}
