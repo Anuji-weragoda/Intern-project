@@ -162,6 +162,38 @@ class ApiService {
     }
   }
 
+  /// Toggle MFA (Multi-Factor Authentication)
+  static Future<Map<String, dynamic>> toggleMfa(bool enabled) async {
+    try {
+      final result = await Amplify.Auth.fetchAuthSession();
+      final cognitoSession = result as CognitoAuthSession;
+
+      final tokens = cognitoSession.userPoolTokensResult.value;
+      final idToken = tokens.idToken.toJson();
+
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/v1/me/mfa/toggle'),
+        headers: {
+          'Authorization': 'Bearer $idToken',
+          'Content-Type': 'application/json',
+        },
+        body: json.encode({'enabled': enabled}),
+      );
+
+      safePrint('MFA Toggle Response Status: ${response.statusCode}');
+      safePrint('MFA Toggle Response Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        throw Exception('Failed to toggle MFA: ${response.statusCode}');
+      }
+    } catch (e) {
+      safePrint('Error toggling MFA: $e');
+      rethrow;
+    }
+  }
+
   /// Get session info
   static Future<Map<String, dynamic>> getSessionInfo() async {
     try {

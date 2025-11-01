@@ -71,7 +71,8 @@ public class AuthSyncController {
                     request.getRemoteAddr(),
                     request.getHeader("User-Agent"),
                     true,
-                    null
+                    null,
+                    java.time.LocalDateTime.now()
             );
             log.info("✓ Audit log created");
 
@@ -91,7 +92,8 @@ public class AuthSyncController {
                         request.getRemoteAddr(),
                         request.getHeader("User-Agent"),
                         false,
-                        e.getMessage()
+                        e.getMessage(),
+                        java.time.LocalDateTime.now()
                 );
             }
 

@@ -137,6 +137,46 @@ public class UserController {
     }
 
     // ==========================
+    // Toggle MFA
+    // ==========================
+    @PostMapping("/mfa/toggle")
+    public ResponseEntity<UserProfileDTO> toggleMfa(
+            @AuthenticationPrincipal Jwt jwt,
+            @RequestBody Map<String, Boolean> request,
+            HttpServletRequest httpRequest) {
+
+        String cognitoSub = jwt.getClaimAsString("sub");
+        String email = jwt.getClaimAsString("email");
+        Boolean enabled = request.get("enabled");
+
+        if (enabled == null) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        try {
+            UserProfileDTO updatedProfile = userService.toggleMfa(cognitoSub, enabled);
+
+            java.time.LocalDateTime eventTime = java.time.LocalDateTime.now();
+            auditService.logLoginAsync(
+                cognitoSub,
+                email,
+                enabled ? "MFA_ENABLED" : "MFA_DISABLED",
+                httpRequest.getRemoteAddr(),
+                httpRequest.getHeader("User-Agent"),
+                true,
+                null,
+                eventTime
+            );
+
+            log.info("MFA {} for user {}", enabled ? "enabled" : "disabled", email);
+            return ResponseEntity.ok(updatedProfile);
+        } catch (Exception e) {
+            log.error("Failed to toggle MFA for user {}: {}", email, e.getMessage());
+            return ResponseEntity.status(500).body(null);
+        }
+    }
+
+    // ==========================
     // Get tokens (JWT or OAuth2)
     // ==========================
     @GetMapping("/token")

@@ -27,6 +27,7 @@ public class UserService {
     private final AppUserRepository appUserRepository;
     private final RoleRepository roleRepository;
     private final UserRoleRepository userRoleRepository;
+    private final CognitoAdminService cognitoAdminService;
 
     /**
      * Get current user profile
@@ -109,6 +110,24 @@ public class UserService {
 
         AppUser savedUser = appUserRepository.save(user);
         log.info("Profile updated for user: {}", user.getEmail());
+
+        return convertToDTO(savedUser);
+    }
+
+    /**
+     * Toggle MFA for user
+     */
+    public UserProfileDTO toggleMfa(String cognitoSub, boolean enabled) {
+        AppUser user = appUserRepository.findByCognitoSub(cognitoSub)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // Update MFA preference in Cognito
+        cognitoAdminService.setUserMfaPreference(user.getEmail(), enabled);
+
+        // Update DB record
+        user.setMfaEnabled(enabled);
+        AppUser savedUser = appUserRepository.save(user);
+        log.info("MFA {} for user: {}", enabled ? "enabled" : "disabled", user.getEmail());
 
         return convertToDTO(savedUser);
     }

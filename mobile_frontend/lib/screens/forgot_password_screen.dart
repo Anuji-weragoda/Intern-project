@@ -131,14 +131,14 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              Colors.blue.shade900,
-              Colors.blue.shade600,
-              Colors.purple.shade400,
+              Color(0xFF0F172A), // slate-900
+              Color(0xFF1E3A8A), // blue-900
+              Color(0xFF0F172A), // slate-900
             ],
           ),
         ),
@@ -171,23 +171,35 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                         width: 100,
                         height: 100,
                         decoration: BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
+                          gradient: const LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              Color(0xFF3B82F6), // blue-500
+                              Color(0xFF4F46E5), // indigo-600
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(24),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.2),
-                              blurRadius: 20,
-                              offset: const Offset(0, 10),
+                              color: const Color(0xFF3B82F6).withOpacity(0.3),
+                              blurRadius: 24,
+                              offset: const Offset(0, 12),
                             ),
                           ],
                         ),
-                        child: Icon(
-                          Icons.lock_reset,
-                          size: 50,
-                          color: Colors.blue.shade700,
+                        child: const Center(
+                          child: Text(
+                            'S',
+                            style: TextStyle(
+                              fontSize: 56,
+                              fontWeight: FontWeight.w900,
+                              color: Colors.white,
+                            ),
+                          ),
                         ),
                       ),
-                      const SizedBox(height: 30),
+                      const SizedBox(height: 32),
 
                       // Title
                       const Text(
@@ -231,9 +243,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                           style: const TextStyle(fontSize: 16),
                           decoration: InputDecoration(
                             labelText: 'Email',
-                            prefixIcon: Icon(
+                            floatingLabelBehavior: FloatingLabelBehavior.auto,
+                            prefixIcon: const Icon(
                               Icons.email_outlined,
-                              color: Colors.blue.shade700,
+                              color: Color(0xFF3B82F6),
                             ),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(16),
@@ -277,9 +290,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                             style: const TextStyle(fontSize: 16),
                             decoration: InputDecoration(
                               labelText: 'Verification Code',
-                              prefixIcon: Icon(
+                              floatingLabelBehavior: FloatingLabelBehavior.auto,
+                              prefixIcon: const Icon(
                                 Icons.confirmation_number_outlined,
-                                color: Colors.blue.shade700,
+                                color: Color(0xFF3B82F6),
                               ),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(16),
@@ -318,9 +332,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                             style: const TextStyle(fontSize: 16),
                             decoration: InputDecoration(
                               labelText: 'New Password',
-                              prefixIcon: Icon(
+                              floatingLabelBehavior: FloatingLabelBehavior.auto,
+                              prefixIcon: const Icon(
                                 Icons.lock_outline,
-                                color: Colors.blue.shade700,
+                                color: Color(0xFF3B82F6),
                               ),
                               suffixIcon: IconButton(
                                 icon: Icon(
@@ -375,9 +390,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                             style: const TextStyle(fontSize: 16),
                             decoration: InputDecoration(
                               labelText: 'Confirm Password',
-                              prefixIcon: Icon(
+                              floatingLabelBehavior: FloatingLabelBehavior.auto,
+                              prefixIcon: const Icon(
                                 Icons.lock_outline,
-                                color: Colors.blue.shade700,
+                                color: Color(0xFF3B82F6),
                               ),
                               suffixIcon: IconButton(
                                 icon: Icon(
@@ -425,19 +441,20 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                               ? null
                               : (_codeSent ? _resetPassword : _requestResetCode),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white,
-                            foregroundColor: Colors.blue.shade700,
+                            backgroundColor: const Color(0xFF3B82F6), // blue-500
+                            foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16),
                             ),
                             elevation: 0,
+                            shadowColor: const Color(0xFF3B82F6).withOpacity(0.5),
                           ),
                           child: _loading
-                              ? SizedBox(
+                              ? const SizedBox(
                                   height: 24,
                                   width: 24,
                                   child: CircularProgressIndicator(
-                                    color: Colors.blue.shade700,
+                                    color: Colors.white,
                                     strokeWidth: 2.5,
                                   ),
                                 )

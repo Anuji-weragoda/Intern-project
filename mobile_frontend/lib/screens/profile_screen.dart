@@ -248,14 +248,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              Colors.blue.shade900,
-              Colors.blue.shade700,
-              Colors.purple.shade500,
+              Color(0xFF0F172A), // slate-900
+              Color(0xFF1E3A8A), // blue-900
+              Color(0xFF0F172A), // slate-900
             ],
           ),
         ),
@@ -264,7 +264,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ? const Center(child: CircularProgressIndicator(color: Colors.white))
               : RefreshIndicator(
                   onRefresh: _loadProfile,
-                  color: Colors.blue.shade700,
+                  color: const Color(0xFF3B82F6), // blue-500
                   child: CustomScrollView(
                     slivers: [
                       SliverToBoxAdapter(
@@ -304,11 +304,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 width: 130,
                                 height: 130,
                                 decoration: BoxDecoration(
-                                  color: Colors.white,
+                                  gradient: const LinearGradient(
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                    colors: [
+                                      Color(0xFF3B82F6), // blue-500
+                                      Color(0xFF4F46E5), // indigo-600
+                                    ],
+                                  ),
                                   shape: BoxShape.circle,
                                   border: Border.all(color: Colors.white, width: 4),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: const Color(0xFF3B82F6).withOpacity(0.3),
+                                      blurRadius: 24,
+                                      offset: const Offset(0, 12),
+                                    ),
+                                  ],
                                 ),
-                                child: Icon(Icons.person, size: 70, color: Colors.blue.shade700),
+                                child: const Icon(Icons.person, size: 70, color: Colors.white),
                               ),
                               const SizedBox(height: 20),
                               Text(
@@ -366,7 +380,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                               : const Icon(Icons.check),
                                           label: Text(_isSaving ? 'Saving...' : 'Save'),
                                           style: ElevatedButton.styleFrom(
-                                            backgroundColor: Colors.blue.shade700,
+                                            backgroundColor: const Color(0xFF3B82F6), // blue-500
                                             foregroundColor: Colors.white,
                                           ),
                                         ),
@@ -460,7 +474,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       children: [
         Row(
           children: [
-            Icon(icon, size: 18, color: Colors.blue.shade700),
+            Icon(icon, size: 18, color: const Color(0xFF3B82F6)), // blue-500
             const SizedBox(width: 8),
             Text(
               label,
@@ -478,7 +492,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             color: isEditable ? Colors.white : Colors.grey.shade50,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: isEditable ? Colors.blue.shade200 : Colors.grey.shade200,
+              color: isEditable ? const Color(0xFF93C5FD) : Colors.grey.shade200, // blue-300
               width: isEditable ? 2 : 1,
             ),
           ),

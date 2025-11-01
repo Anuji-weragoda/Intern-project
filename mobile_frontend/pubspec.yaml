@@ -34,14 +34,18 @@ dependencies:
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
+  
+  # Amplify packages for authentication
+  amplify_flutter: ^1.2.0
+  amplify_auth_cognito: ^1.2.0
+  
+  # HTTP and secure storage
+  flutter_secure_storage: ^9.0.0
+  http: ^1.1.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  amplify_flutter: ^1.2.0
-  amplify_auth_cognito: ^1.2.0
-  flutter_secure_storage: ^9.0.0
-  http: ^1.1.0
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is

@@ -46,14 +46,14 @@ class _MyAppState extends State<MyApp> {
         debugShowCheckedModeBanner: false,
         home: Scaffold(
           body: Container(
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  Colors.blue.shade900,
-                  Colors.blue.shade600,
-                  Colors.purple.shade400,
+                  Color(0xFF0F172A), // slate-900
+                  Color(0xFF1E3A8A), // blue-900
+                  Color(0xFF0F172A), // slate-900
                 ],
               ),
             ),

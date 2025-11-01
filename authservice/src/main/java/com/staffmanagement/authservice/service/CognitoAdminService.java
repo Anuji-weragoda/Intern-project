@@ -10,9 +10,11 @@ import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminAddUserToGroupRequest;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminRemoveUserFromGroupRequest;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminSetUserSettingsRequest;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.CognitoIdentityProviderException;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.ListUsersRequest;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.ListUsersResponse;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.MFAOptionType;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.UserType;
 
 import jakarta.annotation.PostConstruct;
@@ -178,5 +180,54 @@ public class CognitoAdminService {
         }
 
         return null;
+    }
+
+    /**
+     * Enable or disable MFA (SMS) for a user in Cognito.
+     * @param username Cognito username or identifier
+     * @param enabled true to enable MFA, false to disable
+     */
+    public void setUserMfaPreference(String username, boolean enabled) {
+        if (username == null) return;
+        
+        try {
+            String resolvedUsername = resolveCognitoUsername(username);
+            if (resolvedUsername == null) {
+                resolvedUsername = username;
+            }
+
+            if (enabled) {
+                // Enable SMS MFA
+                MFAOptionType mfaOption = MFAOptionType.builder()
+                        .deliveryMedium("SMS")
+                        .attributeName("phone_number")
+                        .build();
+
+                AdminSetUserSettingsRequest req = AdminSetUserSettingsRequest.builder()
+                        .userPoolId(userPoolId)
+                        .username(resolvedUsername)
+                        .mfaOptions(mfaOption)
+                        .build();
+
+                cognitoClient.adminSetUserSettings(req);
+                log.info("MFA enabled for Cognito user {}", resolvedUsername);
+            } else {
+                // Disable MFA by setting empty options
+                AdminSetUserSettingsRequest req = AdminSetUserSettingsRequest.builder()
+                        .userPoolId(userPoolId)
+                        .username(resolvedUsername)
+                        .build();
+
+                cognitoClient.adminSetUserSettings(req);
+                log.info("MFA disabled for Cognito user {}", resolvedUsername);
+            }
+        } catch (CognitoIdentityProviderException e) {
+            String awsMsg = e.awsErrorDetails() != null ? e.awsErrorDetails().errorMessage() : e.getMessage();
+            log.error("Failed to set MFA preference for user {}: {}", username, awsMsg);
+            throw new RuntimeException("Failed to update MFA preference in Cognito: " + awsMsg);
+        } catch (Exception e) {
+            log.error("Unexpected error setting MFA preference for user {}: {}", username, e.getMessage());
+            throw new RuntimeException("Failed to update MFA preference: " + e.getMessage());
+        }
     }
 }

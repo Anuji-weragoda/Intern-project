@@ -47,6 +47,7 @@ public class LoginAudit {
     @Column(name = "location_info", columnDefinition = "JSONB")
     private String locationInfo;
 
+    @Builder.Default
     @Column(name = "success")
     private boolean success = true;
 
