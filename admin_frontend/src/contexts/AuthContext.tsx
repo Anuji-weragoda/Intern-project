@@ -34,9 +34,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const doLogout = async () => {
-    await authService.logout();
-    // ensure local state is cleared
-    setUser(null);
+    // Submit backend logout first to avoid SPA races (e.g., PrivateRoute redirecting to login)
+    // The browser will navigate away immediately via a form POST to /logout
+    try {
+      await authService.logout();
+    } catch (e) {
+      // Backend redirect will take over; no need to manipulate local state here
+    }
   };
 
   const value: AuthContextValue = {

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { User, Shield, Users, BarChart3, Settings, FileText, Activity, Clock, Calendar, Mail, CheckCircle, XCircle, TrendingUp, TrendingDown } from "lucide-react";
+import { User, Shield, Users, BarChart3, Settings, FileText, Activity, Clock, Calendar, CheckCircle, XCircle, TrendingUp } from "lucide-react";
 
 interface UserProfile {
   id?: number;

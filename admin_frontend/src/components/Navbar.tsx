@@ -25,11 +25,7 @@ const Navbar: React.FC = () => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const location = useLocation();
 
-  const handleLogout = async () => {
-    await logout();
-    setIsMobileMenuOpen(false);
-    setIsProfileOpen(false);
-  };
+  // Logout is handled by dedicated /logout route to avoid event/routing races
 
   const isActivePath = (path: string) => location.pathname === path;
 
@@ -138,8 +134,17 @@ const Navbar: React.FC = () => {
                         </Link>
                         <hr className="my-2 border-gray-200" />
                         <button
-                          onClick={handleLogout}
-                          className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                          type="button"
+                          onClick={async (e) => {
+                            e.preventDefault();
+                            setIsProfileOpen(false);
+                            try {
+                              await logout();
+                            } catch {
+                              // navigation will be handled by backend redirect
+                            }
+                          }}
+                          className="w-full text-left flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
                         >
                           <LogOut className="w-4 h-4" />
                           Sign out
@@ -180,9 +185,7 @@ const Navbar: React.FC = () => {
       {/* Mobile menu */}
       <div
         className={`${
-          isMobileMenuOpen
-            ? "max-h-screen opacity-100"
-            : "max-h-0 opacity-0"
+          isMobileMenuOpen ? "max-h-screen opacity-100" : "max-h-0 opacity-0"
         } md:hidden overflow-hidden transition-all duration-300 ease-in-out border-t border-gray-200/60 bg-gradient-to-b from-gray-50 to-white`}
       >
         <div className="px-4 pt-4 pb-6 space-y-2">
@@ -216,7 +219,16 @@ const Navbar: React.FC = () => {
               </NavLink>
 
               <button
-                onClick={handleLogout}
+                type="button"
+                onClick={async (e) => {
+                  e.preventDefault();
+                  setIsMobileMenuOpen(false);
+                  try {
+                    await logout();
+                  } catch {
+                    // backend redirect will take over
+                  }
+                }}
                 className="w-full flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-xl transition-all duration-200 mt-4"
               >
                 <LogOut className="w-4 h-4" />

@@ -112,7 +112,6 @@ const UserManagement: React.FC = () => {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [debugInfo, setDebugInfo] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("");
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
@@ -127,18 +126,18 @@ const UserManagement: React.FC = () => {
 
   const fetchUsers = async () => {
     setLoading(true);
-    setDebugInfo("🔍 Getting JWT token...");
+  // Looking for JWT token...
 
     const token = getJWT();
 
     if (!token) {
       setError("No authentication token found. Please log in via Cognito.");
-      setDebugInfo("❌ No token found in URL, localStorage, sessionStorage, or cookies");
+  // No token found in URL, localStorage, sessionStorage, or cookies
       setLoading(false);
       return;
     }
 
-    setDebugInfo(`✅ Token found! Making API call...`);
+  // Token found, making API call
 
     try {
       const response = await fetch(
@@ -153,7 +152,7 @@ const UserManagement: React.FC = () => {
         }
       );
 
-      setDebugInfo(`📡 Response: ${response.status} ${response.statusText}`);
+  // Response status logged
 
       // Handle 401 - Token expired
       if (response.status === 401) {
@@ -166,7 +165,7 @@ const UserManagement: React.FC = () => {
           console.warn('Cannot clear storage');
         }
         setError("Your session has expired. Please log in again.");
-        setDebugInfo("❌ 401 Unauthorized - Session expired");
+  // 401 Unauthorized - Session expired
         setTimeout(() => {
           window.location.href = '/';
         }, 2000);
@@ -177,7 +176,7 @@ const UserManagement: React.FC = () => {
       // Handle 403 - No permission
       if (response.status === 403) {
         setError("Access denied. Your account doesn't have ADMIN privileges in Cognito.");
-        setDebugInfo("❌ 403 Forbidden - No admin access");
+  // 403 Forbidden - No admin access
         setLoading(false);
         return;
       }
@@ -191,7 +190,7 @@ const UserManagement: React.FC = () => {
 
       if (Array.isArray(data.content)) {
         setUsers(data.content);
-        setDebugInfo(`✅ SUCCESS! Loaded ${data.content.length} users from ${data.totalElements} total`);
+  // Loaded users successfully
       } else {
         throw new Error("Invalid data structure from server");
       }
@@ -199,7 +198,7 @@ const UserManagement: React.FC = () => {
       const msg = err instanceof Error ? err.message : "Unknown error";
       console.error("❌ Error fetching users:", err);
       setError(msg);
-      setDebugInfo(`❌ Error: ${msg}`);
+  // Error while fetching users
     } finally {
       setLoading(false);
     }

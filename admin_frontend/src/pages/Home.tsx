@@ -1,47 +1,20 @@
-import { User, Shield, Users, BarChart3, ArrowRight, CheckCircle } from "lucide-react";
-import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { User, Shield, ArrowRight } from "lucide-react";
+import { Link } from "react-router-dom";
 import useAuth from "../hooks/useAuth";
+import { API_BASE_URL } from "../api";
 
 export default function Home() {
-  const backendUrl = "http://localhost:8081";
-  const navigate = useNavigate();
-  const { user, loading } = useAuth();
+  // Note: We no longer auto-redirect from Home. Backend can choose the post-login
+  // redirect (often /dashboard). Avoiding client-side redirect here prevents
+  // accidental navigation to /dashboard after logout when session state is syncing.
 
-  useEffect(() => {
-    if (user && !loading) {
-      navigate("/admin/dashboard");
-    }
-  }, [user, loading, navigate]);
+  const { isAuthenticated, user, loading } = useAuth();
 
   const handleLogin = () => {
-    window.location.href = `${backendUrl}/oauth2/authorization/cognito`;
+    window.location.href = `${API_BASE_URL}/oauth2/authorization/cognito`;
   };
 
-  const features = [
-    {
-      icon: Users,
-      title: "User Management",
-      description: "Add, edit, and organize staff profiles with custom fields and bulk operations"
-    },
-    {
-      icon: Shield,
-      title: "Secure Access",
-      description: "Multi-factor authentication and role-based access powered by AWS Cognito"
-    },
-    {
-      icon: BarChart3,
-      title: "Analytics & Reporting",
-      description: "Generate insights on team structure, access patterns, and system usage"
-    }
-  ];
-
-  const benefits = [
-    "Centralized employee database with real-time sync",
-    "Granular role-based permissions for security",
-    "Complete audit trail of all system activities",
-    "Instant updates across all departments"
-  ];
+  // (Content data removed since it wasn't used; keeps the component lean and avoids unused variable warnings.)
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-white overflow-hidden">
@@ -61,12 +34,21 @@ export default function Home() {
             </div>
             <span className="text-2xl font-bold">Staff MS</span>
           </div>
-          <button
-            onClick={handleLogin}
-            className="px-6 py-2.5 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl font-medium hover:bg-white/20 transition-all duration-300 text-sm"
-          >
-            Sign In
-          </button>
+          {(!isAuthenticated && !loading) ? (
+            <button
+              onClick={handleLogin}
+              className="px-6 py-2.5 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl font-medium hover:bg-white/20 transition-all duration-300 text-sm"
+            >
+              Sign In
+            </button>
+          ) : (
+            <Link
+              to="/dashboard"
+              className="px-6 py-2.5 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl font-medium hover:bg-white/20 transition-all duration-300 text-sm"
+            >
+              Go to Dashboard
+            </Link>
+          )}
         </div>
       </header>
 
@@ -81,25 +63,44 @@ export default function Home() {
 
           {/* Main Heading */}
           <h1 className="text-6xl md:text-7xl font-extrabold mb-6 bg-gradient-to-r from-white via-blue-100 to-indigo-200 bg-clip-text text-transparent leading-tight animate-in fade-in slide-in-from-bottom duration-700 delay-100">
-            Staff Management
-            <br />
-            Made Simple
+            {isAuthenticated ? (
+              <>
+                Welcome{user?.displayName ? `, ${user.displayName}` : ""}
+              </>
+            ) : (
+              <>
+                Staff Management
+                <br />
+                Made Simple
+              </>
+            )}
           </h1>
 
           {/* Subheading */}
           <p className="text-xl md:text-2xl text-blue-200/80 mb-12 max-w-3xl mx-auto leading-relaxed animate-in fade-in slide-in-from-bottom duration-700 delay-200">
            Track, secure, and organize with ease.</p>
 
-          {/* Single CTA Button */}
+          {/* Primary CTA */}
           <div className="flex items-center justify-center mb-16 animate-in fade-in slide-in-from-bottom duration-700 delay-300">
-            <button
-              onClick={handleLogin}
-              className="group relative px-8 py-4 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-2xl font-semibold shadow-2xl shadow-blue-500/50 hover:shadow-blue-500/70 transition-all duration-300 hover:scale-105 flex items-center gap-2 text-lg"
-            >
-              <User className="w-5 h-5" />
-              Sign In to Dashboard
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-            </button>
+            {(!isAuthenticated && !loading) ? (
+              <button
+                onClick={handleLogin}
+                className="group relative px-8 py-4 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-2xl font-semibold shadow-2xl shadow-blue-500/50 hover:shadow-blue-500/70 transition-all duration-300 hover:scale-105 flex items-center gap-2 text-lg"
+              >
+                <User className="w-5 h-5" />
+                Sign In to Dashboard
+                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </button>
+            ) : (
+              <Link
+                to="/dashboard"
+                className="group relative px-8 py-4 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-2xl font-semibold shadow-2xl shadow-blue-500/50 hover:shadow-blue-500/70 transition-all duration-300 hover:scale-105 flex items-center gap-2 text-lg"
+              >
+                <User className="w-5 h-5" />
+                Go to Dashboard
+                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </Link>
+            )}
           </div>
 
       </div>
