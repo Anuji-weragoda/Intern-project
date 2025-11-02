@@ -1,0 +1,25 @@
+{
+  "uuid": "AuditLog-viu6vqkfx0q-1762092228327",
+  "name": "AuditLog",
+  "status": "passed",
+  "stage": "finished",
+  "start": 1762092213892,
+  "stop": 1762092222500,
+  "steps": [],
+  "attachments": [],
+  "parameters": [],
+  "labels": [
+    {
+      "name": "suite",
+      "value": "admin-frontend-e2e"
+    },
+    {
+      "name": "framework",
+      "value": "selenium-webdriver"
+    },
+    {
+      "name": "language",
+      "value": "javascript"
+    }
+  ]
+}

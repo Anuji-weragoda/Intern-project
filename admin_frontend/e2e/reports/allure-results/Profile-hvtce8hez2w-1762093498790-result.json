@@ -1,0 +1,25 @@
+{
+  "uuid": "Profile-hvtce8hez2w-1762093498790",
+  "name": "Profile",
+  "status": "passed",
+  "stage": "finished",
+  "start": 1762093416999,
+  "stop": 1762093448147,
+  "steps": [],
+  "attachments": [],
+  "parameters": [],
+  "labels": [
+    {
+      "name": "suite",
+      "value": "admin-frontend-e2e"
+    },
+    {
+      "name": "framework",
+      "value": "selenium-webdriver"
+    },
+    {
+      "name": "language",
+      "value": "javascript"
+    }
+  ]
+}

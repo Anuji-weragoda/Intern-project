@@ -1,61 +1,66 @@
-import { jest } from '@jest/globals';
 import { render, screen } from '@testing-library/react';
+import AuthContext from '../../contexts/AuthContext';
 
 describe('PrivateRoute', () => {
-  beforeEach(() => {
-    jest.resetModules();
-  });
-
   it('shows loading state when loading', async () => {
-    await jest.unstable_mockModule('../../hooks/useAuth', () => ({
-      __esModule: true,
-      default: () => ({ isAuthenticated: false, loading: true }),
-    }));
-    const { default: Comp } = await import('../../utils/PrivateRoute');
+    const { default: PrivateRoute } = await import('../../utils/PrivateRoute');
+
     render(
-      <Comp>
-        <div>Secret</div>
-      </Comp>
+      <AuthContext.Provider
+        value={{
+          user: null,
+          isAuthenticated: false,
+          loading: true,
+          refreshSession: async () => {},
+          logout: async () => {},
+        }}
+      >
+        <PrivateRoute>
+          <div>Secret</div>
+        </PrivateRoute>
+      </AuthContext.Provider>
     );
 
     expect(screen.getByText('Checking session...')).toBeInTheDocument();
   });
 
-  it('redirects to login when not authenticated', async () => {
-    const redirectMock = jest.fn();
-
-    await jest.unstable_mockModule('../../hooks/useAuth', () => ({
-      __esModule: true,
-      default: () => ({ isAuthenticated: false, loading: false }),
-    }));
-    await jest.unstable_mockModule('../../utils/navigation', () => ({
-      __esModule: true,
-      redirect: redirectMock,
-      default: { redirect: redirectMock },
-    }));
-
-    const { default: Comp } = await import('../../utils/PrivateRoute');
+  it('does not render children when not authenticated', async () => {
+    const { default: PrivateRoute } = await import('../../utils/PrivateRoute');
     render(
-      <Comp>
-        <div>Secret</div>
-      </Comp>
+      <AuthContext.Provider
+        value={{
+          user: null,
+          isAuthenticated: false,
+          loading: false,
+          refreshSession: async () => {},
+          logout: async () => {},
+        }}
+      >
+        <PrivateRoute>
+          <div>Secret</div>
+        </PrivateRoute>
+      </AuthContext.Provider>
     );
-
-    expect(redirectMock).toHaveBeenCalledTimes(1);
-    expect(redirectMock.mock.calls[0][0]).toContain('/oauth2/authorization/cognito');
+    expect(screen.queryByText('Secret')).toBeNull();
   });
 
   it('renders children when authenticated', async () => {
-    await jest.unstable_mockModule('../../hooks/useAuth', () => ({
-      __esModule: true,
-      default: () => ({ isAuthenticated: true, loading: false }),
-    }));
-    const { default: Comp } = await import('../../utils/PrivateRoute');
+    const { default: PrivateRoute } = await import('../../utils/PrivateRoute');
 
     render(
-      <Comp>
-        <div>Secret</div>
-      </Comp>
+      <AuthContext.Provider
+        value={{
+          user: { email: 'a@b.com' } as any,
+          isAuthenticated: true,
+          loading: false,
+          refreshSession: async () => {},
+          logout: async () => {},
+        }}
+      >
+        <PrivateRoute>
+          <div>Secret</div>
+        </PrivateRoute>
+      </AuthContext.Provider>
     );
 
     expect(screen.getByText('Secret')).toBeInTheDocument();

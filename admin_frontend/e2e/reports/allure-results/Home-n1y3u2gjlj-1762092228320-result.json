@@ -1,0 +1,25 @@
+{
+  "uuid": "Home-n1y3u2gjlj-1762092228320",
+  "name": "Home",
+  "status": "passed",
+  "stage": "finished",
+  "start": 1762092173805,
+  "stop": 1762092175113,
+  "steps": [],
+  "attachments": [],
+  "parameters": [],
+  "labels": [
+    {
+      "name": "suite",
+      "value": "admin-frontend-e2e"
+    },
+    {
+      "name": "framework",
+      "value": "selenium-webdriver"
+    },
+    {
+      "name": "language",
+      "value": "javascript"
+    }
+  ]
+}

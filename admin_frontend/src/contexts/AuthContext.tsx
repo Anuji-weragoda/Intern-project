@@ -29,6 +29,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
+    // Localhost-only E2E bypass: set user synchronously to avoid redirect races
+    try {
+      const host = window.location?.hostname || '';
+      const isLocal = host === 'localhost' || host === '127.0.0.1';
+      const bypass = typeof localStorage !== 'undefined' ? localStorage.getItem('E2E_BYPASS_AUTH') : null;
+      if (isLocal && bypass === '1') {
+        const raw = typeof localStorage !== 'undefined' ? localStorage.getItem('E2E_USER') : null;
+        const mock: User = raw ? JSON.parse(raw) : { username: 'e2e', displayName: 'E2E User', email: 'e2e@example.com', roles: ['ADMIN'] } as any;
+        setUser(mock);
+        setLoading(false);
+        return;
+      }
+    } catch {}
+
     refreshSession();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

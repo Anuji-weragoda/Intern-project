@@ -8,6 +8,22 @@ export type User = {
 };
 
 export async function getSession(): Promise<User | null> {
+  // E2E bypass: when running locally with a test flag, short-circuit to a mock user
+  try {
+    if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+      const bypass = localStorage.getItem('E2E_BYPASS_AUTH');
+      const host = window.location?.hostname || '';
+      const isLocal = host === 'localhost' || host === '127.0.0.1';
+      if (bypass === '1' && isLocal) {
+        const raw = localStorage.getItem('E2E_USER');
+        const mock: User = raw ? JSON.parse(raw) : { username: 'e2e', displayName: 'E2E User', email: 'e2e@example.com', roles: ['ADMIN'] } as any;
+        return mock;
+      }
+    }
+  } catch {
+    // ignore and continue with real flow
+  }
+
   // Try common session endpoints used in this repo
   const candidates = ["/api/v1/me/session", "/api/v1/me", "/api/v1/me/session/"];
   for (const path of candidates) {

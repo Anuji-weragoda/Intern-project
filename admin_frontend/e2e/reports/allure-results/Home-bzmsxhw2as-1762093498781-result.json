@@ -1,0 +1,25 @@
+{
+  "uuid": "Home-bzmsxhw2as-1762093498781",
+  "name": "Home",
+  "status": "passed",
+  "stage": "finished",
+  "start": 1762093334843,
+  "stop": 1762093336200,
+  "steps": [],
+  "attachments": [],
+  "parameters": [],
+  "labels": [
+    {
+      "name": "suite",
+      "value": "admin-frontend-e2e"
+    },
+    {
+      "name": "framework",
+      "value": "selenium-webdriver"
+    },
+    {
+      "name": "language",
+      "value": "javascript"
+    }
+  ]
+}

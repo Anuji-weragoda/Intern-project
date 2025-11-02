@@ -1,0 +1,25 @@
+{
+  "uuid": "Dashboard-bybgpsxftkv-1762092228324",
+  "name": "Dashboard",
+  "status": "passed",
+  "stage": "finished",
+  "start": 1762092194085,
+  "stop": 1762092206361,
+  "steps": [],
+  "attachments": [],
+  "parameters": [],
+  "labels": [
+    {
+      "name": "suite",
+      "value": "admin-frontend-e2e"
+    },
+    {
+      "name": "framework",
+      "value": "selenium-webdriver"
+    },
+    {
+      "name": "language",
+      "value": "javascript"
+    }
+  ]
+}

@@ -1,14 +1,5 @@
-// Be defensive for non-Vite environments (e.g., Jest) where import.meta may be undefined
-const viteEnvBase = (() => {
-  try {
-    return (import.meta as any)?.env?.VITE_API_BASE_URL as string | undefined;
-  } catch {
-    return undefined;
-  }
-})();
-
+// Resolve API base URL without using import.meta to keep Jest/CommonJS happy
 const API_BASE =
-  viteEnvBase ||
   // Fallback to Node/process env in tests/CI without relying on Node types
   ((globalThis as any)?.process?.env?.VITE_API_BASE_URL as string | undefined) ||
   // Default local backend
