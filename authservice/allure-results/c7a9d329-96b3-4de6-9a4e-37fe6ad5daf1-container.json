@@ -1,0 +1,1 @@
+{"uuid":"c7a9d329-96b3-4de6-9a4e-37fe6ad5daf1","name":"getCurrentUser throws when user not found","children":["ecca2b39-97ad-4d7f-8564-e669c10de4d5"],"befores":[{"name":"setUp","status":"passed","stage":"finished","steps":[],"attachments":[],"parameters":[],"start":1762032969811,"stop":1762032969812}],"afters":[],"start":1762032969803,"stop":1762032969850}
