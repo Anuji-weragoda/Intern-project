@@ -1,4 +1,18 @@
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8081";
+// Be defensive for non-Vite environments (e.g., Jest) where import.meta may be undefined
+const viteEnvBase = (() => {
+  try {
+    return (import.meta as any)?.env?.VITE_API_BASE_URL as string | undefined;
+  } catch {
+    return undefined;
+  }
+})();
+
+const API_BASE =
+  viteEnvBase ||
+  // Fallback to Node/process env in tests/CI without relying on Node types
+  ((globalThis as any)?.process?.env?.VITE_API_BASE_URL as string | undefined) ||
+  // Default local backend
+  "http://localhost:8081";
 
 export interface ApiOptions extends RequestInit {}
 

@@ -1,6 +1,7 @@
 import React from "react";
 import useAuth from "../hooks/useAuth";
 import { API_BASE_URL } from "../api/index";
+import { redirect } from "./navigation";
 
 type PrivateRouteProps = {
   children: React.ReactNode;
@@ -13,7 +14,7 @@ const PrivateRoute = ({ children }: PrivateRouteProps) => {
 
   if (!isAuthenticated) {
     // Redirect to backend OAuth login endpoint; API_BASE_URL falls back to localhost in dev
-    window.location.href = `${API_BASE_URL}/oauth2/authorization/cognito`;
+    redirect(`${API_BASE_URL}/oauth2/authorization/cognito`);
     return null;
   }
 

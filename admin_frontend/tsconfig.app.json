@@ -4,8 +4,8 @@
     "target": "ES2022",
     "useDefineForClassFields": true,
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
-    "module": "ESNext",
-    "types": ["vite/client", "jest"],        // <-- includes jest types
+  "module": "ESNext",
+  "types": ["vite/client", "jest", "@testing-library/jest-dom"],        // include jest-dom matchers
     "skipLibCheck": true,
 
     /* Bundler mode */
