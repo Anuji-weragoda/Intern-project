@@ -15,10 +15,13 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _emailFocus = FocusNode();
+  final _passwordFocus = FocusNode();
   final _formKey = GlobalKey<FormState>();
 
   bool _loading = false;
   bool _obscurePassword = true;
+  bool _signing = false; // extra guard to prevent double submit
 
   @override
   void initState() {
@@ -30,6 +33,8 @@ class _LoginScreenState extends State<LoginScreen> {
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _emailFocus.dispose();
+    _passwordFocus.dispose();
     super.dispose();
   }
 
@@ -53,9 +58,15 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _signIn() async {
+    // Dismiss keyboard to avoid IME show/hide jank during navigation
+    FocusScope.of(context).unfocus();
+    if (_signing || _loading) return;
     if (!_formKey.currentState!.validate()) return;
 
-    setState(() => _loading = true);
+    setState(() {
+      _loading = true;
+      _signing = true;
+    });
 
     try {
       // Step 1: Sign in with Cognito
@@ -121,7 +132,15 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       }
     } finally {
-      if (mounted) setState(() => _loading = false);
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _signing = false;
+        });
+      } else {
+        _loading = false;
+        _signing = false;
+      }
     }
   }
 
@@ -143,6 +162,7 @@ class _LoginScreenState extends State<LoginScreen> {
         child: SafeArea(
           child: Center(
             child: SingleChildScrollView(
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 32.0),
                 child: Form(
@@ -220,7 +240,11 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         child: TextFormField(
                           controller: _emailController,
+                          focusNode: _emailFocus,
                           keyboardType: TextInputType.emailAddress,
+                          textInputAction: TextInputAction.next,
+                          enableSuggestions: false,
+                          autocorrect: false,
                           style: const TextStyle(fontSize: 16),
                           decoration: const InputDecoration(
                             hintText: 'Enter your email',
@@ -264,7 +288,14 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         child: TextFormField(
                           controller: _passwordController,
+                          focusNode: _passwordFocus,
                           obscureText: _obscurePassword,
+                          textInputAction: TextInputAction.done,
+                          onFieldSubmitted: (_) {
+                            if (!_loading && !_signing) {
+                              _signIn();
+                            }
+                          },
                           style: const TextStyle(fontSize: 16),
                           decoration: InputDecoration(
                             hintText: 'Enter your password',

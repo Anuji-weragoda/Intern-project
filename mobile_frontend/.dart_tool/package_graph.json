@@ -21,7 +21,7 @@
     },
     {
       "name": "flutter_lints",
-      "version": "5.0.0",
+      "version": "6.0.0",
       "dependencies": [
         "lints"
       ]
@@ -69,7 +69,7 @@
     },
     {
       "name": "amplify_auth_cognito",
-      "version": "1.7.2",
+      "version": "2.7.0",
       "dependencies": [
         "amplify_analytics_pinpoint",
         "amplify_analytics_pinpoint_dart",
@@ -86,7 +86,7 @@
     },
     {
       "name": "amplify_flutter",
-      "version": "1.7.0",
+      "version": "2.7.0",
       "dependencies": [
         "amplify_core",
         "amplify_secure_storage",
@@ -115,7 +115,7 @@
     },
     {
       "name": "lints",
-      "version": "5.1.1",
+      "version": "6.0.0",
       "dependencies": []
     },
     {
@@ -280,12 +280,13 @@
     },
     {
       "name": "amplify_secure_storage",
-      "version": "0.4.4",
+      "version": "0.5.13",
       "dependencies": [
         "amplify_secure_storage_dart",
         "async",
         "file",
         "flutter",
+        "flutter_web_plugins",
         "meta",
         "path",
         "path_provider",
@@ -294,7 +295,7 @@
     },
     {
       "name": "amplify_core",
-      "version": "1.7.0",
+      "version": "2.7.0",
       "dependencies": [
         "async",
         "aws_common",
@@ -307,12 +308,13 @@
         "meta",
         "retry",
         "stack_trace",
-        "uuid"
+        "uuid",
+        "web"
       ]
     },
     {
       "name": "amplify_auth_cognito_dart",
-      "version": "0.10.12",
+      "version": "0.11.14",
       "dependencies": [
         "amplify_analytics_pinpoint_dart",
         "amplify_core",
@@ -330,7 +332,6 @@
         "fixnum",
         "http",
         "intl",
-        "js",
         "json_annotation",
         "meta",
         "oauth2",
@@ -339,6 +340,7 @@
         "smithy_aws",
         "stream_transform",
         "uuid",
+        "web",
         "win32",
         "win32_registry",
         "worker_bee"
@@ -346,7 +348,7 @@
     },
     {
       "name": "amplify_analytics_pinpoint_dart",
-      "version": "0.3.7",
+      "version": "0.4.12",
       "dependencies": [
         "amplify_core",
         "amplify_db_common_dart",
@@ -362,12 +364,13 @@
         "path",
         "smithy",
         "smithy_aws",
-        "uuid"
+        "uuid",
+        "web"
       ]
     },
     {
       "name": "amplify_analytics_pinpoint",
-      "version": "1.7.1",
+      "version": "2.7.0",
       "dependencies": [
         "amplify_analytics_pinpoint_dart",
         "amplify_core",
@@ -383,14 +386,14 @@
     },
     {
       "name": "aws_common",
-      "version": "0.6.5",
+      "version": "0.7.11",
       "dependencies": [
         "async",
         "built_collection",
         "built_value",
         "collection",
+        "http",
         "http2",
-        "js",
         "json_annotation",
         "logging",
         "meta",
@@ -398,7 +401,8 @@
         "os_detect",
         "path",
         "stream_transform",
-        "uuid"
+        "uuid",
+        "web"
       ]
     },
     {
@@ -532,7 +536,7 @@
     },
     {
       "name": "amplify_secure_storage_dart",
-      "version": "0.4.4",
+      "version": "0.5.8",
       "dependencies": [
         "async",
         "aws_common",
@@ -540,9 +544,9 @@
         "built_value",
         "ffi",
         "file",
-        "js",
         "meta",
         "path",
+        "web",
         "win32",
         "worker_bee"
       ]
@@ -569,7 +573,7 @@
     },
     {
       "name": "json_annotation",
-      "version": "4.8.1",
+      "version": "4.9.0",
       "dependencies": [
         "meta"
       ]
@@ -592,7 +596,7 @@
     },
     {
       "name": "aws_signature_v4",
-      "version": "0.5.2",
+      "version": "0.6.9",
       "dependencies": [
         "async",
         "aws_common",
@@ -606,26 +610,27 @@
     },
     {
       "name": "worker_bee",
-      "version": "0.2.4",
+      "version": "0.3.8",
       "dependencies": [
         "async",
         "aws_common",
         "built_collection",
         "built_value",
         "collection",
-        "js",
         "meta",
         "path",
         "stack_trace",
         "stream_channel",
-        "stream_transform"
+        "stream_transform",
+        "web"
       ]
     },
     {
       "name": "win32_registry",
-      "version": "1.1.5",
+      "version": "2.1.0",
       "dependencies": [
         "ffi",
+        "meta",
         "win32"
       ]
     },
@@ -636,7 +641,7 @@
     },
     {
       "name": "smithy_aws",
-      "version": "0.6.3",
+      "version": "0.7.9",
       "dependencies": [
         "aws_common",
         "aws_signature_v4",
@@ -656,7 +661,7 @@
     },
     {
       "name": "smithy",
-      "version": "0.6.4",
+      "version": "0.7.9",
       "dependencies": [
         "async",
         "aws_common",
@@ -708,7 +713,7 @@
     },
     {
       "name": "built_value",
-      "version": "8.8.1",
+      "version": "8.12.0",
       "dependencies": [
         "built_collection",
         "collection",
@@ -723,21 +728,22 @@
     },
     {
       "name": "drift",
-      "version": "2.14.1",
+      "version": "2.29.0",
       "dependencies": [
         "async",
         "collection",
         "convert",
-        "js",
         "meta",
         "path",
         "sqlite3",
-        "stream_channel"
+        "stack_trace",
+        "stream_channel",
+        "web"
       ]
     },
     {
       "name": "amplify_db_common_dart",
-      "version": "0.3.6",
+      "version": "0.4.13",
       "dependencies": [
         "amplify_core",
         "async",
@@ -745,13 +751,15 @@
         "drift",
         "meta",
         "path",
-        "sqlite3"
+        "sqlite3",
+        "web"
       ]
     },
     {
       "name": "package_info_plus",
-      "version": "4.2.0",
+      "version": "9.0.0",
       "dependencies": [
+        "clock",
         "ffi",
         "flutter",
         "flutter_web_plugins",
@@ -759,12 +767,13 @@
         "meta",
         "package_info_plus_platform_interface",
         "path",
+        "web",
         "win32"
       ]
     },
     {
       "name": "device_info_plus",
-      "version": "9.1.2",
+      "version": "12.2.0",
       "dependencies": [
         "device_info_plus_platform_interface",
         "ffi",
@@ -772,13 +781,14 @@
         "flutter",
         "flutter_web_plugins",
         "meta",
+        "web",
         "win32",
         "win32_registry"
       ]
     },
     {
       "name": "amplify_db_common",
-      "version": "0.3.5",
+      "version": "0.4.14",
       "dependencies": [
         "amplify_db_common_dart",
         "drift",
@@ -797,7 +807,7 @@
     },
     {
       "name": "mime",
-      "version": "1.0.6",
+      "version": "2.0.0",
       "dependencies": []
     },
     {
@@ -853,7 +863,7 @@
     },
     {
       "name": "xml",
-      "version": "6.5.0",
+      "version": "6.6.1",
       "dependencies": [
         "collection",
         "meta",
@@ -882,7 +892,7 @@
     },
     {
       "name": "sqlite3",
-      "version": "2.9.3",
+      "version": "2.9.4",
       "dependencies": [
         "collection",
         "ffi",
@@ -894,7 +904,7 @@
     },
     {
       "name": "package_info_plus_platform_interface",
-      "version": "2.0.1",
+      "version": "3.2.1",
       "dependencies": [
         "flutter",
         "meta",
@@ -925,7 +935,7 @@
     },
     {
       "name": "petitparser",
-      "version": "6.1.0",
+      "version": "7.0.1",
       "dependencies": [
         "collection",
         "meta"
