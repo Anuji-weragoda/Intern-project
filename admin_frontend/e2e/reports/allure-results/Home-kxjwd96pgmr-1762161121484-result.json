@@ -1,0 +1,25 @@
+{
+  "uuid": "Home-kxjwd96pgmr-1762161121484",
+  "name": "Home",
+  "status": "passed",
+  "stage": "finished",
+  "start": 1762161086692,
+  "stop": 1762161087905,
+  "steps": [],
+  "attachments": [],
+  "parameters": [],
+  "labels": [
+    {
+      "name": "suite",
+      "value": "admin-frontend-e2e"
+    },
+    {
+      "name": "framework",
+      "value": "selenium-webdriver"
+    },
+    {
+      "name": "language",
+      "value": "javascript"
+    }
+  ]
+}

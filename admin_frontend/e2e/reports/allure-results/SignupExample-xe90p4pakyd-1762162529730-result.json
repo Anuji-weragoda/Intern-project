@@ -1,0 +1,25 @@
+{
+  "uuid": "SignupExample-xe90p4pakyd-1762162529730",
+  "name": "SignupExample",
+  "status": "skipped",
+  "stage": "finished",
+  "start": 1762162529730,
+  "stop": 1762162529730,
+  "steps": [],
+  "attachments": [],
+  "parameters": [],
+  "labels": [
+    {
+      "name": "suite",
+      "value": "admin-frontend-e2e"
+    },
+    {
+      "name": "framework",
+      "value": "selenium-webdriver"
+    },
+    {
+      "name": "language",
+      "value": "javascript"
+    }
+  ]
+}

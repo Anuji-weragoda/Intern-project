@@ -1,0 +1,25 @@
+{
+  "uuid": "Unauthorized-ybmbqgc2st-1762162703400",
+  "name": "Unauthorized",
+  "status": "passed",
+  "stage": "finished",
+  "start": 1762162655985,
+  "stop": 1762162667258,
+  "steps": [],
+  "attachments": [],
+  "parameters": [],
+  "labels": [
+    {
+      "name": "suite",
+      "value": "admin-frontend-e2e"
+    },
+    {
+      "name": "framework",
+      "value": "selenium-webdriver"
+    },
+    {
+      "name": "language",
+      "value": "javascript"
+    }
+  ]
+}

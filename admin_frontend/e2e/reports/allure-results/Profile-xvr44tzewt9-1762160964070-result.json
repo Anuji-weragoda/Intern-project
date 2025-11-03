@@ -1,0 +1,25 @@
+{
+  "uuid": "Profile-xvr44tzewt9-1762160964070",
+  "name": "Profile",
+  "status": "passed",
+  "stage": "finished",
+  "start": 1762160952575,
+  "stop": 1762160956576,
+  "steps": [],
+  "attachments": [],
+  "parameters": [],
+  "labels": [
+    {
+      "name": "suite",
+      "value": "admin-frontend-e2e"
+    },
+    {
+      "name": "framework",
+      "value": "selenium-webdriver"
+    },
+    {
+      "name": "language",
+      "value": "javascript"
+    }
+  ]
+}

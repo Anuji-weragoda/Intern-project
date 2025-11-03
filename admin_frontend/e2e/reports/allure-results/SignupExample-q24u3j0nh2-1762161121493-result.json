@@ -1,0 +1,25 @@
+{
+  "uuid": "SignupExample-q24u3j0nh2-1762161121493",
+  "name": "SignupExample",
+  "status": "skipped",
+  "stage": "finished",
+  "start": 1762161121493,
+  "stop": 1762161121493,
+  "steps": [],
+  "attachments": [],
+  "parameters": [],
+  "labels": [
+    {
+      "name": "suite",
+      "value": "admin-frontend-e2e"
+    },
+    {
+      "name": "framework",
+      "value": "selenium-webdriver"
+    },
+    {
+      "name": "language",
+      "value": "javascript"
+    }
+  ]
+}

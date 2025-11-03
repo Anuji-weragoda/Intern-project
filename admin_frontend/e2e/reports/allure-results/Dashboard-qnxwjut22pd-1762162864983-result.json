@@ -1,0 +1,25 @@
+{
+  "uuid": "Dashboard-qnxwjut22pd-1762162864983",
+  "name": "Dashboard",
+  "status": "passed",
+  "stage": "finished",
+  "start": 1762162822120,
+  "stop": 1762162832346,
+  "steps": [],
+  "attachments": [],
+  "parameters": [],
+  "labels": [
+    {
+      "name": "suite",
+      "value": "admin-frontend-e2e"
+    },
+    {
+      "name": "framework",
+      "value": "selenium-webdriver"
+    },
+    {
+      "name": "language",
+      "value": "javascript"
+    }
+  ]
+}

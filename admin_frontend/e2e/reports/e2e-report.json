@@ -1,77 +1,80 @@
 {
   "suite": "admin-frontend-e2e",
-  "total": 9,
+  "total": 10,
   "passed": 7,
-  "failed": 2,
+  "failed": 1,
   "results": [
     {
       "name": "Home",
       "status": "passed",
-      "duration": 1.357,
-      "start": 1762093334843,
-      "stop": 1762093336200
+      "duration": 1.291,
+      "start": 1762162804900,
+      "stop": 1762162806191
     },
     {
       "name": "Unauthorized",
       "status": "passed",
-      "duration": 11.672,
-      "start": 1762093336200,
-      "stop": 1762093347872
+      "duration": 11.603,
+      "start": 1762162806192,
+      "stop": 1762162817795
     },
     {
       "name": "PrivateRoutes",
       "status": "passed",
-      "duration": 20.342,
-      "start": 1762093347872,
-      "stop": 1762093368214
+      "duration": 4.325,
+      "start": 1762162817795,
+      "stop": 1762162822120
     },
     {
       "name": "Dashboard",
       "status": "passed",
-      "duration": 48.785,
-      "start": 1762093368214,
-      "stop": 1762093416999
+      "duration": 10.226,
+      "start": 1762162822120,
+      "stop": 1762162832346
     },
     {
       "name": "Profile",
       "status": "passed",
-      "duration": 31.148,
-      "start": 1762093416999,
-      "stop": 1762093448147
+      "duration": 7.417,
+      "start": 1762162832346,
+      "stop": 1762162839763
     },
     {
       "name": "AuditLog",
       "status": "passed",
-      "duration": 10.787,
-      "start": 1762093448147,
-      "stop": 1762093458934
+      "duration": 10.166,
+      "start": 1762162839763,
+      "stop": 1762162849929
     },
     {
       "name": "UserManagement",
       "status": "passed",
-      "duration": 10.389,
-      "start": 1762093458934,
-      "stop": 1762093469323
+      "duration": 8.054,
+      "start": 1762162849929,
+      "stop": 1762162857983
+    },
+    {
+      "name": "SignInFlow",
+      "status": "failed",
+      "duration": 6.924,
+      "start": 1762162857983,
+      "stop": 1762162864907,
+      "errorMessage": "Interactive login did not detect a successful sign-in",
+      "errorStack": "Error: Interactive login did not detect a successful sign-in\n    at performInteractiveLogin (file:///C:/Users/AnujiWeragoda/GIT/staff-management-system/Intern-project/admin_frontend/e2e/utils.mjs:289:24)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async runSignInFlow (file:///C:/Users/AnujiWeragoda/GIT/staff-management-system/Intern-project/admin_frontend/e2e/tests/signin.flow.e2e.mjs:12:5)\n    at async runAndRecord (file:///C:/Users/AnujiWeragoda/GIT/staff-management-system/Intern-project/admin_frontend/e2e/run-e2e.mjs:76:7)\n    at async run (file:///C:/Users/AnujiWeragoda/GIT/staff-management-system/Intern-project/admin_frontend/e2e/run-e2e.mjs:97:3)"
     },
     {
       "name": "SignupExample",
-      "status": "failed",
-      "duration": 13.139,
-      "start": 1762093469323,
-      "stop": 1762093482462,
-      "errorMessage": "unknown error: net::ERR_NAME_NOT_RESOLVED\n  (Session info: MicrosoftEdge=141.0.3537.99)",
-      "errorStack": "WebDriverError: unknown error: net::ERR_NAME_NOT_RESOLVED\n  (Session info: MicrosoftEdge=141.0.3537.99)\n    at Object.throwDecodedError (C:\\Users\\AnujiWeragoda\\GIT\\staff-management-system\\Intern-project\\admin_frontend\\node_modules\\selenium-webdriver\\lib\\error.js:523:15)\n    at parseHttpResponse (C:\\Users\\AnujiWeragoda\\GIT\\staff-management-system\\Intern-project\\admin_frontend\\node_modules\\selenium-webdriver\\lib\\http.js:524:13)\n    at Executor.execute (C:\\Users\\AnujiWeragoda\\GIT\\staff-management-system\\Intern-project\\admin_frontend\\node_modules\\selenium-webdriver\\lib\\http.js:456:28)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async Driver.execute (C:\\Users\\AnujiWeragoda\\GIT\\staff-management-system\\Intern-project\\admin_frontend\\node_modules\\selenium-webdriver\\lib\\webdriver.js:745:17)\n    at async runSignupExample (file:///C:/Users/AnujiWeragoda/GIT/staff-management-system/Intern-project/admin_frontend/e2e/tests/signup.example.e2e.mjs:53:5)\n    at async runAndRecord (file:///C:/Users/AnujiWeragoda/GIT/staff-management-system/Intern-project/admin_frontend/e2e/run-e2e.mjs:75:7)\n    at async run (file:///C:/Users/AnujiWeragoda/GIT/staff-management-system/Intern-project/admin_frontend/e2e/run-e2e.mjs:99:5)"
+      "status": "skipped",
+      "duration": 0,
+      "errorMessage": "Missing env vars (SIGNUP_URL, SIGNUP_EMAIL, SIGNUP_PASSWORD, MAILHOG_URL)"
     },
     {
       "name": "SignupTotpExample",
-      "status": "failed",
-      "duration": 16.271,
-      "start": 1762093482464,
-      "stop": 1762093498735,
-      "errorMessage": "unknown error: net::ERR_NAME_NOT_RESOLVED\n  (Session info: MicrosoftEdge=141.0.3537.99)",
-      "errorStack": "WebDriverError: unknown error: net::ERR_NAME_NOT_RESOLVED\n  (Session info: MicrosoftEdge=141.0.3537.99)\n    at Object.throwDecodedError (C:\\Users\\AnujiWeragoda\\GIT\\staff-management-system\\Intern-project\\admin_frontend\\node_modules\\selenium-webdriver\\lib\\error.js:523:15)\n    at parseHttpResponse (C:\\Users\\AnujiWeragoda\\GIT\\staff-management-system\\Intern-project\\admin_frontend\\node_modules\\selenium-webdriver\\lib\\http.js:524:13)\n    at Executor.execute (C:\\Users\\AnujiWeragoda\\GIT\\staff-management-system\\Intern-project\\admin_frontend\\node_modules\\selenium-webdriver\\lib\\http.js:456:28)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async Driver.execute (C:\\Users\\AnujiWeragoda\\GIT\\staff-management-system\\Intern-project\\admin_frontend\\node_modules\\selenium-webdriver\\lib\\webdriver.js:745:17)\n    at async runSignupTotpExample (file:///C:/Users/AnujiWeragoda/GIT/staff-management-system/Intern-project/admin_frontend/e2e/tests/signup.totp.example.e2e.mjs:51:5)\n    at async runAndRecord (file:///C:/Users/AnujiWeragoda/GIT/staff-management-system/Intern-project/admin_frontend/e2e/run-e2e.mjs:75:7)\n    at async run (file:///C:/Users/AnujiWeragoda/GIT/staff-management-system/Intern-project/admin_frontend/e2e/run-e2e.mjs:105:5)"
+      "status": "skipped",
+      "duration": 0,
+      "errorMessage": "Missing env vars (SIGNUP_URL, SIGNUP_EMAIL, SIGNUP_PASSWORD, TOTP_SECRET)"
     }
   ],
-  "generatedAt": "2025-11-02T14:24:58.739Z",
-  "baseUrl": "http://localhost:5182"
+  "generatedAt": "2025-11-03T09:41:04.912Z",
+  "baseUrl": "http://localhost:5180"
 }

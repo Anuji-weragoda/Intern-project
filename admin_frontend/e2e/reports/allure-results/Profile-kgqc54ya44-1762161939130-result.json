@@ -1,0 +1,25 @@
+{
+  "uuid": "Profile-kgqc54ya44-1762161939130",
+  "name": "Profile",
+  "status": "passed",
+  "stage": "finished",
+  "start": 1762161929647,
+  "stop": 1762161932888,
+  "steps": [],
+  "attachments": [],
+  "parameters": [],
+  "labels": [
+    {
+      "name": "suite",
+      "value": "admin-frontend-e2e"
+    },
+    {
+      "name": "framework",
+      "value": "selenium-webdriver"
+    },
+    {
+      "name": "language",
+      "value": "javascript"
+    }
+  ]
+}

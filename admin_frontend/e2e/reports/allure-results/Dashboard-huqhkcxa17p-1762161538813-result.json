@@ -1,0 +1,25 @@
+{
+  "uuid": "Dashboard-huqhkcxa17p-1762161538813",
+  "name": "Dashboard",
+  "status": "passed",
+  "stage": "finished",
+  "start": 1762161520868,
+  "stop": 1762161526301,
+  "steps": [],
+  "attachments": [],
+  "parameters": [],
+  "labels": [
+    {
+      "name": "suite",
+      "value": "admin-frontend-e2e"
+    },
+    {
+      "name": "framework",
+      "value": "selenium-webdriver"
+    },
+    {
+      "name": "language",
+      "value": "javascript"
+    }
+  ]
+}

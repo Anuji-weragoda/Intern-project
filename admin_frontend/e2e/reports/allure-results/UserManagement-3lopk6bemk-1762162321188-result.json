@@ -1,0 +1,25 @@
+{
+  "uuid": "UserManagement-3lopk6bemk-1762162321188",
+  "name": "UserManagement",
+  "status": "passed",
+  "stage": "finished",
+  "start": 1762162316741,
+  "stop": 1762162321139,
+  "steps": [],
+  "attachments": [],
+  "parameters": [],
+  "labels": [
+    {
+      "name": "suite",
+      "value": "admin-frontend-e2e"
+    },
+    {
+      "name": "framework",
+      "value": "selenium-webdriver"
+    },
+    {
+      "name": "language",
+      "value": "javascript"
+    }
+  ]
+}

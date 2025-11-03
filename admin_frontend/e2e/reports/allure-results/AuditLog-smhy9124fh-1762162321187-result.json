@@ -1,0 +1,25 @@
+{
+  "uuid": "AuditLog-smhy9124fh-1762162321187",
+  "name": "AuditLog",
+  "status": "passed",
+  "stage": "finished",
+  "start": 1762162312285,
+  "stop": 1762162316741,
+  "steps": [],
+  "attachments": [],
+  "parameters": [],
+  "labels": [
+    {
+      "name": "suite",
+      "value": "admin-frontend-e2e"
+    },
+    {
+      "name": "framework",
+      "value": "selenium-webdriver"
+    },
+    {
+      "name": "language",
+      "value": "javascript"
+    }
+  ]
+}

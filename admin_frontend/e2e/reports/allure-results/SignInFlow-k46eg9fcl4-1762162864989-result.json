@@ -1,0 +1,29 @@
+{
+  "uuid": "SignInFlow-k46eg9fcl4-1762162864989",
+  "name": "SignInFlow",
+  "status": "failed",
+  "stage": "finished",
+  "start": 1762162857983,
+  "stop": 1762162864907,
+  "steps": [],
+  "attachments": [],
+  "parameters": [],
+  "labels": [
+    {
+      "name": "suite",
+      "value": "admin-frontend-e2e"
+    },
+    {
+      "name": "framework",
+      "value": "selenium-webdriver"
+    },
+    {
+      "name": "language",
+      "value": "javascript"
+    }
+  ],
+  "statusDetails": {
+    "message": "Interactive login did not detect a successful sign-in",
+    "trace": "Error: Interactive login did not detect a successful sign-in\n    at performInteractiveLogin (file:///C:/Users/AnujiWeragoda/GIT/staff-management-system/Intern-project/admin_frontend/e2e/utils.mjs:289:24)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async runSignInFlow (file:///C:/Users/AnujiWeragoda/GIT/staff-management-system/Intern-project/admin_frontend/e2e/tests/signin.flow.e2e.mjs:12:5)\n    at async runAndRecord (file:///C:/Users/AnujiWeragoda/GIT/staff-management-system/Intern-project/admin_frontend/e2e/run-e2e.mjs:76:7)\n    at async run (file:///C:/Users/AnujiWeragoda/GIT/staff-management-system/Intern-project/admin_frontend/e2e/run-e2e.mjs:97:3)"
+  }
+}
