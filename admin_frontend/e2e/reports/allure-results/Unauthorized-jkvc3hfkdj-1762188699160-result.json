@@ -1,0 +1,25 @@
+{
+  "uuid": "Unauthorized-jkvc3hfkdj-1762188699160",
+  "name": "Unauthorized",
+  "status": "passed",
+  "stage": "finished",
+  "start": 1762188672421,
+  "stop": 1762188673608,
+  "steps": [],
+  "attachments": [],
+  "parameters": [],
+  "labels": [
+    {
+      "name": "suite",
+      "value": "admin-frontend-e2e"
+    },
+    {
+      "name": "framework",
+      "value": "selenium-webdriver"
+    },
+    {
+      "name": "language",
+      "value": "javascript"
+    }
+  ]
+}

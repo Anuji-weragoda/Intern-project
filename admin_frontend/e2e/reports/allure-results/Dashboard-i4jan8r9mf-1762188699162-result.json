@@ -1,0 +1,29 @@
+{
+  "uuid": "Dashboard-i4jan8r9mf-1762188699162",
+  "name": "Dashboard",
+  "status": "failed",
+  "stage": "finished",
+  "start": 1762188678355,
+  "stop": 1762188691184,
+  "steps": [],
+  "attachments": [],
+  "parameters": [],
+  "labels": [
+    {
+      "name": "suite",
+      "value": "admin-frontend-e2e"
+    },
+    {
+      "name": "framework",
+      "value": "selenium-webdriver"
+    },
+    {
+      "name": "language",
+      "value": "javascript"
+    }
+  ],
+  "statusDetails": {
+    "message": "Dashboard content not detected at http://localhost:5180/dashboard. Sample: S\nStaff MS\nManagement System\nDashboard\nUsers\nAudit Log\nE2E User\ne2e@example.com\nError Loading Dashboard\n\nFailed to fetch\n\nTry Again",
+    "trace": "Error: Dashboard content not detected at http://localhost:5180/dashboard. Sample: S\nStaff MS\nManagement System\nDashboard\nUsers\nAudit Log\nE2E User\ne2e@example.com\nError Loading Dashboard\n\nFailed to fetch\n\nTry Again\n    at runDashboard (file:///C:/Users/AnujiWeragoda/git/staff-management-system/Intern-project/admin_frontend/e2e/tests/dashboard.e2e.mjs:58:13)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async runAndRecord (file:///C:/Users/AnujiWeragoda/git/staff-management-system/Intern-project/admin_frontend/e2e/run-e2e.mjs:75:7)\n    at async run (file:///C:/Users/AnujiWeragoda/git/staff-management-system/Intern-project/admin_frontend/e2e/run-e2e.mjs:92:3)"
+  }
+}

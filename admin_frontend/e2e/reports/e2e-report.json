@@ -1,66 +1,59 @@
 {
   "suite": "admin-frontend-e2e",
-  "total": 10,
-  "passed": 7,
+  "total": 9,
+  "passed": 6,
   "failed": 1,
   "results": [
     {
       "name": "Home",
       "status": "passed",
-      "duration": 1.291,
-      "start": 1762162804900,
-      "stop": 1762162806191
+      "duration": 1.25,
+      "start": 1762188671171,
+      "stop": 1762188672421
     },
     {
       "name": "Unauthorized",
       "status": "passed",
-      "duration": 11.603,
-      "start": 1762162806192,
-      "stop": 1762162817795
+      "duration": 1.187,
+      "start": 1762188672421,
+      "stop": 1762188673608
     },
     {
       "name": "PrivateRoutes",
       "status": "passed",
-      "duration": 4.325,
-      "start": 1762162817795,
-      "stop": 1762162822120
+      "duration": 4.747,
+      "start": 1762188673608,
+      "stop": 1762188678355
     },
     {
       "name": "Dashboard",
-      "status": "passed",
-      "duration": 10.226,
-      "start": 1762162822120,
-      "stop": 1762162832346
+      "status": "failed",
+      "duration": 12.829,
+      "start": 1762188678355,
+      "stop": 1762188691184,
+      "errorMessage": "Dashboard content not detected at http://localhost:5180/dashboard. Sample: S\nStaff MS\nManagement System\nDashboard\nUsers\nAudit Log\nE2E User\ne2e@example.com\nError Loading Dashboard\n\nFailed to fetch\n\nTry Again",
+      "errorStack": "Error: Dashboard content not detected at http://localhost:5180/dashboard. Sample: S\nStaff MS\nManagement System\nDashboard\nUsers\nAudit Log\nE2E User\ne2e@example.com\nError Loading Dashboard\n\nFailed to fetch\n\nTry Again\n    at runDashboard (file:///C:/Users/AnujiWeragoda/git/staff-management-system/Intern-project/admin_frontend/e2e/tests/dashboard.e2e.mjs:58:13)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async runAndRecord (file:///C:/Users/AnujiWeragoda/git/staff-management-system/Intern-project/admin_frontend/e2e/run-e2e.mjs:75:7)\n    at async run (file:///C:/Users/AnujiWeragoda/git/staff-management-system/Intern-project/admin_frontend/e2e/run-e2e.mjs:92:3)"
     },
     {
       "name": "Profile",
       "status": "passed",
-      "duration": 7.417,
-      "start": 1762162832346,
-      "stop": 1762162839763
+      "duration": 2.671,
+      "start": 1762188691186,
+      "stop": 1762188693857
     },
     {
       "name": "AuditLog",
       "status": "passed",
-      "duration": 10.166,
-      "start": 1762162839763,
-      "stop": 1762162849929
+      "duration": 2.739,
+      "start": 1762188693857,
+      "stop": 1762188696596
     },
     {
       "name": "UserManagement",
       "status": "passed",
-      "duration": 8.054,
-      "start": 1762162849929,
-      "stop": 1762162857983
-    },
-    {
-      "name": "SignInFlow",
-      "status": "failed",
-      "duration": 6.924,
-      "start": 1762162857983,
-      "stop": 1762162864907,
-      "errorMessage": "Interactive login did not detect a successful sign-in",
-      "errorStack": "Error: Interactive login did not detect a successful sign-in\n    at performInteractiveLogin (file:///C:/Users/AnujiWeragoda/GIT/staff-management-system/Intern-project/admin_frontend/e2e/utils.mjs:289:24)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async runSignInFlow (file:///C:/Users/AnujiWeragoda/GIT/staff-management-system/Intern-project/admin_frontend/e2e/tests/signin.flow.e2e.mjs:12:5)\n    at async runAndRecord (file:///C:/Users/AnujiWeragoda/GIT/staff-management-system/Intern-project/admin_frontend/e2e/run-e2e.mjs:76:7)\n    at async run (file:///C:/Users/AnujiWeragoda/GIT/staff-management-system/Intern-project/admin_frontend/e2e/run-e2e.mjs:97:3)"
+      "duration": 2.526,
+      "start": 1762188696596,
+      "stop": 1762188699122
     },
     {
       "name": "SignupExample",
@@ -75,6 +68,6 @@
       "errorMessage": "Missing env vars (SIGNUP_URL, SIGNUP_EMAIL, SIGNUP_PASSWORD, TOTP_SECRET)"
     }
   ],
-  "generatedAt": "2025-11-03T09:41:04.912Z",
+  "generatedAt": "2025-11-03T16:51:39.123Z",
   "baseUrl": "http://localhost:5180"
 }

@@ -1,0 +1,25 @@
+{
+  "uuid": "SignupTotpExample-27wharx431h-1762188699168",
+  "name": "SignupTotpExample",
+  "status": "skipped",
+  "stage": "finished",
+  "start": 1762188699168,
+  "stop": 1762188699168,
+  "steps": [],
+  "attachments": [],
+  "parameters": [],
+  "labels": [
+    {
+      "name": "suite",
+      "value": "admin-frontend-e2e"
+    },
+    {
+      "name": "framework",
+      "value": "selenium-webdriver"
+    },
+    {
+      "name": "language",
+      "value": "javascript"
+    }
+  ]
+}

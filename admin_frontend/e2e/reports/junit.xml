@@ -1,20 +1,42 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="admin-frontend-e2e" tests="10" failures="1" time="60.01">
-    <testcase name="Home" time="1.29"></testcase>
-    <testcase name="Unauthorized" time="11.60"></testcase>
-    <testcase name="PrivateRoutes" time="4.33"></testcase>
-    <testcase name="Dashboard" time="10.23"></testcase>
-    <testcase name="Profile" time="7.42"></testcase>
-    <testcase name="AuditLog" time="10.17"></testcase>
-    <testcase name="UserManagement" time="8.05"></testcase>
-    <testcase name="SignInFlow" time="6.92">
-      <failure message="Interactive login did not detect a successful sign-in">Error: Interactive login did not detect a successful sign-in
-    at performInteractiveLogin (file:///C:/Users/AnujiWeragoda/GIT/staff-management-system/Intern-project/admin_frontend/e2e/utils.mjs:289:24)
+<testsuite name="admin-frontend-e2e" tests="9" failures="1" time="27.95">
+    <testcase name="Home" time="1.25"></testcase>
+    <testcase name="Unauthorized" time="1.19"></testcase>
+    <testcase name="PrivateRoutes" time="4.75"></testcase>
+    <testcase name="Dashboard" time="12.83">
+      <failure message="Dashboard content not detected at http://localhost:5180/dashboard. Sample: S
+Staff MS
+Management System
+Dashboard
+Users
+Audit Log
+E2E User
+e2e@example.com
+Error Loading Dashboard
+
+Failed to fetch
+
+Try Again">Error: Dashboard content not detected at http://localhost:5180/dashboard. Sample: S
+Staff MS
+Management System
+Dashboard
+Users
+Audit Log
+E2E User
+e2e@example.com
+Error Loading Dashboard
+
+Failed to fetch
+
+Try Again
+    at runDashboard (file:///C:/Users/AnujiWeragoda/git/staff-management-system/Intern-project/admin_frontend/e2e/tests/dashboard.e2e.mjs:58:13)
     at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
-    at async runSignInFlow (file:///C:/Users/AnujiWeragoda/GIT/staff-management-system/Intern-project/admin_frontend/e2e/tests/signin.flow.e2e.mjs:12:5)
-    at async runAndRecord (file:///C:/Users/AnujiWeragoda/GIT/staff-management-system/Intern-project/admin_frontend/e2e/run-e2e.mjs:76:7)
-    at async run (file:///C:/Users/AnujiWeragoda/GIT/staff-management-system/Intern-project/admin_frontend/e2e/run-e2e.mjs:97:3)</failure>
+    at async runAndRecord (file:///C:/Users/AnujiWeragoda/git/staff-management-system/Intern-project/admin_frontend/e2e/run-e2e.mjs:75:7)
+    at async run (file:///C:/Users/AnujiWeragoda/git/staff-management-system/Intern-project/admin_frontend/e2e/run-e2e.mjs:92:3)</failure>
     </testcase>
+    <testcase name="Profile" time="2.67"></testcase>
+    <testcase name="AuditLog" time="2.74"></testcase>
+    <testcase name="UserManagement" time="2.53"></testcase>
     <testcase name="SignupExample" time="0.00"></testcase>
     <testcase name="SignupTotpExample" time="0.00"></testcase>
 </testsuite>
