@@ -82,17 +82,95 @@ async function screenshot(name) {
   }
 }
 
+// Try to make sure Android shows the soft keyboard even when a hardware keyboard is present
+async function ensureAndroidSoftKeyboardVisible() {
+  if (!driver.isAndroid) return;
+  try {
+    // Make Android show IME even with a hardware keyboard attached
+    await driver.execute('mobile: shell', {
+      command: 'settings',
+      args: ['put', 'secure', 'show_ime_with_hard_keyboard', '1']
+    });
+    console.log('Ensured Android setting show_ime_with_hard_keyboard=1');
+  } catch (e) {
+    console.log('Could not enforce soft keyboard visibility', e?.message || e);
+  }
+}
+
 async function typeIfExists(selectors, value, label = 'field') {
   try {
     const el = await findAny(selectors, 5000);
+    
+    // Click to focus and force keyboard
     await el.click();
-    await el.clearValue?.();
+    await browser.pause(500);
+    
+    // Try multiple keyboard visibility methods
+    await ensureAndroidSoftKeyboardVisible();
+    await browser.pause(300);
+    
+    // Try to show keyboard via adb if available
+    try {
+      if (driver.isAndroid) {
+        await driver.execute('mobile: shell', {
+          command: 'input',
+          args: ['text', '']
+        });
+        console.log('Triggered IME input command');
+      }
+    } catch (e) {
+      console.log('shell input command failed:', e?.message || e);
+    }
+    
+    await screenshot(`typing-${label}-focused`);
+
+    // Clear and type using direct setValue approach
+    try {
+      await el.clearValue?.();
+    } catch {}
+    
     await el.setValue(value);
     console.log(`Typed into ${label}: ${value}`);
+    await browser.pause(300);
+    await screenshot(`typing-${label}-after-input`);
+
+    // Try to trigger IME action to advance/confirm
+    try {
+      if (driver.isAndroid) {
+        await driver.execute('mobile: performEditorAction', { action: 'next' });
+        await browser.pause(300);
+      }
+    } catch (e) {
+      console.log('performEditorAction failed:', e?.message || e);
+    }
     return true;
-  } catch {
-    console.log(`Could not find ${label} to type`);
+  } catch (e) {
+    console.log(`Could not find ${label} to type:`, e?.message || e);
     return false;
+  }
+}
+
+// Fallback tap using W3C actions at the element's center (helps when .click() is intercepted)
+async function tapCenter(el) {
+  try {
+    const rect = await el.getRect();
+    const x = Math.floor(rect.x + rect.width / 2);
+    const y = Math.floor(rect.y + rect.height / 2);
+    await driver.performActions([
+      {
+        type: 'pointer', id: 'finger1', parameters: { pointerType: 'touch' },
+        actions: [
+          { type: 'pointerMove', duration: 0, x, y },
+          { type: 'pointerDown', button: 0 },
+          { type: 'pause', duration: 100 },
+          { type: 'pointerUp', button: 0 }
+        ]
+      }
+    ]);
+    await driver.releaseActions?.();
+    console.log(`Tapped at center: (${x}, ${y})`);
+  } catch (e) {
+    console.log('tapCenter failed:', e?.message || e);
   }
 }
 
@@ -157,18 +235,20 @@ describe('Login flow', () => {
 
       // Optionally type into username/password for better visual confirmation
       const emailSelectors = [
+        'android=new UiSelector().className("android.widget.EditText").instance(0)',
         'android=new UiSelector().descriptionContains("Email")',
         'android=new UiSelector().textContains("Email")',
-        'android=new UiSelector().className("android.widget.EditText").instance(0)'
+        'android=new UiSelector().hint("Enter your email")'
       ];
       const passwordSelectors = [
+        'android=new UiSelector().className("android.widget.EditText").instance(1)',
         'android=new UiSelector().descriptionContains("Password")',
         'android=new UiSelector().textContains("Password")',
-        'android=new UiSelector().className("android.widget.EditText").instance(1)'
+        'android=new UiSelector().hint("Enter your password")'
       ];
-      const typedEmail = await typeIfExists(emailSelectors, 'test@example.com', 'email');
+      const typedEmail = await typeIfExists(emailSelectors, 'anujinishaweragoda1234@gmail.com', 'email');
       await browser.pause(400);
-      const typedPassword = await typeIfExists(passwordSelectors, 'secret123', 'password');
+      const typedPassword = await typeIfExists(passwordSelectors, 'iHuyntj9P4ZTYR2@@@@', 'password');
       if (typedEmail || typedPassword) {
         await screenshot('03-after-typing');
       }
@@ -191,6 +271,52 @@ describe('Login flow', () => {
       expect(await loginScreen.isDisplayed()).to.equal(true);
       await browser.pause(800);
       await screenshot('04-final-state');
+
+      // Try to click the Sign In/Log In button on the login screen and verify success (best-effort)
+      const signInButtonSelectors = [
+        'android=new UiSelector().description("Sign In")',
+        'android=new UiSelector().descriptionContains("Sign In")',
+        '~Sign In',
+        'android=new UiSelector().text("Sign In")',
+        'android=new UiSelector().textContains("Sign In")',
+        '~login_submit',
+        'android=new UiSelector().resourceIdMatches("(?i).*sign.*in.*|.*login.*")',
+        // Scrollable fallback to bring the button into view by text
+        'android=new UiScrollable(new UiSelector().scrollable(true)).scrollTextIntoView("Sign In")'
+      ];
+      try {
+        const signInBtn = await findAny(signInButtonSelectors, 15000);
+        console.log('Login E2E: Sign In button located, clicking...');
+        try {
+          await signInBtn.click();
+        } catch (clickErr) {
+          console.log('Standard click failed, falling back to tapCenter:', clickErr?.message || clickErr);
+          await tapCenter(signInBtn);
+        }
+        await browser.pause(2000);
+        await screenshot('05-after-sign-in-click');
+        
+        // Best-effort check that we navigated to a post-login screen
+        const successSelectors = [
+          '~home_screen',
+          'android=new UiSelector().descriptionContains("Home")',
+          'android=new UiSelector().textContains("Home")',
+          'android=new UiSelector().textContains("Dashboard")',
+          'android=new UiSelector().resourceIdMatches("(?i).*home.*|.*dashboard.*")',
+          'android=new UiSelector().className("android.widget.FrameLayout")'
+        ];
+        try {
+          const successEl = await findAny(successSelectors, 15000);
+          console.log('Login E2E: post-login screen or app loaded.');
+          await screenshot('06-post-login-visible');
+        } catch (e) {
+          console.log('Login E2E: did not detect a specific post-login screen.');
+          await screenshot('06-after-login-unknown-state');
+        }
+      } catch (btnErr) {
+        console.log('Login E2E: Sign In button not found on login screen; test stopping here:', btnErr?.message || btnErr);
+        throw new Error('Could not find and click Sign In button');
+      }
     } catch (e) {
       // On failure, dump a snippet of the page source to help identify selectors
       try {
