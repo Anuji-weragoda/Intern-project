@@ -4,235 +4,113 @@ import process from 'node:process';
 import fs from 'node:fs';
 import path from 'node:path';
 
-// Simple Selenium login test using Chrome.
-// Run with: node loginTest.js
-// Environment:
-//  BASE_URL (default http://localhost:5180)
-//  LOGIN_EMAIL, LOGIN_PASSWORD
-//  HEADLESS=true to run headless
-
 const BASE_URL = process.env.BASE_URL || 'http://localhost:5180';
-const EMAIL = process.env.LOGIN_EMAIL || '';
-const PASSWORD = process.env.LOGIN_PASSWORD || '';
 const HEADLESS = process.env.HEADLESS === 'true';
 const KEEP_OPEN = process.env.KEEP_BROWSER_OPEN === 'true';
 
 async function main() {
-  // Build Chrome driver
   const options = new chrome.Options();
   if (HEADLESS) options.addArguments('--headless=new');
   options.addArguments('--window-size=1280,900');
 
   const driver = await new Builder().forBrowser('chrome').setChromeOptions(options).build();
 
-  // prepare screenshots dir
+  // prepare screenshot folder
   const reportsDir = path.join(process.cwd(), 'e2e', 'reports');
   const shotsDir = path.join(reportsDir, 'screenshots');
-  try { fs.mkdirSync(shotsDir, { recursive: true }); } catch (e) {}
+  try { fs.mkdirSync(shotsDir, { recursive: true }); } catch {}
 
   async function saveShot(name) {
     try {
       const b = await driver.takeScreenshot();
       const file = path.join(shotsDir, `${name}-${Date.now()}.png`);
       fs.writeFileSync(file, b, 'base64');
-      console.log('[loginTest] saved screenshot', file);
+      console.log('[userManagementTest] saved screenshot', file);
     } catch (e) {
-      console.log('[loginTest] screenshot failed', e && e.message);
+      console.log('[userManagementTest] screenshot failed', e && e.message);
     }
   }
 
   try {
-    console.log('[loginTest] Opening app at', BASE_URL);
-    await driver.get(BASE_URL + '/');
+    console.log('[userManagementTest] Opening User Management page...');
+    await driver.get(`${BASE_URL}/user-management`);
 
-    // Wait for page body
     await driver.wait(until.elementLocated(By.css('body')), 5000);
-    await saveShot('before-click');
+    await saveShot('page-loaded');
 
-    // Attempt to click an in-app sign in link/button. We try several heuristics.
-    const signSelectors = [
-      "button:contains('Sign in')",
-      "button[aria-label*='sign']",
-      "a[href*='login']",
-      "a[href*='signin']",
-      "[data-test*='login']",
-      "[data-testid*='login']",
-      "button.login",
-      "a.login"
-    ];
+    // Verify header text
+    const header = await driver.wait(until.elementLocated(By.xpath("//h1[contains(., 'User Management')]")), 10000);
+    const headerText = await header.getText();
+    console.log('[userManagementTest] Header found:', headerText);
 
-    // Helper to attempt clicks by CSS or XPath (for text matching)
-    async function tryClickByXPathText(text) {
-      try {
-        const xpath = `//button[contains(normalize-space(string(.)), "${text}")] | //a[contains(normalize-space(string(.)), "${text}")]`;
-        const el = await driver.findElements(By.xpath(xpath));
-        if (el.length) { await el[0].click(); return true; }
-      } catch (e) {}
-      return false;
-    }
+    // Wait for table to appear
+    const table = await driver.wait(until.elementLocated(By.xpath("//table")), 10000);
+    console.log('[userManagementTest] Table visible:', !!table);
+    await saveShot('table-visible');
 
-    // Try text-based clicks first
-    const textButtons = ['Sign in', 'Sign In', 'Log in', 'Login', 'Sign in with'];
-    let clicked = false;
-    for (const t of textButtons) {
-      const ok = await tryClickByXPathText(t);
-      if (ok) { console.log('[loginTest] Clicked button with text', t); clicked = true; break; }
-    }
-    if (clicked) {
-      await saveShot('after-click');
-      console.log('[loginTest] current URL after click:', await driver.getCurrentUrl());
-    }
+    // Search for a user
+    const searchInput = await driver.findElement(By.xpath("//input[@placeholder='Search by email or username...']"));
+    await searchInput.sendKeys('admin');
+    await driver.sleep(1000);
+    await saveShot('search-admin');
+    console.log('[userManagementTest] Typed "admin" in search input.');
 
-    // If EMAIL/PASSWORD provided, attempt to fill login form. We wait for common selectors.
-    if (!EMAIL || !PASSWORD) {
-      console.log('[loginTest] No EMAIL/PASSWORD env vars provided — skipping form fill.');
-      return;
-    }
+    // Filter by role
+    const filterSelect = await driver.findElement(By.xpath("//select[contains(@class, 'bg-slate-50')]"));
+    await filterSelect.click();
+    const adminOption = await driver.findElement(By.xpath("//option[contains(text(), 'Admin')]"));
+    await adminOption.click();
+    console.log('[userManagementTest] Filtered by role: Admin');
+    await driver.sleep(1000);
+    await saveShot('filtered-admin');
 
-    // Wait for possible email input on page (hosted IdP or in-app form)
-    const emailSelectors = ["input[type=email]", "input[name=email]", "input[id=email]", "input[autocomplete=email]", "input[name=username]"];
-    let emailEl = null;
-    for (const s of emailSelectors) {
-      const els = await driver.findElements(By.css(s)).catch(() => []);
-      if (els.length) { emailEl = els[0]; break; }
-    }
+    // Click first user row
+    const firstRow = await driver.wait(until.elementLocated(By.xpath("//tbody/tr[1]")), 10000);
+    await firstRow.click();
+    console.log('[userManagementTest] Clicked first user row');
+    await driver.sleep(800);
+    await saveShot('clicked-user');
 
-    // If email input not found, try to navigate to /login
-    if (!emailEl) {
-      console.log('[loginTest] Email input not found on page, navigating to /login');
-      await driver.get(BASE_URL + '/login');
-      await driver.sleep(800);
-      await saveShot('navigated-to-login');
-      for (const s of emailSelectors) {
-        const els = await driver.findElements(By.css(s)).catch(() => []);
-        if (els.length) { emailEl = els[0]; break; }
-      }
-    }
+    // Wait for modal to appear
+    const modal = await driver.wait(
+      until.elementLocated(By.xpath("//div[contains(@class,'bg-white') and contains(.,'Account Status')]")),
+      10000
+    );
+    console.log('[userManagementTest] Modal opened:', await modal.isDisplayed());
+    await saveShot('modal-opened');
 
-    if (!emailEl) throw new Error('Email input not found on login page');
+    // Close modal
+    const closeBtn = await driver.findElement(By.xpath("//button[contains(@class,'hover:bg-slate-100')]"));
+    await closeBtn.click();
+    console.log('[userManagementTest] Closed user modal');
+    await driver.sleep(500);
+    await saveShot('modal-closed');
 
-    // Fill email and click Next (for Cognito flow)
-    console.log('[loginTest] Filling email and clicking Next');
-    await emailEl.clear();
-    await emailEl.sendKeys(EMAIL);
+    // Click Manage Roles button
+    const manageRolesBtn = await driver.findElement(By.xpath("//button[contains(., 'Manage Roles')]"));
+    await manageRolesBtn.click();
+    console.log('[userManagementTest] Clicked Manage Roles');
+    await driver.sleep(800);
+    await saveShot('clicked-manage-roles');
 
-    // Find submit button (Next)
-    const submitSelectors = ["button[type=submit]", "button:contains('Next')"];
-    let submitEl = null;
-    for (const s of submitSelectors) {
-      const els = await driver.findElements(By.css(s)).catch(() => []);
-      if (els.length) { submitEl = els[0]; break; }
-    }
-    if (!submitEl) {
-      // Try XPath for text
-      const xpath = `//button[contains(normalize-space(string(.)), "Next")]`;
-      const els = await driver.findElements(By.xpath(xpath));
-      if (els.length) submitEl = els[0];
-    }
-    if (!submitEl) throw new Error('Submit button not found on login page');
-
-    await submitEl.click();
-    await saveShot('after-email-submit');
-
-    // Wait for password input to appear (after Next)
-    await driver.wait(async () => {
-      const els = await driver.findElements(By.css("input[type=password]")).catch(() => []);
-      return els.length > 0;
-    }, 10000);
-
-    // Now find password
-    const passSelectors = ["input[type=password]", "input[name=password]", "input[id=password]", "input[autocomplete=current-password]"];
-    let passEl = null;
-    for (const s of passSelectors) {
-      const els = await driver.findElements(By.css(s)).catch(() => []);
-      if (els.length) { passEl = els[0]; break; }
-    }
-    if (!passEl) throw new Error('Password input not found after Next');
-
-    // Fill and submit
-    console.log('[loginTest] Filling password and submitting');
-    await passEl.clear();
-    await passEl.sendKeys(PASSWORD, Key.RETURN);
-    await saveShot('after-password-submit');
-
-    // Wait for redirects to complete (follow IdP -> app). Some deployments
-    // redirect through an external IdP (amazoncognito) back to a local port
-    // (e.g. :8081). First wait for the URL to leave the IdP domain, then
-    // wait for an authenticated UI (dashboard/profile or sign-out present).
-
-    // Wait up to 20s for the browser to leave the IdP (if present).
-    try {
-      await driver.wait(async () => {
-        const url = await driver.getCurrentUrl();
-        // return true when URL is no longer the Cognito hosted domain
-        return !/amazoncognito\.com/.test(url);
-      }, 20000);
-    } catch (e) {
-      // timed out waiting for redirect — continue and attempt to detect auth UI
-      console.log('[loginTest] timeout waiting for IdP redirect; continuing to check for authenticated UI');
-    }
-    // If redirected back with a JWT in the URL (some setups use a dev server
-    // origin like :5173 or :8081 and append ?jwt=...), navigate explicitly to
-    // the dashboard on that origin so the client app can process the token and
-    // render the authenticated UI.
-    try {
-      const current = await driver.getCurrentUrl();
-      const m = current.match(/[?&]jwt=[^&]+/i);
-      if (m) {
-        try {
-          const u = new URL(current);
-          const origin = u.origin;
-          const dash = origin + '/dashboard';
-          console.log('[loginTest] Detected jwt in redirect URL — navigating to', dash);
-          await driver.get(dash);
-          await driver.sleep(800);
-          await saveShot('after-redirect-with-jwt');
-        } catch (e) {
-          console.log('[loginTest] Failed to navigate to dashboard on redirect origin', e && e.message);
-        }
-      }
-    } catch (e) {
-      // ignore
-    }
-
-    // Now wait up to 30s for an authenticated UI to appear (dashboard/profile/sign out text)
-    await driver.wait(async () => {
-      const url = await driver.getCurrentUrl();
-      const text = await driver.executeScript('return document.body && document.body.innerText || ""');
-      console.log('[loginTest] checking page after login, url=', url);
-      return /Dashboard|Profile|Sign out|Logout|Welcome/i.test(text) || /\/dashboard|\/profile/.test(url);
-    }, 30000);
-
-    // Give the SPA a short moment to stabilise, then capture final screenshot.
-    try {
-      await driver.sleep(1500);
-      await saveShot('after-submit');
-    } catch (e) {
-      console.log('[loginTest] final screenshot failed', e && e.message);
-    }
-    console.log('[loginTest] Login appears successful — authenticated UI detected');
+    console.log('[userManagementTest] ✅ User Management test completed successfully');
   } catch (err) {
-    try {
-      await saveShot('error');
-      const pageSource = await driver.getPageSource();
-      fs.writeFileSync(path.join(shotsDir, 'error-page.html'), pageSource);
-      console.log('[loginTest] current URL on error:', await driver.getCurrentUrl());
-    } catch (e) {}
+    await saveShot('error');
+    const html = await driver.getPageSource();
+    fs.writeFileSync(path.join(shotsDir, 'error-page.html'), html);
+    console.log('[userManagementTest] ❌ Error occurred:', err.message);
     throw err;
   } finally {
-    // On debug runs you may want to keep the browser open for manual inspection.
     if (KEEP_OPEN) {
-      console.log('[loginTest] KEEP_BROWSER_OPEN=true — leaving browser open for inspection (test process will exit without closing the browser)');
-      // Do not quit the driver so the browser window remains. Return to let the
-      // Node process exit; some OSes may keep the window but the webdriver
-      // session might be orphaned — this is intended for local debugging only.
+      console.log('[userManagementTest] KEEP_BROWSER_OPEN=true — leaving browser open for inspection.');
       return;
     }
-
-    // Always clean up the browser in non-debug runs
-    console.log('[loginTest] Quitting driver');
+    console.log('[userManagementTest] Closing browser');
     await driver.quit().catch(() => {});
   }
 }
 
-main().catch((err) => { console.error('[loginTest] Error:', err && err.stack || err); process.exit(1); });
+main().catch((err) => {
+  console.error('[userManagementTest] Fatal error:', err);
+  process.exit(1);
+});
