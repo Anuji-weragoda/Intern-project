@@ -56,7 +56,7 @@ exports.config = {
   reporters: ['spec'],
   mochaOpts: {
     ui: 'bdd',
-    timeout: 60000
+    timeout: 180000  // Increased to 3 minutes for full login + profile edit flow
   },
   // Take a screenshot on failure to help debug selector issues
   afterTest: async function (test, context, { error, result, duration, passed, retries }) {

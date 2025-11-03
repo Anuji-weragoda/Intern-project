@@ -1,0 +1,6 @@
+{
+  "title": "should login, navigate to dashboard, open Edit Profile, edit a field and save",
+  "state": "passed",
+  "duration": 56926,
+  "timestamp": "2025-11-03T07:39:40.773Z"
+}
