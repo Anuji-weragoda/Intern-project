@@ -2,7 +2,7 @@ import { Builder } from 'selenium-webdriver';
 import chrome from 'selenium-webdriver/chrome.js';
 import edge from 'selenium-webdriver/edge.js';
 
-export async function buildDriver({ headless = true, preferred = process.env.PREFERRED_BROWSER || 'edge' } = {}) {
+export async function buildDriver({ headless = true, preferred = 'edge' } = {}) {
   // Try preferred browser first, fall back if it fails
   const tried = [];
   for (const browser of [preferred, browserFallback(preferred)]) {

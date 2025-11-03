@@ -15,6 +15,7 @@ const BASE_URL = process.env.BASE_URL || 'http://localhost:5180';
 const EMAIL = process.env.LOGIN_EMAIL || '';
 const PASSWORD = process.env.LOGIN_PASSWORD || '';
 const HEADLESS = process.env.HEADLESS === 'true';
+const KEEP_OPEN = process.env.KEEP_BROWSER_OPEN === 'true';
 
 async function main() {
   // Build Chrome driver
@@ -154,14 +155,61 @@ async function main() {
     await passEl.sendKeys(PASSWORD, Key.RETURN);
     await saveShot('after-password-submit');
 
-    // Wait for authenticated content
+    // Wait for redirects to complete (follow IdP -> app). Some deployments
+    // redirect through an external IdP (amazoncognito) back to a local port
+    // (e.g. :8081). First wait for the URL to leave the IdP domain, then
+    // wait for an authenticated UI (dashboard/profile or sign-out present).
+
+    // Wait up to 20s for the browser to leave the IdP (if present).
+    try {
+      await driver.wait(async () => {
+        const url = await driver.getCurrentUrl();
+        // return true when URL is no longer the Cognito hosted domain
+        return !/amazoncognito\.com/.test(url);
+      }, 20000);
+    } catch (e) {
+      // timed out waiting for redirect — continue and attempt to detect auth UI
+      console.log('[loginTest] timeout waiting for IdP redirect; continuing to check for authenticated UI');
+    }
+    // If redirected back with a JWT in the URL (some setups use a dev server
+    // origin like :5173 or :8081 and append ?jwt=...), navigate explicitly to
+    // the dashboard on that origin so the client app can process the token and
+    // render the authenticated UI.
+    try {
+      const current = await driver.getCurrentUrl();
+      const m = current.match(/[?&]jwt=[^&]+/i);
+      if (m) {
+        try {
+          const u = new URL(current);
+          const origin = u.origin;
+          const dash = origin + '/dashboard';
+          console.log('[loginTest] Detected jwt in redirect URL — navigating to', dash);
+          await driver.get(dash);
+          await driver.sleep(800);
+          await saveShot('after-redirect-with-jwt');
+        } catch (e) {
+          console.log('[loginTest] Failed to navigate to dashboard on redirect origin', e && e.message);
+        }
+      }
+    } catch (e) {
+      // ignore
+    }
+
+    // Now wait up to 30s for an authenticated UI to appear (dashboard/profile/sign out text)
     await driver.wait(async () => {
       const url = await driver.getCurrentUrl();
       const text = await driver.executeScript('return document.body && document.body.innerText || ""');
-      return /Dashboard|Profile|Sign out|Logout|Welcome/i.test(text) || url.includes('/dashboard') || url.includes('/profile');
-    }, 10000);
+      console.log('[loginTest] checking page after login, url=', url);
+      return /Dashboard|Profile|Sign out|Logout|Welcome/i.test(text) || /\/dashboard|\/profile/.test(url);
+    }, 30000);
 
-    await saveShot('after-submit');
+    // Give the SPA a short moment to stabilise, then capture final screenshot.
+    try {
+      await driver.sleep(1500);
+      await saveShot('after-submit');
+    } catch (e) {
+      console.log('[loginTest] final screenshot failed', e && e.message);
+    }
     console.log('[loginTest] Login appears successful — authenticated UI detected');
   } catch (err) {
     try {
@@ -172,7 +220,16 @@ async function main() {
     } catch (e) {}
     throw err;
   } finally {
-    // Always clean up the browser
+    // On debug runs you may want to keep the browser open for manual inspection.
+    if (KEEP_OPEN) {
+      console.log('[loginTest] KEEP_BROWSER_OPEN=true — leaving browser open for inspection (test process will exit without closing the browser)');
+      // Do not quit the driver so the browser window remains. Return to let the
+      // Node process exit; some OSes may keep the window but the webdriver
+      // session might be orphaned — this is intended for local debugging only.
+      return;
+    }
+
+    // Always clean up the browser in non-debug runs
     console.log('[loginTest] Quitting driver');
     await driver.quit().catch(() => {});
   }

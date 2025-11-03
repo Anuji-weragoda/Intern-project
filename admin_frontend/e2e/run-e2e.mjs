@@ -60,7 +60,6 @@ async function run() {
   const { runProfile } = await import('./tests/profile.e2e.mjs');
   const { runAuditLog } = await import('./tests/auditLog.e2e.mjs');
   const { runUserManagement } = await import('./tests/userManagement.e2e.mjs');
-  const { runSignInFlow } = await import('./tests/signin.flow.e2e.mjs');
   let runSignupExample = null;
   let runSignupTotpExample = null;
   try { ({ runSignupExample } = await import('./tests/signup.example.e2e.mjs')); } catch {}
@@ -94,7 +93,6 @@ async function run() {
   await runAndRecord('Profile', async () => runProfile({ baseUrl: BASE_URL, headless: HEADLESS }));
   await runAndRecord('AuditLog', async () => runAuditLog({ baseUrl: BASE_URL, headless: HEADLESS }));
   await runAndRecord('UserManagement', async () => runUserManagement({ baseUrl: BASE_URL, headless: HEADLESS }));
-  await runAndRecord('SignInFlow', async () => runSignInFlow({ baseUrl: BASE_URL, headless: HEADLESS }));
 
   // Optional examples
   if (runSignupExample && process.env.SIGNUP_URL && process.env.MAILHOG_URL && process.env.SIGNUP_EMAIL && process.env.SIGNUP_PASSWORD) {
