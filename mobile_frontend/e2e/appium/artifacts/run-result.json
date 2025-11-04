@@ -1,6 +1,6 @@
 {
-  "title": "should open app, tap login button, and show login screen",
-  "state": "passed",
-  "duration": 37826,
-  "timestamp": "2025-11-04T08:11:42.000Z"
+  "title": "should login with MFA verification",
+  "state": "failed",
+  "duration": 55102,
+  "timestamp": "2025-11-04T11:15:42.404Z"
 }

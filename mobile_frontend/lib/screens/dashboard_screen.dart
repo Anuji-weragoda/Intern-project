@@ -114,191 +114,194 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC), // slate-50
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Header Section
-            Container(
-              width: double.infinity,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Color(0xFF0F172A), // slate-900
-                    Color(0xFF1E3A8A), // blue-900
-                    Color(0xFF0F172A), // slate-900
+    return Semantics(
+      label: 'dashboard_root',
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF8FAFC), // slate-50
+        body: SafeArea(
+          child: Column(
+            children: [
+              // Header Section
+              Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Color(0xFF0F172A), // slate-900
+                      Color(0xFF1E3A8A), // blue-900
+                      Color(0xFF0F172A), // slate-900
+                    ],
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.2),
+                      blurRadius: 20,
+                      offset: const Offset(0, 5),
+                    ),
                   ],
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
-                    blurRadius: 20,
-                    offset: const Offset(0, 5),
-                  ),
-                ],
-              ),
-              padding: const EdgeInsets.all(32),
-              child: Column(
-                children: [
-                  // Logo
-                  Container(
-                    width: 80,
-                    height: 80,
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          Color(0xFF3B82F6), // blue-500
-                          Color(0xFF4F46E5), // indigo-600
+                padding: const EdgeInsets.all(32),
+                child: Column(
+                  children: [
+                    // Logo
+                    Container(
+                      width: 80,
+                      height: 80,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            Color(0xFF3B82F6), // blue-500
+                            Color(0xFF4F46E5), // indigo-600
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF3B82F6).withOpacity(0.5),
+                            blurRadius: 20,
+                            offset: const Offset(0, 5),
+                          ),
                         ],
                       ),
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFF3B82F6).withOpacity(0.5),
-                          blurRadius: 20,
-                          offset: const Offset(0, 5),
-                        ),
-                      ],
-                    ),
-                    child: const Center(
-                      child: Text(
-                        'S',
-                        style: TextStyle(
-                          fontSize: 48,
-                          fontWeight: FontWeight.w900,
-                          color: Colors.white,
+                      child: const Center(
+                        child: Text(
+                          'S',
+                          style: TextStyle(
+                            fontSize: 48,
+                            fontWeight: FontWeight.w900,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 24),
-                  const Text(
-                    'Staff Management',
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Welcome, ${_displayName ?? _userEmail ?? 'User'}!',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.white.withOpacity(0.9),
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
-            ),
-
-            // Menu Items
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+                    const SizedBox(height: 24),
                     const Text(
-                      'What would you like to do?',
+                      'Staff Management',
                       style: TextStyle(
-                        fontSize: 20,
+                        fontSize: 28,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF1E293B),
+                        color: Colors.white,
                       ),
                     ),
-                    const SizedBox(height: 20),
-
-                    // Profile Card
-                    _buildMenuCard(
-                      icon: Icons.person_outline,
-                      title: 'My Profile',
-                      description: 'View and manage your profile information',
-                      color: const Color(0xFF3B82F6), // blue
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const HomeScreen(),
-                          ),
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Edit Profile Card
-                    _buildMenuCard(
-                      icon: Icons.edit_outlined,
-                      title: 'Edit Profile',
-                      description: 'Update your personal information',
-                      color: const Color(0xFF10B981), // green
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const ProfileEditScreen(),
-                          ),
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Security Settings Card
-                    _buildMenuCard(
-                      icon: Icons.security,
-                      title: 'Security Settings',
-                      description: 'Manage MFA and security preferences',
-                      color: const Color(0xFF8B5CF6), // purple
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const SettingsScreen(),
-                          ),
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 32),
-
-                    // Sign Out Button
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed: _signingOut ? null : _signOut,
-                        icon: _signingOut
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
-                                ),
-                              )
-                            : const Icon(Icons.logout),
-                        label: Text(_signingOut ? 'Signing out...' : 'Sign Out'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFEF4444), // red
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          elevation: 2,
-                        ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Welcome, ${_displayName ?? _userEmail ?? 'User'}!',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.white.withOpacity(0.9),
                       ),
+                      textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 20),
                   ],
                 ),
               ),
-            ),
-          ],
+
+              // Menu Items
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'What would you like to do?',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1E293B),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Profile Card
+                      _buildMenuCard(
+                        icon: Icons.person_outline,
+                        title: 'My Profile',
+                        description: 'View and manage your profile information',
+                        color: const Color(0xFF3B82F6), // blue
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const HomeScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Edit Profile Card
+                      _buildMenuCard(
+                        icon: Icons.edit_outlined,
+                        title: 'Edit Profile',
+                        description: 'Update your personal information',
+                        color: const Color(0xFF10B981), // green
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const ProfileEditScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Security Settings Card
+                      _buildMenuCard(
+                        icon: Icons.security,
+                        title: 'Security Settings',
+                        description: 'Manage MFA and security preferences',
+                        color: const Color(0xFF8B5CF6), // purple
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const SettingsScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 32),
+
+                      // Sign Out Button
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: _signingOut ? null : _signOut,
+                          icon: _signingOut
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Icon(Icons.logout),
+                          label: Text(_signingOut ? 'Signing out...' : 'Sign Out'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFEF4444), // red
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            elevation: 2,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

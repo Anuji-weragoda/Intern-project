@@ -199,88 +199,95 @@ class _MFAVerificationScreenState extends State<MFAVerificationScreen> {
                       const SizedBox(height: 48),
 
                       // Code Field
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
-                              blurRadius: 20,
-                              offset: const Offset(0, 10),
-                            ),
-                          ],
-                        ),
-                        child: TextFormField(
-                          controller: _codeController,
-                          keyboardType: TextInputType.number,
-                          textInputAction: TextInputAction.done,
-                          maxLength: 6,
-                          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                          textAlign: TextAlign.center,
-                          decoration: const InputDecoration(
-                            hintText: '000000',
-                            counterText: '',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.all(Radius.circular(16)),
-                              borderSide: BorderSide.none,
-                            ),
-                            filled: true,
-                            fillColor: Colors.white,
-                            contentPadding: EdgeInsets.all(20),
+                      Semantics(
+                        label: 'mfa_input',
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.1),
+                                blurRadius: 20,
+                                offset: const Offset(0, 10),
+                              ),
+                            ],
                           ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter the verification code';
-                            }
-                            if (value.length != 6) {
-                              return 'Code must be 6 digits';
-                            }
-                            if (!RegExp(r'^\d{6}$').hasMatch(value)) {
-                              return 'Code must contain only digits';
-                            }
-                            return null;
-                          },
-                          onFieldSubmitted: (_) {
-                            if (!_verifying) {
-                              _verifyCode();
-                            }
-                          },
+                          child: TextFormField(
+                            key: const ValueKey('mfa_code_field'),
+                            controller: _codeController,
+                            keyboardType: TextInputType.number,
+                            textInputAction: TextInputAction.done,
+                            maxLength: 6,
+                            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                            textAlign: TextAlign.center,
+                            decoration: const InputDecoration(
+                              hintText: '000000',
+                              counterText: '',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.all(Radius.circular(16)),
+                                borderSide: BorderSide.none,
+                              ),
+                              filled: true,
+                              fillColor: Colors.white,
+                              contentPadding: EdgeInsets.all(20),
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Please enter the verification code';
+                              }
+                              if (value.length != 6) {
+                                return 'Code must be 6 digits';
+                              }
+                              if (!RegExp(r'^\d{6}$').hasMatch(value)) {
+                                return 'Code must contain only digits';
+                              }
+                              return null;
+                            },
+                            onFieldSubmitted: (_) {
+                              if (!_verifying) {
+                                _verifyCode();
+                              }
+                            },
+                          ),
                         ),
                       ),
                       const SizedBox(height: 30),
 
                       // Verify Button
-                      SizedBox(
-                        width: double.infinity,
-                        height: 56,
-                        child: ElevatedButton(
-                          onPressed: _verifying ? null : _verifyCode,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF3B82F6),
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
+                      Semantics(
+                        label: 'mfa_verify_button',
+                        child: SizedBox(
+                          width: double.infinity,
+                          height: 56,
+                          child: ElevatedButton(
+                            onPressed: _verifying ? null : _verifyCode,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF3B82F6),
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              elevation: 0,
+                              shadowColor: const Color(0xFF3B82F6).withOpacity(0.5),
                             ),
-                            elevation: 0,
-                            shadowColor: const Color(0xFF3B82F6).withOpacity(0.5),
+                            child: _verifying
+                                ? const SizedBox(
+                                    height: 24,
+                                    width: 24,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2.5,
+                                    ),
+                                  )
+                                : const Text(
+                                    'Verify Code',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
                           ),
-                          child: _verifying
-                              ? const SizedBox(
-                                  height: 24,
-                                  width: 24,
-                                  child: CircularProgressIndicator(
-                                    color: Colors.white,
-                                    strokeWidth: 2.5,
-                                  ),
-                                )
-                              : const Text(
-                                  'Verify Code',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
                         ),
                       ),
                       const SizedBox(height: 20),
