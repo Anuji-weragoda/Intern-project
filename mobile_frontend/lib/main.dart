@@ -5,6 +5,15 @@ import 'amplifyconfiguration.dart';
 import 'screens/login_screen.dart';
 
 void main() {
+  ErrorWidget.builder = (FlutterErrorDetails details) {
+    return MaterialApp(
+      home: Scaffold(
+        body: Center(
+          child: Text('An error occurred: ${details.exception}'),
+        ),
+      ),
+    );
+  };
   runApp(const MyApp());
 }
 

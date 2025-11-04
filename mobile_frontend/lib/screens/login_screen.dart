@@ -4,6 +4,7 @@ import '../services/api_service.dart';
 import 'signup_screen.dart';
 import 'dashboard_screen.dart';
 import 'forgot_password_screen.dart';
+import 'mfa_verification_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -76,6 +77,39 @@ class _LoginScreenState extends State<LoginScreen> {
         password: _passwordController.text.trim(),
       );
 
+      // Check if MFA is required
+      if (!result.isSignedIn) {
+        final step = result.nextStep.signInStep;
+        if (step == AuthSignInStep.confirmSignInWithSmsMfaCode ||
+            step == AuthSignInStep.confirmSignInWithTotpMfaCode) {
+          if (mounted) {
+            // Navigate to MFA verification screen
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(
+                builder: (_) => MFAVerificationScreen(mfaStep: step),
+              ),
+            );
+          }
+          return;
+        } else {
+          // Other steps not handled, show error
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text('Additional sign-in step required but not supported.'),
+                backgroundColor: Colors.orange,
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            );
+          }
+          return;
+        }
+      }
+
+      // If signed in (no MFA required)
       if (result.isSignedIn && mounted) {
         safePrint('✓ Cognito authentication successful');
 
@@ -89,23 +123,22 @@ class _LoginScreenState extends State<LoginScreen> {
           // Continue anyway - user is authenticated with Cognito
         }
 
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('Successfully signed in!'),
-              backgroundColor: Colors.green,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Successfully signed in!'),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
             ),
-          );
+          ),
+        );
 
-          // Step 3: Navigate to dashboard screen
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => const DashboardScreen()),
-          );
-        }
+        // Step 3: Navigate to dashboard screen
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const DashboardScreen()),
+        );
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
