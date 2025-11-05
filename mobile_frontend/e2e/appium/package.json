@@ -6,6 +6,9 @@
     "test": "wdio run wdio.conf.js",
     "test:android:win": "powershell -NoProfile -Command \"$env:CAPS='android'; npm run test\"",
     "test:ios": "powershell -NoProfile -Command \"$env:CAPS='ios'; npm run test\"",
+    "test:signup:mailslurp": "wdio run wdio.conf.js --spec specs\\signup_mailslurp.e2e.js",
+    "test:mailslurp:connection": "node mailslurp-example.js test-connection",
+    "test:mailslurp:demo": "node mailslurp-example.js demo-extraction",
     "driver:android": "appium driver install uiautomator2",
     "driver:ios": "appium driver install xcuitest",
     "drivers:list": "appium driver list",
@@ -24,6 +27,7 @@
     "appium": "^3.0.0",
     "appium-uiautomator2-driver": "^6.1.0",
     "chai": "^4.0.0",
+    "mailslurp-client": "^16.0.0",
     "otplib": "^12.0.1",
     "webdriverio": "^8.0.0"
   },
