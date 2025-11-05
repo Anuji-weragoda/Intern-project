@@ -1,6 +1,6 @@
 {
   "title": "should login with MFA verification",
-  "state": "failed",
-  "duration": 55102,
-  "timestamp": "2025-11-04T11:15:42.404Z"
+  "state": "passed",
+  "duration": 20870,
+  "timestamp": "2025-11-05T07:30:20.876Z"
 }

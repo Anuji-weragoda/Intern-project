@@ -58,19 +58,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
         title: const Text('Sign Out', style: TextStyle(fontWeight: FontWeight.bold)),
         content: const Text('Are you sure you want to sign out?'),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
+          Semantics(
+            label: 'cancel_signout_button',
+            button: true,
+            child: TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel'),
             ),
-            child: const Text('Sign Out'),
+          ),
+          Semantics(
+            label: 'confirm_signout_button',
+            button: true,
+            child: ElevatedButton(
+              onPressed: () => Navigator.pop(context, true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text('Sign Out'),
+            ),
           ),
         ],
       ),
@@ -271,27 +279,31 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       // Sign Out Button
                       SizedBox(
                         width: double.infinity,
-                        child: ElevatedButton.icon(
-                          onPressed: _signingOut ? null : _signOut,
-                          icon: _signingOut
-                              ? const SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Colors.white,
-                                  ),
-                                )
-                              : const Icon(Icons.logout),
-                          label: Text(_signingOut ? 'Signing out...' : 'Sign Out'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFFEF4444), // red
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
+                        child: Semantics(
+                          label: 'sign_out_button',
+                          button: true,
+                          child: ElevatedButton.icon(
+                            onPressed: _signingOut ? null : _signOut,
+                            icon: _signingOut
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : const Icon(Icons.logout),
+                            label: Text(_signingOut ? 'Signing out...' : 'Sign Out'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFFEF4444), // red
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              elevation: 2,
                             ),
-                            elevation: 2,
                           ),
                         ),
                       ),
