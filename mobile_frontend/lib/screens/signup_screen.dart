@@ -237,33 +237,36 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               ),
                             ],
                           ),
-                          child: TextFormField(
-                            controller: _emailController,
-                            keyboardType: TextInputType.emailAddress,
-                            style: const TextStyle(fontSize: 16),
-                            decoration: const InputDecoration(
-                              hintText: 'Enter your email',
-                              prefixIcon: Icon(
-                                Icons.email_outlined,
-                                color: Color(0xFF3B82F6),
+                          child: Semantics(
+                            label: 'email_input',
+                            child: TextFormField(
+                              controller: _emailController,
+                              keyboardType: TextInputType.emailAddress,
+                              style: const TextStyle(fontSize: 16),
+                              decoration: const InputDecoration(
+                                hintText: 'Enter your email',
+                                prefixIcon: Icon(
+                                  Icons.email_outlined,
+                                  color: Color(0xFF3B82F6),
+                                ),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.all(Radius.circular(16)),
+                                  borderSide: BorderSide.none,
+                                ),
+                                filled: true,
+                                fillColor: Colors.white,
+                                contentPadding: EdgeInsets.all(20),
                               ),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.all(Radius.circular(16)),
-                                borderSide: BorderSide.none,
-                              ),
-                              filled: true,
-                              fillColor: Colors.white,
-                              contentPadding: EdgeInsets.all(20),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Please enter your email';
+                                }
+                                if (!value.contains('@')) {
+                                  return 'Please enter a valid email';
+                                }
+                                return null;
+                              },
                             ),
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Please enter your email';
-                              }
-                              if (!value.contains('@')) {
-                                return 'Please enter a valid email';
-                              }
-                              return null;
-                            },
                           ),
                         ),
                         const SizedBox(height: 20),
@@ -281,46 +284,49 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               ),
                             ],
                           ),
-                          child: TextFormField(
-                            controller: _passwordController,
-                            obscureText: _obscurePassword,
-                            style: const TextStyle(fontSize: 16),
-                            decoration: InputDecoration(
-                              hintText: 'Enter your password',
-                              prefixIcon: const Icon(
-                                Icons.lock_outline,
-                                color: Color(0xFF3B82F6),
-                              ),
-                              suffixIcon: IconButton(
-                                icon: Icon(
-                                  _obscurePassword
-                                      ? Icons.visibility_outlined
-                                      : Icons.visibility_off_outlined,
-                                  color: Colors.grey,
+                          child: Semantics(
+                            label: 'password_input',
+                            child: TextFormField(
+                              controller: _passwordController,
+                              obscureText: _obscurePassword,
+                              style: const TextStyle(fontSize: 16),
+                              decoration: InputDecoration(
+                                hintText: 'Enter your password',
+                                prefixIcon: const Icon(
+                                  Icons.lock_outline,
+                                  color: Color(0xFF3B82F6),
                                 ),
-                                onPressed: () {
-                                  setState(() {
-                                    _obscurePassword = !_obscurePassword;
-                                  });
-                                },
+                                suffixIcon: IconButton(
+                                  icon: Icon(
+                                    _obscurePassword
+                                        ? Icons.visibility_outlined
+                                        : Icons.visibility_off_outlined,
+                                    color: Colors.grey,
+                                  ),
+                                  onPressed: () {
+                                    setState(() {
+                                      _obscurePassword = !_obscurePassword;
+                                    });
+                                  },
+                                ),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                  borderSide: BorderSide.none,
+                                ),
+                                filled: true,
+                                fillColor: Colors.white,
+                                contentPadding: const EdgeInsets.all(20),
                               ),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(16),
-                                borderSide: BorderSide.none,
-                              ),
-                              filled: true,
-                              fillColor: Colors.white,
-                              contentPadding: const EdgeInsets.all(20),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Please enter a password';
+                                }
+                                if (value.length < 8) {
+                                  return 'Password must be at least 8 characters';
+                                }
+                                return null;
+                              },
                             ),
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Please enter a password';
-                              }
-                              if (value.length < 8) {
-                                return 'Password must be at least 8 characters';
-                              }
-                              return null;
-                            },
                           ),
                         ),
                         const SizedBox(height: 20),
@@ -338,47 +344,50 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               ),
                             ],
                           ),
-                          child: TextFormField(
-                            controller: _confirmPasswordController,
-                            obscureText: _obscureConfirmPassword,
-                            style: const TextStyle(fontSize: 16),
-                            decoration: InputDecoration(
-                              hintText: 'Confirm your password',
-                              prefixIcon: const Icon(
-                                Icons.lock_outline,
-                                color: Color(0xFF3B82F6),
-                              ),
-                              suffixIcon: IconButton(
-                                icon: Icon(
-                                  _obscureConfirmPassword
-                                      ? Icons.visibility_outlined
-                                      : Icons.visibility_off_outlined,
-                                  color: Colors.grey,
+                          child: Semantics(
+                            label: 'confirm_password_input',
+                            child: TextFormField(
+                              controller: _confirmPasswordController,
+                              obscureText: _obscureConfirmPassword,
+                              style: const TextStyle(fontSize: 16),
+                              decoration: InputDecoration(
+                                hintText: 'Confirm your password',
+                                prefixIcon: const Icon(
+                                  Icons.lock_outline,
+                                  color: Color(0xFF3B82F6),
                                 ),
-                                onPressed: () {
-                                  setState(() {
-                                    _obscureConfirmPassword =
-                                        !_obscureConfirmPassword;
-                                  });
-                                },
+                                suffixIcon: IconButton(
+                                  icon: Icon(
+                                    _obscureConfirmPassword
+                                        ? Icons.visibility_outlined
+                                        : Icons.visibility_off_outlined,
+                                    color: Colors.grey,
+                                  ),
+                                  onPressed: () {
+                                    setState(() {
+                                      _obscureConfirmPassword =
+                                          !_obscureConfirmPassword;
+                                    });
+                                  },
+                                ),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                  borderSide: BorderSide.none,
+                                ),
+                                filled: true,
+                                fillColor: Colors.white,
+                                contentPadding: const EdgeInsets.all(20),
                               ),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(16),
-                                borderSide: BorderSide.none,
-                              ),
-                              filled: true,
-                              fillColor: Colors.white,
-                              contentPadding: const EdgeInsets.all(20),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Please confirm your password';
+                                }
+                                if (value != _passwordController.text) {
+                                  return 'Passwords do not match';
+                                }
+                                return null;
+                              },
                             ),
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Please confirm your password';
-                              }
-                              if (value != _passwordController.text) {
-                                return 'Passwords do not match';
-                              }
-                              return null;
-                            },
                           ),
                         ),
                       ] else ...[
@@ -395,28 +404,31 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               ),
                             ],
                           ),
-                          child: TextFormField(
-                            controller: _codeController,
-                            keyboardType: TextInputType.number,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 8,
-                            ),
-                            decoration: const InputDecoration(
-                              hintText: 'Enter verification code',
-                              prefixIcon: Icon(
-                                Icons.verified_user_outlined,
-                                color: Color(0xFF3B82F6),
+                          child: Semantics(
+                            label: 'verification_code_input',
+                            child: TextFormField(
+                              controller: _codeController,
+                              keyboardType: TextInputType.number,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 8,
                               ),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.all(Radius.circular(16)),
-                                borderSide: BorderSide.none,
+                              decoration: const InputDecoration(
+                                hintText: 'Enter verification code',
+                                prefixIcon: Icon(
+                                  Icons.verified_user_outlined,
+                                  color: Color(0xFF3B82F6),
+                                ),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.all(Radius.circular(16)),
+                                  borderSide: BorderSide.none,
+                                ),
+                                filled: true,
+                                fillColor: Colors.white,
+                                contentPadding: EdgeInsets.all(20),
                               ),
-                              filled: true,
-                              fillColor: Colors.white,
-                              contentPadding: EdgeInsets.all(20),
                             ),
                           ),
                         ),
@@ -427,35 +439,39 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       SizedBox(
                         width: double.infinity,
                         height: 56,
-                        child: ElevatedButton(
-                          onPressed: _loading
-                              ? null
-                              : (_codeSent ? _confirmSignUp : _signUp),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF3B82F6), // blue-500
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
+                        child: Semantics(
+                          label: _codeSent ? 'verify_button' : 'signup_button',
+                          button: true,
+                          child: ElevatedButton(
+                            onPressed: _loading
+                                ? null
+                                : (_codeSent ? _confirmSignUp : _signUp),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF3B82F6), // blue-500
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              elevation: 0,
+                              shadowColor: const Color(0xFF3B82F6).withOpacity(0.5),
                             ),
-                            elevation: 0,
-                            shadowColor: const Color(0xFF3B82F6).withOpacity(0.5),
+                            child: _loading
+                                ? const SizedBox(
+                                    height: 24,
+                                    width: 24,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2.5,
+                                    ),
+                                  )
+                                : Text(
+                                    _codeSent ? 'Verify & Complete' : 'Sign Up',
+                                    style: const TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
                           ),
-                          child: _loading
-                              ? const SizedBox(
-                                  height: 24,
-                                  width: 24,
-                                  child: CircularProgressIndicator(
-                                    color: Colors.white,
-                                    strokeWidth: 2.5,
-                                  ),
-                                )
-                              : Text(
-                                  _codeSent ? 'Verify & Complete' : 'Sign Up',
-                                  style: const TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
                         ),
                       ),
                       const SizedBox(height: 30),

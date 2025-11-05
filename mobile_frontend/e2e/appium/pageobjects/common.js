@@ -132,3 +132,39 @@ module.exports = {
   scrollToText,
   typeIfExists,
 };
+
+// Attempt to click an element or selector with retries and fallbacks.
+async function clickWithRetry(elOrSelector, attempts = 3) {
+  let el = null;
+  try {
+    el = typeof elOrSelector === 'string' ? await $(elOrSelector) : elOrSelector;
+  } catch (e) { /* ignore */ }
+
+  for (let i = 0; i < attempts; i++) {
+    try {
+      if (!el) el = typeof elOrSelector === 'string' ? await $(elOrSelector) : elOrSelector;
+      await el.waitForDisplayed({ timeout: 3000 });
+      await el.click();
+      return true;
+    } catch (e) {
+      // try to hide keyboard (it may block clicks)
+      try { await driver.hideKeyboard(); } catch {}
+      await browser.pause(300);
+      // try tap by center coordinates
+      try {
+        const rect = await el.getRect();
+        const x = Math.floor(rect.x + rect.width / 2);
+        const y = Math.floor(rect.y + rect.height / 2);
+        // legacy touchPerform call - works in many Appium setups
+        await driver.touchPerform([{ action: 'tap', options: { x, y } }]);
+        return true;
+      } catch (err) {
+        // last resort: try executing a generic mobile tap when supported
+        try {
+          await driver.execute('mobile: tap', { x: Math.floor((await driver.getWindowRect()).width / 2), y: Math.floor((await driver.getWindowRect()).height / 2) });
+        } catch {}
+      }
+    }
+  }
+  return false;
+}

@@ -4,6 +4,7 @@ import '../services/api_service.dart';
 import 'signup_screen.dart';
 import 'dashboard_screen.dart';
 import 'forgot_password_screen.dart';
+import 'mfa_verification_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -15,10 +16,13 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _emailFocus = FocusNode();
+  final _passwordFocus = FocusNode();
   final _formKey = GlobalKey<FormState>();
 
   bool _loading = false;
   bool _obscurePassword = true;
+  bool _signing = false; // extra guard to prevent double submit
 
   @override
   void initState() {
@@ -30,6 +34,8 @@ class _LoginScreenState extends State<LoginScreen> {
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _emailFocus.dispose();
+    _passwordFocus.dispose();
     super.dispose();
   }
 
@@ -53,9 +59,15 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _signIn() async {
+    // Dismiss keyboard to avoid IME show/hide jank during navigation
+    FocusScope.of(context).unfocus();
+    if (_signing || _loading) return;
     if (!_formKey.currentState!.validate()) return;
 
-    setState(() => _loading = true);
+    setState(() {
+      _loading = true;
+      _signing = true;
+    });
 
     try {
       // Step 1: Sign in with Cognito
@@ -65,6 +77,39 @@ class _LoginScreenState extends State<LoginScreen> {
         password: _passwordController.text.trim(),
       );
 
+      // Check if MFA is required
+      if (!result.isSignedIn) {
+        final step = result.nextStep.signInStep;
+        if (step == AuthSignInStep.confirmSignInWithSmsMfaCode ||
+            step == AuthSignInStep.confirmSignInWithTotpMfaCode) {
+          if (mounted) {
+            // Navigate to MFA verification screen
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(
+                builder: (_) => MFAVerificationScreen(mfaStep: step),
+              ),
+            );
+          }
+          return;
+        } else {
+          // Other steps not handled, show error
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text('Additional sign-in step required but not supported.'),
+                backgroundColor: Colors.orange,
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            );
+          }
+          return;
+        }
+      }
+
+      // If signed in (no MFA required)
       if (result.isSignedIn && mounted) {
         safePrint('✓ Cognito authentication successful');
 
@@ -78,23 +123,22 @@ class _LoginScreenState extends State<LoginScreen> {
           // Continue anyway - user is authenticated with Cognito
         }
 
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('Successfully signed in!'),
-              backgroundColor: Colors.green,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Successfully signed in!'),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
             ),
-          );
+          ),
+        );
 
-          // Step 3: Navigate to dashboard screen
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => const DashboardScreen()),
-          );
-        }
+        // Step 3: Navigate to dashboard screen
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const DashboardScreen()),
+        );
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -121,7 +165,15 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       }
     } finally {
-      if (mounted) setState(() => _loading = false);
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _signing = false;
+        });
+      } else {
+        _loading = false;
+        _signing = false;
+      }
     }
   }
 
@@ -143,6 +195,7 @@ class _LoginScreenState extends State<LoginScreen> {
         child: SafeArea(
           child: Center(
             child: SingleChildScrollView(
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 32.0),
                 child: Form(
@@ -218,90 +271,109 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ],
                         ),
-                        child: TextFormField(
-                          controller: _emailController,
-                          keyboardType: TextInputType.emailAddress,
-                          style: const TextStyle(fontSize: 16),
-                          decoration: const InputDecoration(
-                            hintText: 'Enter your email',
-                            prefixIcon: Icon(
-                              Icons.email_outlined,
-                              color: Color(0xFF3B82F6),
+                        child: Semantics(
+                          label: 'email_input',
+                          child: TextFormField(
+                            key: const ValueKey('email_field'),
+                            controller: _emailController,
+                            focusNode: _emailFocus,
+                            keyboardType: TextInputType.emailAddress,
+                            textInputAction: TextInputAction.next,
+                            enableSuggestions: false,
+                            autocorrect: false,
+                            style: const TextStyle(fontSize: 16),
+                            decoration: const InputDecoration(
+                              hintText: 'Enter your email',
+                              prefixIcon: Icon(
+                                Icons.email_outlined,
+                                color: Color(0xFF3B82F6),
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.all(Radius.circular(16)),
+                                borderSide: BorderSide.none,
+                              ),
+                              filled: true,
+                              fillColor: Colors.white,
+                              contentPadding: EdgeInsets.all(20),
                             ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.all(Radius.circular(16)),
-                              borderSide: BorderSide.none,
-                            ),
-                            filled: true,
-                            fillColor: Colors.white,
-                            contentPadding: EdgeInsets.all(20),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Please enter your email';
+                              }
+                              if (!value.contains('@')) {
+                                return 'Please enter a valid email';
+                              }
+                              return null;
+                            },
                           ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter your email';
-                            }
-                            if (!value.contains('@')) {
-                              return 'Please enter a valid email';
-                            }
-                            return null;
-                          },
                         ),
                       ),
                       const SizedBox(height: 20),
 
                       // Password Field
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
-                              blurRadius: 20,
-                              offset: const Offset(0, 10),
-                            ),
-                          ],
-                        ),
-                        child: TextFormField(
-                          controller: _passwordController,
-                          obscureText: _obscurePassword,
-                          style: const TextStyle(fontSize: 16),
-                          decoration: InputDecoration(
-                            hintText: 'Enter your password',
-                            prefixIcon: const Icon(
-                              Icons.lock_outline,
-                              color: Color(0xFF3B82F6),
-                            ),
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                _obscurePassword
-                                    ? Icons.visibility_outlined
-                                    : Icons.visibility_off_outlined,
-                                color: Colors.grey,
+                      Semantics(
+                        label: 'password_input',
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.1),
+                                blurRadius: 20,
+                                offset: const Offset(0, 10),
                               ),
-                              onPressed: () {
-                                setState(() {
-                                  _obscurePassword = !_obscurePassword;
-                                });
-                              },
-                            ),
-                            border: const OutlineInputBorder(
-                              borderRadius: BorderRadius.all(Radius.circular(16)),
-                              borderSide: BorderSide.none,
-                            ),
-                            filled: true,
-                            fillColor: Colors.white,
-                            contentPadding: const EdgeInsets.all(20),
+                            ],
                           ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter your password';
-                            }
-                            if (value.length < 6) {
-                              return 'Password must be at least 6 characters';
-                            }
-                            return null;
-                          },
+                          child: TextFormField(
+                            key: const ValueKey('password_field'),
+                            controller: _passwordController,
+                            focusNode: _passwordFocus,
+                            obscureText: _obscurePassword,
+                            textInputAction: TextInputAction.done,
+                            onFieldSubmitted: (_) {
+                              if (!_loading && !_signing) {
+                                _signIn();
+                              }
+                            },
+                            style: const TextStyle(fontSize: 16),
+                            decoration: InputDecoration(
+                              hintText: 'Enter your password',
+                              prefixIcon: const Icon(
+                                Icons.lock_outline,
+                                color: Color(0xFF3B82F6),
+                              ),
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _obscurePassword
+                                      ? Icons.visibility_outlined
+                                      : Icons.visibility_off_outlined,
+                                  color: Colors.grey,
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    _obscurePassword = !_obscurePassword;
+                                  });
+                                },
+                              ),
+                              border: const OutlineInputBorder(
+                                borderRadius: BorderRadius.all(Radius.circular(16)),
+                                borderSide: BorderSide.none,
+                              ),
+                              filled: true,
+                              fillColor: Colors.white,
+                              contentPadding: const EdgeInsets.all(20),
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Please enter your password';
+                              }
+                              if (value.length < 6) {
+                                return 'Password must be at least 6 characters';
+                              }
+                              return null;
+                            },
+                          ),
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -332,36 +404,39 @@ class _LoginScreenState extends State<LoginScreen> {
                       const SizedBox(height: 30),
 
                       // Login Button
-                      SizedBox(
-                        width: double.infinity,
-                        height: 56,
-                        child: ElevatedButton(
-                          onPressed: _loading ? null : _signIn,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF3B82F6), // blue-500
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
+                      Semantics(
+                        label: 'login_button',
+                        child: SizedBox(
+                          width: double.infinity,
+                          height: 56,
+                          child: ElevatedButton(
+                            onPressed: _loading ? null : _signIn,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF3B82F6), // blue-500
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              elevation: 0,
+                              shadowColor: const Color(0xFF3B82F6).withOpacity(0.5),
                             ),
-                            elevation: 0,
-                            shadowColor: const Color(0xFF3B82F6).withOpacity(0.5),
+                            child: _loading
+                                ? const SizedBox(
+                                    height: 24,
+                                    width: 24,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2.5,
+                                    ),
+                                  )
+                                : const Text(
+                                    'Sign In',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
                           ),
-                          child: _loading
-                              ? const SizedBox(
-                                  height: 24,
-                                  width: 24,
-                                  child: CircularProgressIndicator(
-                                    color: Colors.white,
-                                    strokeWidth: 2.5,
-                                  ),
-                                )
-                              : const Text(
-                                  'Sign In',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
                         ),
                       ),
                       const SizedBox(height: 30),

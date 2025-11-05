@@ -3,63 +3,63 @@
   "packages": [
     {
       "name": "amplify_analytics_pinpoint",
-      "rootUri": "file:///C:/Users/AnujiWeragoda/AppData/Local/Pub/Cache/hosted/pub.dev/amplify_analytics_pinpoint-1.7.1",
+      "rootUri": "file:///C:/Users/AnujiWeragoda/AppData/Local/Pub/Cache/hosted/pub.dev/amplify_analytics_pinpoint-2.7.0",
       "packageUri": "lib/",
-      "languageVersion": "3.0"
+      "languageVersion": "3.9"
     },
     {
       "name": "amplify_analytics_pinpoint_dart",
-      "rootUri": "file:///C:/Users/AnujiWeragoda/AppData/Local/Pub/Cache/hosted/pub.dev/amplify_analytics_pinpoint_dart-0.3.7",
+      "rootUri": "file:///C:/Users/AnujiWeragoda/AppData/Local/Pub/Cache/hosted/pub.dev/amplify_analytics_pinpoint_dart-0.4.12",
       "packageUri": "lib/",
-      "languageVersion": "3.0"
+      "languageVersion": "3.9"
     },
     {
       "name": "amplify_auth_cognito",
-      "rootUri": "file:///C:/Users/AnujiWeragoda/AppData/Local/Pub/Cache/hosted/pub.dev/amplify_auth_cognito-1.7.2",
+      "rootUri": "file:///C:/Users/AnujiWeragoda/AppData/Local/Pub/Cache/hosted/pub.dev/amplify_auth_cognito-2.7.0",
       "packageUri": "lib/",
-      "languageVersion": "3.0"
+      "languageVersion": "3.9"
     },
     {
       "name": "amplify_auth_cognito_dart",
-      "rootUri": "file:///C:/Users/AnujiWeragoda/AppData/Local/Pub/Cache/hosted/pub.dev/amplify_auth_cognito_dart-0.10.12",
+      "rootUri": "file:///C:/Users/AnujiWeragoda/AppData/Local/Pub/Cache/hosted/pub.dev/amplify_auth_cognito_dart-0.11.14",
       "packageUri": "lib/",
-      "languageVersion": "3.0"
+      "languageVersion": "3.9"
     },
     {
       "name": "amplify_core",
-      "rootUri": "file:///C:/Users/AnujiWeragoda/AppData/Local/Pub/Cache/hosted/pub.dev/amplify_core-1.7.0",
+      "rootUri": "file:///C:/Users/AnujiWeragoda/AppData/Local/Pub/Cache/hosted/pub.dev/amplify_core-2.7.0",
       "packageUri": "lib/",
-      "languageVersion": "3.0"
+      "languageVersion": "3.9"
     },
     {
       "name": "amplify_db_common",
-      "rootUri": "file:///C:/Users/AnujiWeragoda/AppData/Local/Pub/Cache/hosted/pub.dev/amplify_db_common-0.3.5",
+      "rootUri": "file:///C:/Users/AnujiWeragoda/AppData/Local/Pub/Cache/hosted/pub.dev/amplify_db_common-0.4.14",
       "packageUri": "lib/",
-      "languageVersion": "3.0"
+      "languageVersion": "3.9"
     },
     {
       "name": "amplify_db_common_dart",
-      "rootUri": "file:///C:/Users/AnujiWeragoda/AppData/Local/Pub/Cache/hosted/pub.dev/amplify_db_common_dart-0.3.6",
+      "rootUri": "file:///C:/Users/AnujiWeragoda/AppData/Local/Pub/Cache/hosted/pub.dev/amplify_db_common_dart-0.4.13",
       "packageUri": "lib/",
-      "languageVersion": "3.0"
+      "languageVersion": "3.9"
     },
     {
       "name": "amplify_flutter",
-      "rootUri": "file:///C:/Users/AnujiWeragoda/AppData/Local/Pub/Cache/hosted/pub.dev/amplify_flutter-1.7.0",
+      "rootUri": "file:///C:/Users/AnujiWeragoda/AppData/Local/Pub/Cache/hosted/pub.dev/amplify_flutter-2.7.0",
       "packageUri": "lib/",
-      "languageVersion": "3.0"
+      "languageVersion": "3.9"
     },
     {
       "name": "amplify_secure_storage",
-      "rootUri": "file:///C:/Users/AnujiWeragoda/AppData/Local/Pub/Cache/hosted/pub.dev/amplify_secure_storage-0.4.4",
+      "rootUri": "file:///C:/Users/AnujiWeragoda/AppData/Local/Pub/Cache/hosted/pub.dev/amplify_secure_storage-0.5.13",
       "packageUri": "lib/",
-      "languageVersion": "3.3"
+      "languageVersion": "3.9"
     },
     {
       "name": "amplify_secure_storage_dart",
-      "rootUri": "file:///C:/Users/AnujiWeragoda/AppData/Local/Pub/Cache/hosted/pub.dev/amplify_secure_storage_dart-0.4.4",
+      "rootUri": "file:///C:/Users/AnujiWeragoda/AppData/Local/Pub/Cache/hosted/pub.dev/amplify_secure_storage_dart-0.5.8",
       "packageUri": "lib/",
-      "languageVersion": "3.3"
+      "languageVersion": "3.9"
     },
     {
       "name": "async",
@@ -69,15 +69,15 @@
     },
     {
       "name": "aws_common",
-      "rootUri": "file:///C:/Users/AnujiWeragoda/AppData/Local/Pub/Cache/hosted/pub.dev/aws_common-0.6.5",
+      "rootUri": "file:///C:/Users/AnujiWeragoda/AppData/Local/Pub/Cache/hosted/pub.dev/aws_common-0.7.11",
       "packageUri": "lib/",
-      "languageVersion": "3.3"
+      "languageVersion": "3.9"
     },
     {
       "name": "aws_signature_v4",
-      "rootUri": "file:///C:/Users/AnujiWeragoda/AppData/Local/Pub/Cache/hosted/pub.dev/aws_signature_v4-0.5.2",
+      "rootUri": "file:///C:/Users/AnujiWeragoda/AppData/Local/Pub/Cache/hosted/pub.dev/aws_signature_v4-0.6.9",
       "packageUri": "lib/",
-      "languageVersion": "3.3"
+      "languageVersion": "3.9"
     },
     {
       "name": "boolean_selector",
@@ -93,7 +93,7 @@
     },
     {
       "name": "built_value",
-      "rootUri": "file:///C:/Users/AnujiWeragoda/AppData/Local/Pub/Cache/hosted/pub.dev/built_value-8.8.1",
+      "rootUri": "file:///C:/Users/AnujiWeragoda/AppData/Local/Pub/Cache/hosted/pub.dev/built_value-8.12.0",
       "packageUri": "lib/",
       "languageVersion": "3.0"
     },
@@ -141,9 +141,9 @@
     },
     {
       "name": "device_info_plus",
-      "rootUri": "file:///C:/Users/AnujiWeragoda/AppData/Local/Pub/Cache/hosted/pub.dev/device_info_plus-9.1.2",
+      "rootUri": "file:///C:/Users/AnujiWeragoda/AppData/Local/Pub/Cache/hosted/pub.dev/device_info_plus-12.2.0",
       "packageUri": "lib/",
-      "languageVersion": "2.18"
+      "languageVersion": "3.7"
     },
     {
       "name": "device_info_plus_platform_interface",
@@ -153,9 +153,9 @@
     },
     {
       "name": "drift",
-      "rootUri": "file:///C:/Users/AnujiWeragoda/AppData/Local/Pub/Cache/hosted/pub.dev/drift-2.14.1",
+      "rootUri": "file:///C:/Users/AnujiWeragoda/AppData/Local/Pub/Cache/hosted/pub.dev/drift-2.29.0",
       "packageUri": "lib/",
-      "languageVersion": "3.0"
+      "languageVersion": "3.5"
     },
     {
       "name": "fake_async",
@@ -189,9 +189,9 @@
     },
     {
       "name": "flutter_lints",
-      "rootUri": "file:///C:/Users/AnujiWeragoda/AppData/Local/Pub/Cache/hosted/pub.dev/flutter_lints-5.0.0",
+      "rootUri": "file:///C:/Users/AnujiWeragoda/AppData/Local/Pub/Cache/hosted/pub.dev/flutter_lints-6.0.0",
       "packageUri": "lib/",
-      "languageVersion": "3.5"
+      "languageVersion": "3.8"
     },
     {
       "name": "flutter_secure_storage",
@@ -279,9 +279,9 @@
     },
     {
       "name": "json_annotation",
-      "rootUri": "file:///C:/Users/AnujiWeragoda/AppData/Local/Pub/Cache/hosted/pub.dev/json_annotation-4.8.1",
+      "rootUri": "file:///C:/Users/AnujiWeragoda/AppData/Local/Pub/Cache/hosted/pub.dev/json_annotation-4.9.0",
       "packageUri": "lib/",
-      "languageVersion": "2.19"
+      "languageVersion": "3.0"
     },
     {
       "name": "leak_tracker",
@@ -303,9 +303,9 @@
     },
     {
       "name": "lints",
-      "rootUri": "file:///C:/Users/AnujiWeragoda/AppData/Local/Pub/Cache/hosted/pub.dev/lints-5.1.1",
+      "rootUri": "file:///C:/Users/AnujiWeragoda/AppData/Local/Pub/Cache/hosted/pub.dev/lints-6.0.0",
       "packageUri": "lib/",
-      "languageVersion": "3.6"
+      "languageVersion": "3.8"
     },
     {
       "name": "logging",
@@ -333,7 +333,7 @@
     },
     {
       "name": "mime",
-      "rootUri": "file:///C:/Users/AnujiWeragoda/AppData/Local/Pub/Cache/hosted/pub.dev/mime-1.0.6",
+      "rootUri": "file:///C:/Users/AnujiWeragoda/AppData/Local/Pub/Cache/hosted/pub.dev/mime-2.0.0",
       "packageUri": "lib/",
       "languageVersion": "3.2"
     },
@@ -351,15 +351,15 @@
     },
     {
       "name": "package_info_plus",
-      "rootUri": "file:///C:/Users/AnujiWeragoda/AppData/Local/Pub/Cache/hosted/pub.dev/package_info_plus-4.2.0",
+      "rootUri": "file:///C:/Users/AnujiWeragoda/AppData/Local/Pub/Cache/hosted/pub.dev/package_info_plus-9.0.0",
       "packageUri": "lib/",
-      "languageVersion": "2.18"
+      "languageVersion": "3.3"
     },
     {
       "name": "package_info_plus_platform_interface",
-      "rootUri": "file:///C:/Users/AnujiWeragoda/AppData/Local/Pub/Cache/hosted/pub.dev/package_info_plus_platform_interface-2.0.1",
+      "rootUri": "file:///C:/Users/AnujiWeragoda/AppData/Local/Pub/Cache/hosted/pub.dev/package_info_plus_platform_interface-3.2.1",
       "packageUri": "lib/",
-      "languageVersion": "2.12"
+      "languageVersion": "2.18"
     },
     {
       "name": "path",
@@ -441,15 +441,15 @@
     },
     {
       "name": "smithy",
-      "rootUri": "file:///C:/Users/AnujiWeragoda/AppData/Local/Pub/Cache/hosted/pub.dev/smithy-0.6.4",
+      "rootUri": "file:///C:/Users/AnujiWeragoda/AppData/Local/Pub/Cache/hosted/pub.dev/smithy-0.7.9",
       "packageUri": "lib/",
-      "languageVersion": "3.3"
+      "languageVersion": "3.9"
     },
     {
       "name": "smithy_aws",
-      "rootUri": "file:///C:/Users/AnujiWeragoda/AppData/Local/Pub/Cache/hosted/pub.dev/smithy_aws-0.6.3",
+      "rootUri": "file:///C:/Users/AnujiWeragoda/AppData/Local/Pub/Cache/hosted/pub.dev/smithy_aws-0.7.9",
       "packageUri": "lib/",
-      "languageVersion": "3.3"
+      "languageVersion": "3.9"
     },
     {
       "name": "source_span",
@@ -549,15 +549,15 @@
     },
     {
       "name": "win32_registry",
-      "rootUri": "file:///C:/Users/AnujiWeragoda/AppData/Local/Pub/Cache/hosted/pub.dev/win32_registry-1.1.5",
+      "rootUri": "file:///C:/Users/AnujiWeragoda/AppData/Local/Pub/Cache/hosted/pub.dev/win32_registry-2.1.0",
       "packageUri": "lib/",
-      "languageVersion": "3.4"
+      "languageVersion": "3.7"
     },
     {
       "name": "worker_bee",
-      "rootUri": "file:///C:/Users/AnujiWeragoda/AppData/Local/Pub/Cache/hosted/pub.dev/worker_bee-0.2.4",
+      "rootUri": "file:///C:/Users/AnujiWeragoda/AppData/Local/Pub/Cache/hosted/pub.dev/worker_bee-0.3.8",
       "packageUri": "lib/",
-      "languageVersion": "3.3"
+      "languageVersion": "3.9"
     },
     {
       "name": "xdg_directories",
