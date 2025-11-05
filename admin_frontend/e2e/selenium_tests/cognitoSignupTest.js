@@ -586,7 +586,38 @@ async function main() {
 
       console.log('[cognitoSignupTest] 📬 Waiting for verification email from Cognito...');
       console.log('[cognitoSignupTest] This may take up to 60 seconds...');
-      const email = await mailslurp.waitForLatestEmail(inbox.id, 60000, true);
+
+      // Wrap MailSlurp waitForLatestEmail with retry/backoff to handle 429 Too Many Requests
+      async function waitForEmailWithRetry(inboxId, timeoutMs = 60000) {
+        const maxAttempts = 6;
+        let attempt = 0;
+        let lastErr = null;
+        while (attempt < maxAttempts) {
+          try {
+            attempt++;
+            if (attempt > 1) console.log(`[cognitoSignupTest] ℹ️ waitForEmailWithRetry: retry attempt ${attempt}`);
+            const email = await mailslurp.waitForLatestEmail(inboxId, timeoutMs, true);
+            return email;
+          } catch (err) {
+            lastErr = err;
+            const msg = (err && err.message) || String(err);
+            // Detect rate-limit / Too Many Requests
+            if (msg && msg.toLowerCase().includes('too many') || (err && err.statusCode === 429)) {
+              const backoff = 1000 * Math.min(30, Math.pow(2, attempt));
+              console.log(`[cognitoSignupTest] ⚠️ MailSlurp rate limit detected (attempt ${attempt}). Backing off ${backoff}ms and retrying...`);
+              await driver.sleep(backoff);
+              continue;
+            }
+            // For other errors, rethrow after a short backoff up to attempts
+            console.log(`[cognitoSignupTest] ⚠️ waitForEmailWithRetry caught error (attempt ${attempt}):`, msg);
+            const shortBackoff = 800 * attempt;
+            await driver.sleep(shortBackoff);
+          }
+        }
+        throw lastErr || new Error('waitForEmailWithRetry: timed out or failed');
+      }
+
+      const email = await waitForEmailWithRetry(inbox.id, 60000);
       console.log('[cognitoSignupTest] ✅ Received verification email!');
       console.log(`[cognitoSignupTest] Email subject: ${email.subject}`);
       console.log(`[cognitoSignupTest] Email from: ${email.from}`);
