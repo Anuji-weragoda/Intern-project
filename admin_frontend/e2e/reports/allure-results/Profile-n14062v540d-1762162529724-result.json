@@ -1,0 +1,25 @@
+{
+  "uuid": "Profile-n14062v540d-1762162529724",
+  "name": "Profile",
+  "status": "passed",
+  "stage": "finished",
+  "start": 1762162510427,
+  "stop": 1762162517194,
+  "steps": [],
+  "attachments": [],
+  "parameters": [],
+  "labels": [
+    {
+      "name": "suite",
+      "value": "admin-frontend-e2e"
+    },
+    {
+      "name": "framework",
+      "value": "selenium-webdriver"
+    },
+    {
+      "name": "language",
+      "value": "javascript"
+    }
+  ]
+}

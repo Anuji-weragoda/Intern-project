@@ -371,6 +371,263 @@
       ]
     },
     {
+<<<<<<< Updated upstream
+=======
+      "name": "file",
+      "version": "7.0.1",
+      "dependencies": [
+        "meta",
+        "path"
+      ]
+    },
+    {
+      "name": "amplify_secure_storage_dart",
+      "version": "0.5.8",
+      "dependencies": [
+        "async",
+        "aws_common",
+        "built_collection",
+        "built_value",
+        "ffi",
+        "file",
+        "meta",
+        "path",
+        "web",
+        "win32",
+        "worker_bee"
+      ]
+    },
+    {
+      "name": "uuid",
+      "version": "4.5.1",
+      "dependencies": [
+        "crypto",
+        "fixnum",
+        "meta",
+        "sprintf"
+      ]
+    },
+    {
+      "name": "retry",
+      "version": "3.1.2",
+      "dependencies": []
+    },
+    {
+      "name": "logging",
+      "version": "1.3.0",
+      "dependencies": []
+    },
+    {
+      "name": "json_annotation",
+      "version": "4.9.0",
+      "dependencies": [
+        "meta"
+      ]
+    },
+    {
+      "name": "intl",
+      "version": "0.20.2",
+      "dependencies": [
+        "clock",
+        "meta",
+        "path"
+      ]
+    },
+    {
+      "name": "graphs",
+      "version": "2.3.2",
+      "dependencies": [
+        "collection"
+      ]
+    },
+    {
+      "name": "aws_signature_v4",
+      "version": "0.6.9",
+      "dependencies": [
+        "async",
+        "aws_common",
+        "collection",
+        "convert",
+        "crypto",
+        "json_annotation",
+        "meta",
+        "path"
+      ]
+    },
+    {
+      "name": "worker_bee",
+      "version": "0.3.8",
+      "dependencies": [
+        "async",
+        "aws_common",
+        "built_collection",
+        "built_value",
+        "collection",
+        "meta",
+        "path",
+        "stack_trace",
+        "stream_channel",
+        "stream_transform",
+        "web"
+      ]
+    },
+    {
+      "name": "win32_registry",
+      "version": "2.1.0",
+      "dependencies": [
+        "ffi",
+        "meta",
+        "win32"
+      ]
+    },
+    {
+      "name": "stream_transform",
+      "version": "2.1.1",
+      "dependencies": []
+    },
+    {
+      "name": "smithy_aws",
+      "version": "0.7.9",
+      "dependencies": [
+        "aws_common",
+        "aws_signature_v4",
+        "built_collection",
+        "built_value",
+        "collection",
+        "convert",
+        "crclib",
+        "crypto",
+        "intl",
+        "json_annotation",
+        "meta",
+        "path",
+        "smithy",
+        "xml"
+      ]
+    },
+    {
+      "name": "smithy",
+      "version": "0.7.9",
+      "dependencies": [
+        "async",
+        "aws_common",
+        "built_collection",
+        "built_value",
+        "collection",
+        "convert",
+        "crypto",
+        "fixnum",
+        "http_parser",
+        "intl",
+        "json_annotation",
+        "meta",
+        "path",
+        "retry",
+        "shelf",
+        "typed_data",
+        "xml"
+      ]
+    },
+    {
+      "name": "oauth2",
+      "version": "2.0.5",
+      "dependencies": [
+        "collection",
+        "crypto",
+        "http",
+        "http_parser"
+      ]
+    },
+    {
+      "name": "fixnum",
+      "version": "1.1.1",
+      "dependencies": []
+    },
+    {
+      "name": "crypto",
+      "version": "3.0.6",
+      "dependencies": [
+        "typed_data"
+      ]
+    },
+    {
+      "name": "convert",
+      "version": "3.1.2",
+      "dependencies": [
+        "typed_data"
+      ]
+    },
+    {
+      "name": "built_collection",
+      "version": "5.1.1",
+      "dependencies": []
+    },
+    {
+      "name": "amplify_db_common_dart",
+      "version": "0.4.13",
+      "dependencies": [
+        "amplify_core",
+        "async",
+        "aws_common",
+        "drift",
+        "meta",
+        "path",
+        "sqlite3",
+        "web"
+      ]
+    },
+    {
+      "name": "package_info_plus",
+      "version": "9.0.0",
+      "dependencies": [
+        "clock",
+        "ffi",
+        "flutter",
+        "flutter_web_plugins",
+        "http",
+        "meta",
+        "package_info_plus_platform_interface",
+        "path",
+        "web",
+        "win32"
+      ]
+    },
+    {
+      "name": "amplify_db_common",
+      "version": "0.4.14",
+      "dependencies": [
+        "amplify_db_common_dart",
+        "drift",
+        "flutter",
+        "path",
+        "path_provider"
+      ]
+    },
+    {
+      "name": "os_detect",
+      "version": "2.0.3",
+      "dependencies": [
+        "meta",
+        "web"
+      ]
+    },
+    {
+      "name": "mime",
+      "version": "2.0.0",
+      "dependencies": []
+    },
+    {
+      "name": "http2",
+      "version": "2.3.1",
+      "dependencies": []
+    },
+    {
+      "name": "vm_service",
+      "version": "15.0.2",
+      "dependencies": []
+    },
+    {
+>>>>>>> Stashed changes
       "name": "path_provider_platform_interface",
       "version": "2.1.2",
       "dependencies": [
@@ -714,6 +971,7 @@
       ]
     },
     {
+<<<<<<< Updated upstream
       "name": "drift",
       "version": "2.14.1",
       "dependencies": [
@@ -737,11 +995,22 @@
         "convert",
         "crypto",
         "json_annotation",
+=======
+      "name": "platform",
+      "version": "3.1.6",
+      "dependencies": []
+    },
+    {
+      "name": "xdg_directories",
+      "version": "1.1.0",
+      "dependencies": [
+>>>>>>> Stashed changes
         "meta",
         "path"
       ]
     },
     {
+<<<<<<< Updated upstream
       "name": "aws_common",
       "version": "0.6.5",
       "dependencies": [
@@ -910,12 +1179,28 @@
         "built_collection",
         "collection",
         "fixnum",
+=======
+      "name": "petitparser",
+      "version": "6.1.0",
+      "dependencies": [
+        "collection",
+>>>>>>> Stashed changes
         "meta"
       ]
     },
     {
+<<<<<<< Updated upstream
       "name": "device_info_plus",
       "version": "9.1.2",
+=======
+      "name": "tuple",
+      "version": "2.0.2",
+      "dependencies": []
+    },
+    {
+      "name": "device_info_plus",
+      "version": "12.2.0",
+>>>>>>> Stashed changes
       "dependencies": [
         "device_info_plus_platform_interface",
         "ffi",
@@ -923,6 +1208,10 @@
         "flutter",
         "flutter_web_plugins",
         "meta",
+<<<<<<< Updated upstream
+=======
+        "web",
+>>>>>>> Stashed changes
         "win32",
         "win32_registry"
       ]
@@ -935,6 +1224,34 @@
         "meta",
         "plugin_platform_interface"
       ]
+<<<<<<< Updated upstream
+=======
+    },
+    {
+      "name": "built_value",
+      "version": "8.12.0",
+      "dependencies": [
+        "built_collection",
+        "collection",
+        "fixnum",
+        "meta"
+      ]
+    },
+    {
+      "name": "drift",
+      "version": "2.29.0",
+      "dependencies": [
+        "async",
+        "collection",
+        "convert",
+        "meta",
+        "path",
+        "sqlite3",
+        "stack_trace",
+        "stream_channel",
+        "web"
+      ]
+>>>>>>> Stashed changes
     }
   ],
   "configVersion": 1

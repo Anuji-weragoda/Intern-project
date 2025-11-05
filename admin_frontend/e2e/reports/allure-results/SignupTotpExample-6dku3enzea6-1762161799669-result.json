@@ -1,0 +1,25 @@
+{
+  "uuid": "SignupTotpExample-6dku3enzea6-1762161799669",
+  "name": "SignupTotpExample",
+  "status": "skipped",
+  "stage": "finished",
+  "start": 1762161799669,
+  "stop": 1762161799669,
+  "steps": [],
+  "attachments": [],
+  "parameters": [],
+  "labels": [
+    {
+      "name": "suite",
+      "value": "admin-frontend-e2e"
+    },
+    {
+      "name": "framework",
+      "value": "selenium-webdriver"
+    },
+    {
+      "name": "language",
+      "value": "javascript"
+    }
+  ]
+}

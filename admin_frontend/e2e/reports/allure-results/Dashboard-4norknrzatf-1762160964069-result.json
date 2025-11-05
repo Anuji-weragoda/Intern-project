@@ -1,0 +1,25 @@
+{
+  "uuid": "Dashboard-4norknrzatf-1762160964069",
+  "name": "Dashboard",
+  "status": "passed",
+  "stage": "finished",
+  "start": 1762160947103,
+  "stop": 1762160952575,
+  "steps": [],
+  "attachments": [],
+  "parameters": [],
+  "labels": [
+    {
+      "name": "suite",
+      "value": "admin-frontend-e2e"
+    },
+    {
+      "name": "framework",
+      "value": "selenium-webdriver"
+    },
+    {
+      "name": "language",
+      "value": "javascript"
+    }
+  ]
+}

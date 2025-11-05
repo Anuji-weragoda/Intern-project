@@ -1,0 +1,25 @@
+{
+  "uuid": "Profile-p57n85oyfd7-1762162202250",
+  "name": "Profile",
+  "status": "passed",
+  "stage": "finished",
+  "start": 1762162192519,
+  "stop": 1762162196149,
+  "steps": [],
+  "attachments": [],
+  "parameters": [],
+  "labels": [
+    {
+      "name": "suite",
+      "value": "admin-frontend-e2e"
+    },
+    {
+      "name": "framework",
+      "value": "selenium-webdriver"
+    },
+    {
+      "name": "language",
+      "value": "javascript"
+    }
+  ]
+}

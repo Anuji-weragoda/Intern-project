@@ -1,36 +1,42 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="admin-frontend-e2e" tests="9" failures="2" time="163.89">
-    <testcase name="Home" time="1.36"></testcase>
-    <testcase name="Unauthorized" time="11.67"></testcase>
-    <testcase name="PrivateRoutes" time="20.34"></testcase>
-    <testcase name="Dashboard" time="48.78"></testcase>
-    <testcase name="Profile" time="31.15"></testcase>
-    <testcase name="AuditLog" time="10.79"></testcase>
-    <testcase name="UserManagement" time="10.39"></testcase>
-    <testcase name="SignupExample" time="13.14">
-      <failure message="unknown error: net::ERR_NAME_NOT_RESOLVED
-  (Session info: MicrosoftEdge=141.0.3537.99)">WebDriverError: unknown error: net::ERR_NAME_NOT_RESOLVED
-  (Session info: MicrosoftEdge=141.0.3537.99)
-    at Object.throwDecodedError (C:\Users\AnujiWeragoda\GIT\staff-management-system\Intern-project\admin_frontend\node_modules\selenium-webdriver\lib\error.js:523:15)
-    at parseHttpResponse (C:\Users\AnujiWeragoda\GIT\staff-management-system\Intern-project\admin_frontend\node_modules\selenium-webdriver\lib\http.js:524:13)
-    at Executor.execute (C:\Users\AnujiWeragoda\GIT\staff-management-system\Intern-project\admin_frontend\node_modules\selenium-webdriver\lib\http.js:456:28)
+<testsuite name="admin-frontend-e2e" tests="9" failures="1" time="27.95">
+    <testcase name="Home" time="1.25"></testcase>
+    <testcase name="Unauthorized" time="1.19"></testcase>
+    <testcase name="PrivateRoutes" time="4.75"></testcase>
+    <testcase name="Dashboard" time="12.83">
+      <failure message="Dashboard content not detected at http://localhost:5180/dashboard. Sample: S
+Staff MS
+Management System
+Dashboard
+Users
+Audit Log
+E2E User
+e2e@example.com
+Error Loading Dashboard
+
+Failed to fetch
+
+Try Again">Error: Dashboard content not detected at http://localhost:5180/dashboard. Sample: S
+Staff MS
+Management System
+Dashboard
+Users
+Audit Log
+E2E User
+e2e@example.com
+Error Loading Dashboard
+
+Failed to fetch
+
+Try Again
+    at runDashboard (file:///C:/Users/AnujiWeragoda/git/staff-management-system/Intern-project/admin_frontend/e2e/tests/dashboard.e2e.mjs:58:13)
     at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
-    at async Driver.execute (C:\Users\AnujiWeragoda\GIT\staff-management-system\Intern-project\admin_frontend\node_modules\selenium-webdriver\lib\webdriver.js:745:17)
-    at async runSignupExample (file:///C:/Users/AnujiWeragoda/GIT/staff-management-system/Intern-project/admin_frontend/e2e/tests/signup.example.e2e.mjs:53:5)
-    at async runAndRecord (file:///C:/Users/AnujiWeragoda/GIT/staff-management-system/Intern-project/admin_frontend/e2e/run-e2e.mjs:75:7)
-    at async run (file:///C:/Users/AnujiWeragoda/GIT/staff-management-system/Intern-project/admin_frontend/e2e/run-e2e.mjs:99:5)</failure>
+    at async runAndRecord (file:///C:/Users/AnujiWeragoda/git/staff-management-system/Intern-project/admin_frontend/e2e/run-e2e.mjs:75:7)
+    at async run (file:///C:/Users/AnujiWeragoda/git/staff-management-system/Intern-project/admin_frontend/e2e/run-e2e.mjs:92:3)</failure>
     </testcase>
-    <testcase name="SignupTotpExample" time="16.27">
-      <failure message="unknown error: net::ERR_NAME_NOT_RESOLVED
-  (Session info: MicrosoftEdge=141.0.3537.99)">WebDriverError: unknown error: net::ERR_NAME_NOT_RESOLVED
-  (Session info: MicrosoftEdge=141.0.3537.99)
-    at Object.throwDecodedError (C:\Users\AnujiWeragoda\GIT\staff-management-system\Intern-project\admin_frontend\node_modules\selenium-webdriver\lib\error.js:523:15)
-    at parseHttpResponse (C:\Users\AnujiWeragoda\GIT\staff-management-system\Intern-project\admin_frontend\node_modules\selenium-webdriver\lib\http.js:524:13)
-    at Executor.execute (C:\Users\AnujiWeragoda\GIT\staff-management-system\Intern-project\admin_frontend\node_modules\selenium-webdriver\lib\http.js:456:28)
-    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
-    at async Driver.execute (C:\Users\AnujiWeragoda\GIT\staff-management-system\Intern-project\admin_frontend\node_modules\selenium-webdriver\lib\webdriver.js:745:17)
-    at async runSignupTotpExample (file:///C:/Users/AnujiWeragoda/GIT/staff-management-system/Intern-project/admin_frontend/e2e/tests/signup.totp.example.e2e.mjs:51:5)
-    at async runAndRecord (file:///C:/Users/AnujiWeragoda/GIT/staff-management-system/Intern-project/admin_frontend/e2e/run-e2e.mjs:75:7)
-    at async run (file:///C:/Users/AnujiWeragoda/GIT/staff-management-system/Intern-project/admin_frontend/e2e/run-e2e.mjs:105:5)</failure>
-    </testcase>
+    <testcase name="Profile" time="2.67"></testcase>
+    <testcase name="AuditLog" time="2.74"></testcase>
+    <testcase name="UserManagement" time="2.53"></testcase>
+    <testcase name="SignupExample" time="0.00"></testcase>
+    <testcase name="SignupTotpExample" time="0.00"></testcase>
 </testsuite>

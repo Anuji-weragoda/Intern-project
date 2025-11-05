@@ -1,0 +1,25 @@
+{
+  "uuid": "PrivateRoutes-vanccrxbdt-1762162202248",
+  "name": "PrivateRoutes",
+  "status": "passed",
+  "stage": "finished",
+  "start": 1762162183878,
+  "stop": 1762162187569,
+  "steps": [],
+  "attachments": [],
+  "parameters": [],
+  "labels": [
+    {
+      "name": "suite",
+      "value": "admin-frontend-e2e"
+    },
+    {
+      "name": "framework",
+      "value": "selenium-webdriver"
+    },
+    {
+      "name": "language",
+      "value": "javascript"
+    }
+  ]
+}

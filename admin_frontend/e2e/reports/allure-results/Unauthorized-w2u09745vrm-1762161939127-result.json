@@ -1,0 +1,25 @@
+{
+  "uuid": "Unauthorized-w2u09745vrm-1762161939127",
+  "name": "Unauthorized",
+  "status": "passed",
+  "stage": "finished",
+  "start": 1762161909985,
+  "stop": 1762161921146,
+  "steps": [],
+  "attachments": [],
+  "parameters": [],
+  "labels": [
+    {
+      "name": "suite",
+      "value": "admin-frontend-e2e"
+    },
+    {
+      "name": "framework",
+      "value": "selenium-webdriver"
+    },
+    {
+      "name": "language",
+      "value": "javascript"
+    }
+  ]
+}

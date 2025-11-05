@@ -1,0 +1,25 @@
+{
+  "uuid": "UserManagement-z7958zhzlmb-1762161121492",
+  "name": "UserManagement",
+  "status": "passed",
+  "stage": "finished",
+  "start": 1762161116907,
+  "stop": 1762161121425,
+  "steps": [],
+  "attachments": [],
+  "parameters": [],
+  "labels": [
+    {
+      "name": "suite",
+      "value": "admin-frontend-e2e"
+    },
+    {
+      "name": "framework",
+      "value": "selenium-webdriver"
+    },
+    {
+      "name": "language",
+      "value": "javascript"
+    }
+  ]
+}

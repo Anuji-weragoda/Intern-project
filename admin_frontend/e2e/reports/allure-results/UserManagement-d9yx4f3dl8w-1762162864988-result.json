@@ -1,0 +1,25 @@
+{
+  "uuid": "UserManagement-d9yx4f3dl8w-1762162864988",
+  "name": "UserManagement",
+  "status": "passed",
+  "stage": "finished",
+  "start": 1762162849929,
+  "stop": 1762162857983,
+  "steps": [],
+  "attachments": [],
+  "parameters": [],
+  "labels": [
+    {
+      "name": "suite",
+      "value": "admin-frontend-e2e"
+    },
+    {
+      "name": "framework",
+      "value": "selenium-webdriver"
+    },
+    {
+      "name": "language",
+      "value": "javascript"
+    }
+  ]
+}

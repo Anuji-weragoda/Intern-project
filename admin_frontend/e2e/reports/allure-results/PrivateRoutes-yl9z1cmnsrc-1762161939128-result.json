@@ -1,0 +1,25 @@
+{
+  "uuid": "PrivateRoutes-yl9z1cmnsrc-1762161939128",
+  "name": "PrivateRoutes",
+  "status": "passed",
+  "stage": "finished",
+  "start": 1762161921146,
+  "stop": 1762161924663,
+  "steps": [],
+  "attachments": [],
+  "parameters": [],
+  "labels": [
+    {
+      "name": "suite",
+      "value": "admin-frontend-e2e"
+    },
+    {
+      "name": "framework",
+      "value": "selenium-webdriver"
+    },
+    {
+      "name": "language",
+      "value": "javascript"
+    }
+  ]
+}
