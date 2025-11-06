@@ -2,6 +2,16 @@ const { findAny, typeIfExists, screenshot, scrollToText } = require('./common');
 
 class ForgotPasswordPage {
   async assertOnForgotPassword() {
+    // Fast-path: if the fp_email_input semantics/accessibility id is present, we're already on the forgot screen
+    try {
+      const quick = await findAny(['~fp_email_input'], 2000).catch(() => null);
+      if (quick) {
+        await screenshot('forgot-open-quick');
+        return quick;
+      }
+    } catch (_) {}
+
+    // Otherwise, perform the normal detection flow (scroll + heuristics)
     await scrollToText('Forgot Password');
     await scrollToText('Reset Password');
     await scrollToText('Send Reset Code');
@@ -18,8 +28,11 @@ class ForgotPasswordPage {
   }
 
   async fillEmail(email) {
+    // Prefer accessibility id (Semantics label) if available, then fall back to text/hint heuristics
     await typeIfExists([
+      '~fp_email_input',
       'android=new UiSelector().textContains("Email")',
+      'android=new UiSelector().textMatches("(?i).*email.*")',
       'android=new UiSelector().className("android.widget.EditText").instance(0)'
     ], email, 'forgot-email');
     await screenshot('forgot-email');
