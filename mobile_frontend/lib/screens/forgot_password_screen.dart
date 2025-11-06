@@ -236,7 +236,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                             ),
                           ],
                         ),
-                        child: TextFormField(
+                        child: Semantics(
+                          label: 'fp_email_input',
+                          child: TextFormField(
                           controller: _emailController,
                           keyboardType: TextInputType.emailAddress,
                           enabled: !_codeSent,
@@ -265,6 +267,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                             }
                             return null;
                           },
+                          ),
                         ),
                       ),
 
@@ -284,7 +287,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                               ),
                             ],
                           ),
-                          child: TextFormField(
+                          child: Semantics(
+                            label: 'fp_code_input',
+                            child: TextFormField(
                             controller: _codeController,
                             keyboardType: TextInputType.number,
                             style: const TextStyle(fontSize: 16),
@@ -309,6 +314,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                               }
                               return null;
                             },
+                            ),
                           ),
                         ),
                         const SizedBox(height: 20),
@@ -326,7 +332,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                               ),
                             ],
                           ),
-                          child: TextFormField(
+                          child: Semantics(
+                            label: 'fp_new_password_input',
+                            child: TextFormField(
                             controller: _newPasswordController,
                             obscureText: _obscurePassword,
                             style: const TextStyle(fontSize: 16),
@@ -367,6 +375,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                               }
                               return null;
                             },
+                            ),
                           ),
                         ),
                         const SizedBox(height: 20),
@@ -384,7 +393,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                               ),
                             ],
                           ),
-                          child: TextFormField(
+                          child: Semantics(
+                            label: 'fp_confirm_password_input',
+                            child: TextFormField(
                             controller: _confirmPasswordController,
                             obscureText: _obscureConfirmPassword,
                             style: const TextStyle(fontSize: 16),
@@ -426,6 +437,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                               }
                               return null;
                             },
+                            ),
                           ),
                         ),
                       ],
@@ -436,35 +448,39 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                       SizedBox(
                         width: double.infinity,
                         height: 56,
-                        child: ElevatedButton(
-                          onPressed: _loading
-                              ? null
-                              : (_codeSent ? _resetPassword : _requestResetCode),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF3B82F6), // blue-500
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
+                        child: Semantics(
+                          label: _codeSent ? 'fp_action_button_verify' : 'fp_action_button_send',
+                          button: true,
+                          child: ElevatedButton(
+                            onPressed: _loading
+                                ? null
+                                : (_codeSent ? _resetPassword : _requestResetCode),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF3B82F6), // blue-500
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              elevation: 0,
+                              shadowColor: const Color(0xFF3B82F6).withOpacity(0.5),
                             ),
-                            elevation: 0,
-                            shadowColor: const Color(0xFF3B82F6).withOpacity(0.5),
+                            child: _loading
+                                ? const SizedBox(
+                                    height: 24,
+                                    width: 24,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2.5,
+                                    ),
+                                  )
+                                : Text(
+                                    _codeSent ? 'Reset Password' : 'Send Reset Code',
+                                    style: const TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
                           ),
-                          child: _loading
-                              ? const SizedBox(
-                                  height: 24,
-                                  width: 24,
-                                  child: CircularProgressIndicator(
-                                    color: Colors.white,
-                                    strokeWidth: 2.5,
-                                  ),
-                                )
-                              : Text(
-                                  _codeSent ? 'Reset Password' : 'Send Reset Code',
-                                  style: const TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
                         ),
                       ),
 

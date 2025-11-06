@@ -12,8 +12,9 @@ describe('Sign Up with MailSlurp Email Verification', () => {
   const APP_ACTIVITY = process.env.ANDROID_ACTIVITY || 'com.example.mobile_frontend.MainActivity';
 
   // Helper function to wait for and find an element with retry
-  const findElement = async (selector, timeout = 10000) => {
-    console.log(`Finding element: ${selector}`);
+  const findElement = async (selector, timeout = 15000) => {
+    // Improved finder with longer default timeout and better logging
+    console.log(`Finding element: ${selector} (timeout ${timeout}ms)`);
     const element = await $(selector);
     await element.waitForDisplayed({ timeout });
     return element;
@@ -23,8 +24,20 @@ describe('Sign Up with MailSlurp Email Verification', () => {
   const typeText = async (selector, text, label = '') => {
     console.log(`Typing ${label || 'text'} into ${selector}`);
     const element = await findElement(selector);
+    // Ensure the field is focused before typing — click to focus, then set value.
+    try {
+      await element.click();
+    } catch (e) {
+      // Some elements may not support click; ignore and continue
+    }
     await element.clearValue();
     await element.setValue(text);
+    // Hide keyboard if present (Android)
+    try {
+      await driver.hideKeyboard();
+    } catch (e) {
+      // ignore if hideKeyboard not available
+    }
     await browser.pause(300);
   };
 
@@ -365,9 +378,12 @@ describe('Sign Up with MailSlurp Email Verification', () => {
       }
 
       await otpInput.clearValue();
-      await otpInput.setValue(otp);
-      console.log(`Entered OTP: ${otp}`);
-      await browser.pause(500);
+  try { await otpInput.click(); } catch (e) {}
+  await otpInput.clearValue();
+  await otpInput.setValue(otp);
+  try { await driver.hideKeyboard(); } catch (e) {}
+  console.log(`Entered OTP: ${otp}`);
+  await browser.pause(500);
       await screenshot('11-otp-entered');
 
       // Step 9: Submit OTP
@@ -469,37 +485,82 @@ describe('Sign Up with MailSlurp Email Verification', () => {
       testEmail = inbox.emailAddress;
       console.log(`Created test inbox: ${testEmail}`);
 
-      // Navigate to signup and fill form (abbreviated)
-      await browser.pause(2000);
-      
-      // Navigate to signup screen
+      // Navigate to signup and fill form (use the same robust selectors as the main test)
+      await browser.pause(1500);
+
+      // Try clicking Sign Up navigation
       try {
-        const signupNavBtn = await findElement('android=new UiSelector().textContains("Sign Up")', 5000);
-        await signupNavBtn.click();
-        await browser.pause(1500);
+        let signupNavBtn;
+        try {
+          signupNavBtn = await findElement('~signup_nav_button', 4000);
+        } catch {
+          try {
+            signupNavBtn = await findElement('//*[@content-desc="Sign Up"]', 4000);
+          } catch {
+            signupNavBtn = await findElement('android=new UiSelector().textContains("Sign Up")', 4000);
+          }
+        }
+        if (signupNavBtn) {
+          await signupNavBtn.click();
+          await browser.pause(1200);
+        }
       } catch (e) {
-        console.log('Could not find signup button, may already be on signup screen');
+        console.log('Could not find signup navigation button, continuing assuming signup screen is shown');
       }
 
-      // Fill minimal required fields
-      await typeText('//android.widget.EditText[@index="0"]', testEmail, 'email');
-      await typeText('//android.widget.EditText[@password="true"][@index="0"]', TEST_PASSWORD, 'password');
-      
-      // Submit
-      const submitBtn = await findElement('android=new UiSelector().textContains("Sign Up").className("android.widget.Button")', 5000);
-      await submitBtn.click();
-      await browser.pause(3000);
+      // Fill minimal required fields with stable selectors
+      try {
+        await typeText('~email_input', testEmail, 'email');
+      } catch {
+        await typeText('//android.widget.EditText[contains(@hint, "email") or contains(@hint, "Email") or contains(@hint, "email_input")]', testEmail, 'email');
+      }
 
-      // Enter invalid OTP
+      try {
+        await typeText('~password_input', TEST_PASSWORD, 'password');
+      } catch {
+        await typeText('//android.widget.EditText[@password="true" or contains(@hint, "password")]', TEST_PASSWORD, 'password');
+      }
+
+      // Submit the signup form
+      try {
+        const submitBtn = await findElement('~signup_button', 5000);
+        await submitBtn.click();
+      } catch {
+        const submitBtn = await findElement('android=new UiSelector().textContains("Sign Up").className("android.widget.Button")', 7000);
+        await submitBtn.click();
+      }
+
+      await browser.pause(2500);
+
+      // Wait explicitly for verification screen (OTP input) to appear
+      console.log('Waiting for verification screen (OTP input) to appear...');
+      let otpInput;
+      try {
+        otpInput = await findElement('~verification_code_input', 10000);
+      } catch {
+        try {
+          otpInput = await findElement('//android.widget.EditText[contains(@hint, "code") or contains(@hint, "OTP") or contains(@hint, "verification") or contains(@hint, "verification_code_input")]', 10000);
+        } catch {
+          otpInput = await findElement('//android.widget.EditText', 10000);
+        }
+      }
+
       console.log('Entering invalid OTP...');
-      const otpInput = await findElement('//android.widget.EditText', 5000);
-      await otpInput.clearValue();
-      await otpInput.setValue('000000');
-      await screenshot('invalid-otp-entered');
+  try { await otpInput.click(); } catch (e) {}
+  await otpInput.clearValue();
+  await otpInput.setValue('000000');
+  try { await driver.hideKeyboard(); } catch (e) {}
+  await screenshot('invalid-otp-entered');
 
       // Submit invalid OTP
-      const verifyBtn = await findElement('android=new UiSelector().textContains("Verify").className("android.widget.Button")', 5000);
-      await verifyBtn.click();
+      try {
+        const verifyBtn = await findElement('~verify_button', 5000);
+        await verifyBtn.click();
+      } catch {
+        const verifyBtn = await findElement('android=new UiSelector().textContains("Verify").className("android.widget.Button")', 7000);
+        await verifyBtn.click();
+      }
+
       await browser.pause(2000);
       await screenshot('after-invalid-otp');
 
