@@ -253,11 +253,11 @@ const Profile: React.FC = () => {
                     <Mail className="w-4 h-4" />
                     Email Status
                   </span>
-                  {profile.emailVerified ? (
-                    <span className="flex items-center gap-1 text-green-600 text-sm font-medium">
-                      <CheckCircle className="w-4 h-4" />
-                      Verified
-                    </span>
+                      {profile.emailVerified ? (
+                        <span className="flex items-center gap-1 text-green-900 text-sm font-medium">
+                          <CheckCircle className="w-4 h-4" />
+                          Verified
+                        </span>
                   ) : (
                     <span className="flex items-center gap-1 text-red-600 text-sm font-medium">
                       <XCircle className="w-4 h-4" />
@@ -272,7 +272,7 @@ const Profile: React.FC = () => {
                     Account Status
                   </span>
                   {profile.isActive ? (
-                    <span className="flex items-center gap-1 text-green-600 text-sm font-medium">
+                    <span className="flex items-center gap-1 text-green-900 text-sm font-medium">
                       <CheckCircle className="w-4 h-4" />
                       Active
                     </span>
@@ -290,7 +290,7 @@ const Profile: React.FC = () => {
                     Two-Factor Auth
                   </span>
                   {profile.mfaEnabled ? (
-                    <span className="flex items-center gap-1 text-green-600 text-sm font-medium">
+                    <span className="flex items-center gap-1 text-green-900 text-sm font-medium">
                       <CheckCircle className="w-4 h-4" />
                       Enabled
                     </span>
@@ -514,12 +514,13 @@ const SelectField: React.FC<{
   onChange: any;
 }> = ({ icon, label, name, value, onChange }) => (
   <div>
-    <label className="block text-sm font-semibold text-gray-700 mb-2">{label}</label>
+    <label htmlFor={name} className="block text-sm font-semibold text-gray-700 mb-2">{label}</label>
     <div className="relative">
       <div className="absolute left-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
         {icon}
       </div>
       <select
+        id={name}
         name={name}
         value={value}
         onChange={onChange}

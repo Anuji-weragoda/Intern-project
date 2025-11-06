@@ -271,7 +271,7 @@ const Dashboard: React.FC = () => {
               <div className="pt-3 border-t border-gray-100">
                 <div className="flex items-center gap-2 text-xs">
                   {user.emailVerified ? (
-                    <span className="flex items-center gap-1 text-green-600">
+                    <span className="flex items-center gap-1 text-green-900">
                       <CheckCircle className="w-3 h-3" />
                       Email Verified
                     </span>
@@ -310,7 +310,7 @@ const Dashboard: React.FC = () => {
               <div className="flex items-center justify-between text-xs">
                 <span className="text-gray-600">Account Status</span>
                 {user.isActive ? (
-                  <span className="text-green-600 font-medium">Active</span>
+                  <span className="text-green-900 font-medium">Active</span>
                 ) : (
                   <span className="text-red-600 font-medium">Inactive</span>
                 )}
@@ -318,7 +318,7 @@ const Dashboard: React.FC = () => {
               <div className="flex items-center justify-between text-xs">
                 <span className="text-gray-600">MFA</span>
                 {user.mfaEnabled ? (
-                  <span className="text-green-600 font-medium">Enabled</span>
+                  <span className="text-green-900 font-medium">Enabled</span>
                 ) : (
                   <span className="text-gray-500 font-medium">Disabled</span>
                 )}
@@ -341,7 +341,7 @@ const Dashboard: React.FC = () => {
                 </div>
               </div>
               <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
-                <Calendar className="w-5 h-5 text-green-600" />
+                <Calendar className="w-5 h-5 text-green-900" />
                 <div>
                   <p className="text-xs text-gray-600">Member Since</p>
                   <p className="text-sm font-semibold text-gray-900">{formatDate(user.createdAt)}</p>
@@ -373,9 +373,9 @@ const Dashboard: React.FC = () => {
             <div className="bg-white rounded-xl shadow-md p-6 border border-gray-100">
               <div className="flex items-center justify-between mb-2">
                 <p className="text-sm font-medium text-gray-600">Successful Logins</p>
-                <CheckCircle className="w-5 h-5 text-green-600" />
+                <CheckCircle className="w-5 h-5 text-green-900" />
               </div>
-              <p className="text-3xl font-bold text-green-600">{auditStats.successfulLogins}</p>
+              <p className="text-3xl font-bold text-green-900">{auditStats.successfulLogins}</p>
             </div>
             <div className="bg-white rounded-xl shadow-md p-6 border border-gray-100">
               <div className="flex items-center justify-between mb-2">

@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Accessibility Test Report — Intern-project</title>
+  <style>
+    body{font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;line-height:1.5;color:#111;padding:28px;max-width:900px;margin:auto}
+    h1,h2{color:#0f172a}
+    pre{background:#f8fafc;padding:12px;border-radius:6px;overflow:auto}
+    table{border-collapse:collapse;width:100%}
+    .muted{color:#6b7280}
+  </style>
+</head>
+<body>
+  <h1>Accessibility Test Report</h1>
+  <p class="muted">Date: 2025-11-06 &nbsp; | &nbsp; Repository: Intern-project (branch: Testing)</p>
+
+  <h2>Summary</h2>
+  <p>This report summarizes the automated accessibility scan findings and remediation suggestions / changes applied to the admin frontend on 2025-11-06.</p>
+
+  <h2>Key findings</h2>
+  <ol>
+    <li>
+      <strong>Insufficient color contrast (WCAG 2.0 AA)</strong>
+      <p>Text using Tailwind class <code>text-green-600</code> on white backgrounds had contrast ~3.29:1. Fixed by updating to <code>text-green-900</code> in source files (Dashboard, Profile, AuditLog). Rebuild required to update generated artifacts.</p>
+    </li>
+
+    <li>
+      <strong>Select elements missing accessible name (WCAG 2.0 A)</strong>
+      <p>Several <code>&lt;select&gt;</code> controls had no programmatic name. Fixed by associating <code>&lt;label htmlFor=...&gt;</code> with select <code>id</code> and updating the reusable <code>SelectField</code> component.</p>
+    </li>
+
+    <li>
+      <strong>Icon-only buttons missing accessible name</strong>
+      <p>Added <code>aria-label</code> and <code>title</code> for icon-only controls (pagination buttons, modal close buttons).</p>
+    </li>
+
+    <li>
+      <strong>Horizontally scrollable containers not keyboard-focusable</strong>
+      <p>Made scroll containers focusable via <code>tabIndex=0</code> and added <code>aria-label</code> to describe their purpose.</p>
+    </li>
+  </ol>
+
+  <h2>Files changed (high level)</h2>
+  <ul>
+    <li><code>admin_frontend/src/pages/Dashboard.tsx</code></li>
+    <li><code>admin_frontend/src/pages/Profile.tsx</code></li>
+    <li><code>admin_frontend/src/pages/AuditLog.tsx</code></li>
+    <li><code>admin_frontend/src/pages/UserManagement.tsx</code></li>
+    <li><code>authservice/perf/results/k6-report.md</code> (documentation entry)</li>
+  </ul>
+
+  <h2>How to verify locally</h2>
+  <ol>
+    <li>From repo root, change to admin_frontend and run build or dev server:
+      <pre>cd admin_frontend
+npm install
+npm run build</pre>
+    </li>
+    <li>Run your accessibility scanner (aXe, WAVE, or the tool you used previously) and confirm the earlier issues are resolved.</li>
+    <li>Manual checks: keyboard navigation (Tab), focusable scroll containers, screen reader announcement of button names and select labels.</li>
+  </ol>
+
+  <h2>Quick remediation examples</h2>
+  <pre>&lt;label htmlFor="eventTypeFilter"&gt;Event Type&lt;/label&gt;
+&lt;select id="eventTypeFilter" ...&gt; ... &lt;/select&gt;
+
+&lt;button aria-label="Close" title="Close"&gt;
+  &lt;X className="w-5 h-5" /&gt;
+&lt;/button&gt;
+
+&lt;div className="overflow-x-auto" tabIndex={0} aria-label="Audit logs table, scrollable horizontally"&gt;
+  ...table...
+&lt;/div&gt;
+  </pre>
+
+  <h2>Recommendations</h2>
+  <ul>
+    <li>Add automated axe checks to CI to prevent regressions.</li>
+    <li>Prefer design tokens for color choices to ensure accessible contrast by default.</li>
+    <li>Make a small component pattern for icon-only buttons that enforces an accessible name prop.</li>
+  </ul>
+
+  <hr />
+  <p class="muted">If you want, I can run the frontend build here and produce a downloadable PDF of this report. Tell me to proceed and I will run the build and convert the HTML to PDF.</p>
+</body>
+</html>

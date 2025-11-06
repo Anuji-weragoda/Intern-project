@@ -529,12 +529,13 @@ const UserManagement: React.FC = () => {
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                  <label htmlFor="searchUsers" className="block text-sm font-medium text-slate-700 mb-2">
                     Search Users
                   </label>
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                     <input
+                      id="searchUsers"
                       type="text"
                       placeholder="Search by email or username..."
                       className="w-full pl-10 pr-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
@@ -545,12 +546,13 @@ const UserManagement: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                  <label htmlFor="roleFilter" className="block text-sm font-medium text-slate-700 mb-2">
                     Filter by Role
                   </label>
                   <div className="relative">
                     <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                     <select
+                      id="roleFilter"
                       className="w-full pl-10 pr-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all appearance-none"
                       value={roleFilter}
                       onChange={(e) => setRoleFilter(e.target.value)}
@@ -584,8 +586,8 @@ const UserManagement: React.FC = () => {
             </div>
 
             {/* Users Table */}
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-              <div className="overflow-x-auto">
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+              <div className="overflow-x-auto" tabIndex={0} aria-label="Users table, scrollable horizontally">
                 <table className="w-full table-fixed">
                   <thead className="bg-slate-50 border-b border-slate-200">
                     <tr>
@@ -685,6 +687,8 @@ const UserManagement: React.FC = () => {
                   </div>
                   <button
                     onClick={() => setShowUserDetailsModal(false)}
+                    aria-label="Close"
+                    title="Close"
                     className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
                   >
                     <X className="w-5 h-5 text-slate-500" />
@@ -856,6 +860,8 @@ const UserManagement: React.FC = () => {
                   </div>
                   <button
                     onClick={() => setShowRoleModal(false)}
+                    aria-label="Close"
+                    title="Close"
                     className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
                   >
                     <X className="w-5 h-5 text-slate-500" />

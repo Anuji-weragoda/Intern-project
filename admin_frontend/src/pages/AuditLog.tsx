@@ -256,7 +256,7 @@ const AuditLog: React.FC = () => {
               </div>
               <div className="bg-white rounded-xl shadow-md p-5 border-l-4 border-green-500">
                 <div className="text-sm text-gray-600 mb-1">Successful</div>
-                <div className="text-3xl font-bold text-green-600">
+                <div className="text-3xl font-bold text-green-900">
                   {logs.filter(l => l.success).length}
                 </div>
               </div>
@@ -278,12 +278,13 @@ const AuditLog: React.FC = () => {
             <div className="bg-white rounded-xl shadow-lg p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="lg:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="searchQuery" className="block text-sm font-medium text-gray-700 mb-2">
                     Search
                   </label>
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                     <input
+                      id="searchQuery"
                       type="text"
                       placeholder="Search by email, event, IP, or Cognito Sub..."
                       className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -294,10 +295,11 @@ const AuditLog: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="eventTypeFilter" className="block text-sm font-medium text-gray-700 mb-2">
                     Event Type
                   </label>
                   <select
+                    id="eventTypeFilter"
                     className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     value={eventTypeFilter}
                     onChange={(e) => setEventTypeFilter(e.target.value)}
@@ -310,10 +312,11 @@ const AuditLog: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="successFilter" className="block text-sm font-medium text-gray-700 mb-2">
                     Status
                   </label>
                   <select
+                    id="successFilter"
                     className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     value={successFilter}
                     onChange={(e) => setSuccessFilter(e.target.value)}
@@ -341,7 +344,7 @@ const AuditLog: React.FC = () => {
 
             {/* Table */}
             <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto" tabIndex={0} aria-label="Audit logs table, scrollable horizontally">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
@@ -418,8 +421,9 @@ const AuditLog: React.FC = () => {
               {/* Pagination */}
               <div className="bg-gray-50 px-6 py-4 flex items-center justify-between border-t border-gray-200">
                 <div className="flex items-center gap-2">
-                  <label className="text-sm text-gray-700">Rows per page:</label>
+                  <label htmlFor="itemsPerPage" className="text-sm text-gray-700">Rows per page:</label>
                   <select
+                    id="itemsPerPage"
                     className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     value={itemsPerPage}
                     onChange={(e) => setItemsPerPage(Number(e.target.value))}
@@ -436,6 +440,8 @@ const AuditLog: React.FC = () => {
                   <button
                     onClick={() => handlePageChange(currentPage - 1)}
                     disabled={currentPage === 1}
+                    aria-label="Previous page"
+                    title="Previous page"
                     className="p-2 rounded-lg border border-gray-300 hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     <ChevronLeft className="w-5 h-5" />
@@ -473,6 +479,8 @@ const AuditLog: React.FC = () => {
                   <button
                     onClick={() => handlePageChange(currentPage + 1)}
                     disabled={currentPage === totalPages}
+                    aria-label="Next page"
+                    title="Next page"
                     className="p-2 rounded-lg border border-gray-300 hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     <ChevronRight className="w-5 h-5" />
