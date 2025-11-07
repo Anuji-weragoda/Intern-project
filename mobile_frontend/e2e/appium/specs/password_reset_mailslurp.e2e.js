@@ -32,6 +32,7 @@ describe('Password Reset with MailSlurp', () => {
     await browser.pause(300);
   };
 
+
   const extractOtpFromEmail = (emailBody) => {
     const patterns = [
       /reset code is[:\s]+(\d{6})/i,
@@ -319,9 +320,9 @@ describe('Password Reset with MailSlurp', () => {
           }
         }
       }
-      try { await codeField.click(); } catch (e) {}
-      await codeField.clearValue();
-      await codeField.setValue(otp);
+  try { await codeField.click(); } catch (e) {}
+  try { await codeField.clearValue(); } catch (e) {}
+  await codeField.setValue(otp);
       try { await driver.hideKeyboard(); } catch (e) {}
       await screenshot('pr-06-otp-entered');
 
@@ -333,9 +334,9 @@ describe('Password Reset with MailSlurp', () => {
           newPassField = await findElement('//android.widget.EditText[contains(@text, "New Password") or contains(@hint, "New Password")]');
         }
       }
-      try { await newPassField.click(); } catch (e) {}
-      await newPassField.clearValue();
-      await newPassField.setValue(NEW_PASSWORD);
+  try { await newPassField.click(); } catch (e) {}
+  try { await newPassField.clearValue(); } catch (e) {}
+  await newPassField.setValue(NEW_PASSWORD);
       try { await driver.hideKeyboard(); } catch (e) {}
 
       let confirmField;
@@ -344,9 +345,9 @@ describe('Password Reset with MailSlurp', () => {
           confirmField = await findElement('//android.widget.EditText[contains(@text, "Confirm") or contains(@hint, "Confirm")]');
         }
       }
-      try { await confirmField.click(); } catch (e) {}
-      await confirmField.clearValue();
-      await confirmField.setValue(NEW_PASSWORD);
+  try { await confirmField.click(); } catch (e) {}
+  try { await confirmField.clearValue(); } catch (e) {}
+  await confirmField.setValue(NEW_PASSWORD);
       try { await driver.hideKeyboard(); } catch (e) {}
       await screenshot('pr-07-passwords-entered');
 

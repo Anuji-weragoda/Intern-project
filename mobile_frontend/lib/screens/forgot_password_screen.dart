@@ -244,8 +244,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                           enabled: !_codeSent,
                           style: const TextStyle(fontSize: 16),
                           decoration: InputDecoration(
-                            labelText: 'Email',
-                            floatingLabelBehavior: FloatingLabelBehavior.auto,
+                            // show the placeholder inside the field instead of a floating label
+                            hintText: 'Email',
+                            floatingLabelBehavior: FloatingLabelBehavior.never,
                             prefixIcon: const Icon(
                               Icons.email_outlined,
                               color: Color(0xFF3B82F6),
