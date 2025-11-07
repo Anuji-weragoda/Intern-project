@@ -88,7 +88,12 @@ public class AdminUserService {
                 .map(ur -> ur.getRole().getRoleName())
                 .collect(Collectors.toSet());
 
-        String username = targetUser.getUsername() != null ? targetUser.getUsername() : targetUser.getEmail();
+    // Prefer Cognito 'sub' when available; otherwise prefer App username, then email
+    String username = targetUser.getCognitoSub() != null && !targetUser.getCognitoSub().isBlank()
+        ? targetUser.getCognitoSub()
+        : (targetUser.getUsername() != null && !targetUser.getUsername().isBlank()
+            ? targetUser.getUsername()
+            : targetUser.getEmail());
 
         // For each allowed group, ensure membership matches DB
         for (String group : allowedGroups) {
@@ -129,6 +134,10 @@ public class AdminUserService {
         .collect(Collectors.toSet());
 
         if ((add != null && !add.isEmpty()) || (remove != null && !remove.isEmpty())) {
+            // Track unique Cognito groups to remove/add to avoid duplicate AWS calls
+            Set<String> groupsToRemove = new HashSet<>();
+            Set<String> groupsToAdd = new HashSet<>();
+
             // Removals
             if (remove != null) {
                 for (String roleName : remove) {
@@ -138,15 +147,12 @@ public class AdminUserService {
                     existing.ifPresent(userRoleRepository::delete);
                     log.info("Removed role {} from user {}", roleName, targetUser.getEmail());
 
-                    // If this role maps to a Cognito group we should remove the user from that group
+                    // If this role maps to a Cognito group we should remove the user from that group (queue it)
                     try {
-                            if (allowedGroups.contains(roleName) && cognitoSyncGroups) {
-                                    String username = targetUser.getUsername() != null ? targetUser.getUsername() : targetUser.getEmail();
-                                    String cognitoGroup = mapToCognitoGroup(roleName);
-                                    if (cognitoGroup != null) {
-                                        cognitoAdminService.removeUserFromGroup(username, cognitoGroup);
-                                    }
-                                }
+                        if (allowedGroups.contains(roleName) && cognitoSyncGroups) {
+                            String cognitoGroup = mapToCognitoGroup(roleName);
+                            if (cognitoGroup != null) groupsToRemove.add(cognitoGroup);
+                        }
                     } catch (Exception e) {
                         log.warn("Failed to remove Cognito group for user {} role {}: {}", targetUser.getEmail(), roleName, e.getMessage());
                     }
@@ -168,20 +174,30 @@ public class AdminUserService {
                         userRoleRepository.save(userRole);
                         log.info("Added role {} to user {}", roleName, targetUser.getEmail());
 
-                        // If this role maps to a Cognito group we should add the user to that group
+                        // If this role maps to a Cognito group we should add the user to that group (queue it)
                         try {
                             if (allowedGroups.contains(roleName) && cognitoSyncGroups) {
-                                String username = targetUser.getUsername() != null ? targetUser.getUsername() : targetUser.getEmail();
                                 String cognitoGroup = mapToCognitoGroup(roleName);
-                                if (cognitoGroup != null) {
-                                    cognitoAdminService.addUserToGroup(username, cognitoGroup);
-                                }
+                                if (cognitoGroup != null) groupsToAdd.add(cognitoGroup);
                             }
                         } catch (Exception e) {
                             log.warn("Failed to add Cognito group for user {} role {}: {}", targetUser.getEmail(), roleName, e.getMessage());
                         }
                     }
                 }
+            }
+
+            // Perform unique Cognito group removals and additions once per group
+                String username = targetUser.getCognitoSub() != null && !targetUser.getCognitoSub().isBlank()
+                    ? targetUser.getCognitoSub()
+                    : (targetUser.getUsername() != null && !targetUser.getUsername().isBlank()
+                        ? targetUser.getUsername()
+                        : targetUser.getEmail());
+            for (String g : groupsToRemove) {
+                try { cognitoAdminService.removeUserFromGroup(username, g); } catch (Exception e) { log.warn("Failed to remove Cognito group {} for user {}: {}", g, username, e.getMessage()); }
+            }
+            for (String g : groupsToAdd) {
+                try { cognitoAdminService.addUserToGroup(username, g); } catch (Exception e) { log.warn("Failed to add Cognito group {} for user {}: {}", g, username, e.getMessage()); }
             }
 
             log.info("User {} roles incrementally updated by {}", targetUser.getEmail(), currentUserEmail);
@@ -202,31 +218,31 @@ public class AdminUserService {
 
         Set<String> requestedSet = new HashSet<>(requested);
 
-        // Roles to remove
+        // Roles to remove/add (collect unique Cognito groups to call once)
+        Set<String> groupsToRemove = new HashSet<>();
+        Set<String> groupsToAdd = new HashSet<>();
+
         for (UserRole ur : currentUserRoles) {
             String rn = ur.getRole().getRoleName();
             if (!requestedSet.contains(rn)) {
                 userRoleRepository.delete(ur);
                 log.info("Removed role {} from user {}", rn, targetUser.getEmail());
 
-                // Remove from Cognito group if applicable
+                // Queue cognito removal if applicable
                 try {
                     if (allowedGroups.contains(rn) && cognitoSyncGroups) {
-                            String username = targetUser.getUsername() != null ? targetUser.getUsername() : targetUser.getEmail();
-                            String cognitoGroup = mapToCognitoGroup(rn);
-                            if (cognitoGroup != null) {
-                                cognitoAdminService.removeUserFromGroup(username, cognitoGroup);
-                            }
-                        }
+                        String cognitoGroup = mapToCognitoGroup(rn);
+                        if (cognitoGroup != null) groupsToRemove.add(cognitoGroup);
+                    }
                 } catch (Exception e) {
-                    log.warn("Failed to remove Cognito group for user {} role {}: {}", targetUser.getEmail(), rn, e.getMessage());
+                    log.warn("Failed to queue Cognito group removal for user {} role {}: {}", targetUser.getEmail(), rn, e.getMessage());
                 }
             }
         }
 
         // Roles to add
         for (String roleName : requestedSet) {
-                if (!currentRoleNames.contains(roleName)) {
+            if (!currentRoleNames.contains(roleName)) {
                 Role role = roleRepository.findByRoleName(roleName)
                         .orElseThrow(() -> new RuntimeException("Role not found: " + roleName));
                 UserRole userRole = new UserRole();
@@ -237,19 +253,29 @@ public class AdminUserService {
                 userRoleRepository.save(userRole);
                 log.info("Added role {} to user {}", roleName, targetUser.getEmail());
 
-                // Add Cognito group if applicable
+                // Queue cognito add if applicable
                 try {
                     if (allowedGroups.contains(roleName) && cognitoSyncGroups) {
-                            String username = targetUser.getUsername() != null ? targetUser.getUsername() : targetUser.getEmail();
-                            String cognitoGroup = mapToCognitoGroup(roleName);
-                            if (cognitoGroup != null) {
-                                cognitoAdminService.addUserToGroup(username, cognitoGroup);
-                            }
-                        }
+                        String cognitoGroup = mapToCognitoGroup(roleName);
+                        if (cognitoGroup != null) groupsToAdd.add(cognitoGroup);
+                    }
                 } catch (Exception e) {
-                    log.warn("Failed to add Cognito group for user {} role {}: {}", targetUser.getEmail(), roleName, e.getMessage());
+                    log.warn("Failed to queue Cognito group add for user {} role {}: {}", targetUser.getEmail(), roleName, e.getMessage());
                 }
             }
+        }
+
+        // Execute unique cognito operations
+        String username = targetUser.getCognitoSub() != null && !targetUser.getCognitoSub().isBlank()
+            ? targetUser.getCognitoSub()
+            : (targetUser.getUsername() != null && !targetUser.getUsername().isBlank()
+            ? targetUser.getUsername()
+            : targetUser.getEmail());
+        for (String g : groupsToRemove) {
+            try { cognitoAdminService.removeUserFromGroup(username, g); } catch (Exception e) { log.warn("Failed to remove Cognito group {} for user {}: {}", g, username, e.getMessage()); }
+        }
+        for (String g : groupsToAdd) {
+            try { cognitoAdminService.addUserToGroup(username, g); } catch (Exception e) { log.warn("Failed to add Cognito group {} for user {}: {}", g, username, e.getMessage()); }
         }
 
         log.info("User {} roles replaced successfully by {}", targetUser.getEmail(), currentUserEmail);
@@ -278,8 +304,11 @@ public class AdminUserService {
      */
     private String mapToCognitoGroup(String roleName) {
         if (roleName == null) return null;
-        // By default map role names directly to Cognito group names.
-        // Do NOT map ML1/ML2/ML3/HR to ADMIN so those roles will not grant ADMIN access.
+        // Per product decision: map ML-level roles and HR to the ADMIN Cognito group
+        // so that management/HR roles receive the ADMIN group in Cognito.
+        if (roleName.equalsIgnoreCase("HR")) return "ADMIN";
+        if (roleName.toUpperCase().startsWith("ML")) return "ADMIN";
+        // Default: map role name directly to Cognito group
         return roleName;
     }
 
