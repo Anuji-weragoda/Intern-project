@@ -39,6 +39,9 @@ dependencies:
   amplify_flutter: ^2.7.0
   amplify_auth_cognito: ^2.7.0
   
+  # QR code generation for TOTP setup
+  qr_flutter: ^4.1.0
+  
   # HTTP and secure storage
   flutter_secure_storage: ^9.0.0
   http: ^1.1.0

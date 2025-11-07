@@ -5,6 +5,7 @@ import 'signup_screen.dart';
 import 'dashboard_screen.dart';
 import 'forgot_password_screen.dart';
 import 'mfa_verification_screen.dart';
+import 'totp_setup_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   final bool skipAuthCheck;
@@ -80,8 +81,11 @@ class _LoginScreenState extends State<LoginScreen> {
         username: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
+      safePrint('[Login] initial signIn nextStep: ${result.nextStep.signInStep}');
+      safePrint('[Login] allowed MFA types: ${result.nextStep.allowedMfaTypes}');
+      safePrint('[Login] has totpSetupDetails? ${result.nextStep.totpSetupDetails != null}');
 
-      // Check if MFA is required
+      // Check if MFA is required or additional steps are needed
       if (!result.isSignedIn) {
         final step = result.nextStep.signInStep;
         if (step == AuthSignInStep.confirmSignInWithSmsMfaCode ||
@@ -95,6 +99,123 @@ class _LoginScreenState extends State<LoginScreen> {
             );
           }
           return;
+        } else if (step == AuthSignInStep.continueSignInWithMfaSelection ||
+            step.toString().contains('continueSignInWithMfaSetupSelection')) {
+          // Newer Cognito may already include TOTP setup details here.
+          safePrint('[Login] MFA setup selection step detected.');
+          if (result.nextStep.totpSetupDetails != null) {
+            final secret = result.nextStep.totpSetupDetails!.sharedSecret;
+            safePrint('[Login] Using pre-provided TOTP secret (first 6): ${secret.substring(0, secret.length < 6 ? secret.length : 6)}...');
+            final username = _emailController.text.trim();
+            if (mounted) {
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(
+                  builder: (_) => TotpSetupScreen(
+                    sharedSecret: secret,
+                    username: username,
+                    issuer: 'StaffMS',
+                  ),
+                ),
+              );
+            }
+            return;
+          }
+          // Otherwise attempt to call setUpTotp directly.
+          try {
+            safePrint('[Login] No secret in nextStep; calling setUpTotp()');
+            final setupDetails = await Amplify.Auth.setUpTotp();
+            final secret = setupDetails.sharedSecret;
+            safePrint('[Login] setupTotp obtained secret (first 6): ${secret.substring(0, secret.length < 6 ? secret.length : 6)}...');
+            final username = _emailController.text.trim();
+            if (mounted) {
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(
+                  builder: (_) => TotpSetupScreen(
+                    sharedSecret: secret,
+                    username: username,
+                    issuer: 'StaffMS',
+                  ),
+                ),
+              );
+            }
+            return;
+          } catch (e) {
+            safePrint('[Login] Direct setUpTotp failed ($e); falling back to explicit selection via confirmSignIn');
+            try {
+              SignInResult selectRes;
+              try {
+                selectRes = await Amplify.Auth.confirmSignIn(confirmationValue: 'SOFTWARE_TOKEN_MFA');
+              } catch (_) {
+                selectRes = await Amplify.Auth.confirmSignIn(confirmationValue: 'totp');
+              }
+              safePrint('[Login] after fallback selection step: ${selectRes.nextStep.signInStep}');
+              if (selectRes.nextStep.signInStep == AuthSignInStep.continueSignInWithTotpSetup) {
+                final setupDetails2 = await Amplify.Auth.setUpTotp();
+                final secret2 = setupDetails2.sharedSecret;
+                safePrint('[Login] setupTotp obtained secret (first 6): ${secret2.substring(0, secret2.length < 6 ? secret2.length : 6)}...');
+                final username = _emailController.text.trim();
+                if (mounted) {
+                  Navigator.of(context).pushReplacement(
+                    MaterialPageRoute(
+                      builder: (_) => TotpSetupScreen(
+                        sharedSecret: secret2,
+                        username: username,
+                        issuer: 'StaffMS',
+                      ),
+                    ),
+                  );
+                }
+                return;
+              } else if (selectRes.nextStep.signInStep == AuthSignInStep.confirmSignInWithTotpMfaCode ||
+                  selectRes.nextStep.signInStep == AuthSignInStep.confirmSignInWithSmsMfaCode) {
+                if (mounted) {
+                  Navigator.of(context).pushReplacement(
+                    MaterialPageRoute(
+                      builder: (_) => MFAVerificationScreen(mfaStep: selectRes.nextStep.signInStep),
+                    ),
+                  );
+                }
+                return;
+              }
+            } catch (e2) {
+              safePrint('[Login] MFA selection fallback failed: $e2');
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: const Text('MFA selection failed'), backgroundColor: Colors.red),
+                );
+              }
+            }
+            return;
+          }
+        } else if (step == AuthSignInStep.continueSignInWithTotpSetup) {
+          // Need to explicitly call setUpTotp() to obtain secret
+          safePrint('[Login] continueSignInWithTotpSetup -> calling setUpTotp()');
+          try {
+            final setupDetails = await Amplify.Auth.setUpTotp();
+            safePrint('[Login] setupTotp secret length: ${setupDetails.sharedSecret.length}');
+            final sharedSecret = setupDetails.sharedSecret;
+          final username = _emailController.text.trim();
+          if (mounted) {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(
+                builder: (_) => TotpSetupScreen(
+                  sharedSecret: sharedSecret,
+                  username: username,
+                  issuer: 'StaffMS',
+                ),
+              ),
+            );
+          }
+          return;
+          } catch (e) {
+            safePrint('[Login] setUpTotp failed: $e');
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: const Text('TOTP setup failed'), backgroundColor: Colors.red),
+              );
+            }
+            return;
+          }
         } else {
           // Other steps not handled, show error
           if (mounted) {

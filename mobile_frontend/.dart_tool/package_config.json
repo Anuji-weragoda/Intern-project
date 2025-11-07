@@ -422,6 +422,18 @@
       "languageVersion": "3.0"
     },
     {
+      "name": "qr",
+      "rootUri": "file:///C:/Users/AnujiWeragoda/AppData/Local/Pub/Cache/hosted/pub.dev/qr-3.0.2",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
+      "name": "qr_flutter",
+      "rootUri": "file:///C:/Users/AnujiWeragoda/AppData/Local/Pub/Cache/hosted/pub.dev/qr_flutter-4.1.0",
+      "packageUri": "lib/",
+      "languageVersion": "2.19"
+    },
+    {
       "name": "retry",
       "rootUri": "file:///C:/Users/AnujiWeragoda/AppData/Local/Pub/Cache/hosted/pub.dev/retry-3.1.2",
       "packageUri": "lib/",

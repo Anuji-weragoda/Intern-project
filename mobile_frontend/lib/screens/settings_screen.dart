@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:amplify_flutter/amplify_flutter.dart';
 import '../services/api_service.dart';
+import 'totp_setup_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -13,6 +14,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _loading = true;
   bool _updatingMfa = false;
   Map<String, dynamic>? _profileData;
+  bool _startingTotp = false;
 
   @override
   void initState() {
@@ -95,6 +97,54 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         );
       }
+    }
+  }
+
+  Future<void> _startTotpSetup() async {
+    if (_startingTotp) return;
+    setState(() => _startingTotp = true);
+    try {
+      // Call Amplify to initiate TOTP setup regardless of current state.
+      // If already configured, this will likely throw; we catch and inform.
+      safePrint('[Settings] Initiating TOTP setup');
+      final setupDetails = await Amplify.Auth.setUpTotp();
+      final secret = setupDetails.sharedSecret;
+      safePrint('[Settings] Received TOTP secret length: ${secret.length}');
+      if (!mounted) return;
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => TotpSetupScreen(
+            sharedSecret: secret,
+            username: (_profileData?['email'] ?? 'user'),
+            issuer: 'StaffMS',
+          ),
+        ),
+      );
+    } on AuthException catch (e) {
+      safePrint('[Settings] TOTP setup failed: ${e.message}');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Cannot start TOTP setup: ${e.message}'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Unexpected error: $e'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _startingTotp = false);
     }
   }
 
@@ -261,6 +311,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             color: const Color(0xFF3B82F6),
                             title: 'SMS Verification',
                             description: 'Receive codes via text message to your phone',
+                          ),
+                          const SizedBox(height: 20),
+                          // Manual TOTP setup trigger
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton.icon(
+                              icon: const Icon(Icons.qr_code_2),
+                              onPressed: _startingTotp ? null : _startTotpSetup,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF3B82F6),
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
+                              ),
+                              label: Text(
+                                _startingTotp ? 'Starting...' : 'Set Up Authenticator App',
+                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                              ),
+                            ),
                           ),
                         ],
                       ),

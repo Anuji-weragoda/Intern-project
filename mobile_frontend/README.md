@@ -1,60 +1,114 @@
 # mobile_frontend
 
-A new Flutter project.
+Flutter application for the Staff Management System mobile experience.
 
-## Getting Started
+## Contents
+1. Overview
+2. Architecture & Packages
+3. Authentication (Cognito + Amplify) & MFA/TOTP Flow
+4. Local Development & Running
+5. Appium UI Testing
+6. Troubleshooting
+7. Future Enhancements
 
-This project is a starting point for a Flutter application.
+---
+## 1. Overview
+The app provides secure sign in, profile management, dashboard access and multi-factor authentication (MFA) via SMS or authenticator (TOTP) backed by Amazon Cognito using Amplify.
 
-A few resources to get you started if this is your first Flutter project:
+## 2. Architecture & Packages
+Key dependencies (see `pubspec.yaml`):
+- `amplify_flutter`, `amplify_auth_cognito`: Cognito auth & step-based sign-in.
+- `qr_flutter`: Generates QR for TOTP provisioning.
+- `flutter_secure_storage`: Secure local storage (tokens/secrets if needed).
+- `http`: Backend REST calls via `ApiService`.
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+Screens of note:
+- `login_screen.dart`, `signup_screen.dart` – primary auth entry points.
+- `totp_setup_screen.dart` – shows QR + secret and confirms first code.
+- `mfa_verification_screen.dart` – generic 6‑digit code entry (SMS or TOTP after setup).
+- `settings_screen.dart` – manual TOTP initiation and MFA enable/disable.
+- `profile_screen.dart` – user profile & sign out.
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## 3. Authentication & MFA/TOTP Flow
+Cognito may require multiple steps during `Amplify.Auth.signIn()`. The app inspects `SignInResult.nextStep.signInStep` and branches accordingly.
 
-## Appium testing
+### Sign-in steps handled
+| Cognito Step | Meaning | App Action |
+|--------------|---------|-----------|
+| `confirmSignInWithSmsMfaCode` | SMS factor required | Navigate to `MFAVerificationScreen` |
+| `confirmSignInWithTotpMfaCode` | TOTP factor required (already configured) | Navigate to `MFAVerificationScreen` |
+| `continueSignInWithMfaSelection` | User must choose MFA type | Acquire or initiate TOTP setup -> `TotpSetupScreen` |
+| `continueSignInWithMfaSetupSelection` (variant) | Some pools return this extended enum for selection/setup | Treated same as above |
+| `continueSignInWithTotpSetup` | Start authenticator setup; need secret | Call `Amplify.Auth.setUpTotp()` and show `TotpSetupScreen` |
 
-A short overview of how Appium fits into this mobile project: Appium is a
-cross-platform mobile automation framework that uses the WebDriver protocol to
-drive native, hybrid and web apps on iOS and Android. Tests live in a language
-client (Java, JavaScript, Python, etc.), create a driver session with desired
-capabilities (device, platform, app), perform UI actions and assertions, and
-then attach screenshots/logs to the test report (for example Allure or JUnit
-XML) for diagnostics.
+### Obtaining the TOTP secret
+The secret may appear in `result.nextStep.totpSetupDetails.sharedSecret` when the selection step is returned. If not present we call `Amplify.Auth.setUpTotp()` to retrieve it. As a defensive fallback the app attempts legacy selection via `confirmSignIn('SOFTWARE_TOKEN_MFA')` or `'totp'` when direct setup fails (older Cognito behavior).
 
-Quick checklist
-- Appium Server (npm package or standalone)
-- Client library (for example `appium-java-client`, `appium-python-client`, or WebdriverIO)
-- Test runner (JUnit/TestNG, pytest, Mocha/Jest)
-- Backend automation: UiAutomator2/Espresso (Android) or XCUITest (iOS)
-- Device/emulator accessible via adb or Xcode; Appium Inspector for debugging
+### Generating the QR code
+In `TotpSetupScreen` we build an otpauth URL:
+```
+otpauth://totp/<ISSUER>:<USER>?secret=<SECRET>&issuer=<ISSUER>&algorithm=SHA1&digits=6&period=30
+```
+Rendered using `QrImageView`. User can also view/copy raw secret.
 
-Minimal desired capabilities example (Android)
+### Confirming setup
+User enters the first 6‑digit code; we call `Amplify.Auth.confirmSignIn(confirmationValue: code)`. On success we sync with backend (`ApiService.syncUserAfterLogin()`) and navigate to the dashboard.
 
+### Required Cognito User Pool Settings
+Minimum recommended for mandatory TOTP:
+- MFA: Required.
+- Enabled MFA types: Software token (and optionally SMS).
+- Email verification required (signup sends code).
+- Allow TOTP (software token) in pool settings.
+
+### Handling Variant Enum Names
+Some Amplify versions/pools surface `continueSignInWithMfaSetupSelection` which is not in older documentation. We match via `step.toString().contains('MfaSetupSelection')` to stay resilient.
+
+### Common Failure Modes
+| Symptom | Likely Cause | Resolution |
+|---------|--------------|-----------|
+| "Additional sign-in step required but not supported" | Missing branch for a new/variant step | Update conditional to include variant enum or new step |
+| No QR / secret shown | Secret not in nextStep and `setUpTotp()` not invoked | Ensure selection branch calls `setUpTotp()` when `totpSetupDetails` is null |
+| `InvalidParameterException` on signup auto sign-in | Attempted to pass selection using a 6‑digit code or unsupported plugin options | Remove unsupported plugin options; perform proper TOTP setup retrieval |
+| Endless MFA loop | Failing to call `confirmSignIn` with code after entering TOTP | Verify code submission path hits `confirmSignIn()` |
+
+## 4. Local Development
+1. Install Amplify CLI & configure backend environment (Cognito user pool, etc.).
+2. Run `flutter pub get`.
+3. Add/amplify configuration files (not included here) and call `Amplify.configure()` early in app bootstrap.
+4. Run app: `flutter run` (Android emulator / iOS simulator / device).
+
+## 5. Appium UI Testing
+High-level recap:
+- Start an emulator/device (`adb devices`).
+- Launch Appium server (`npx appium`).
+- Execute test runner; include capabilities JSON similar to:
 ```json
 {
-	"platformName": "Android",
-	"automationName": "UiAutomator2",
-	"deviceName": "Pixel_4_API_31",
-	"app": "C:\\\\path\\\\to\\\\app-debug.apk",
-	"appPackage": "com.example.app",
-	"appActivity": "com.example.app.MainActivity",
-	"noReset": false
+  "platformName": "Android",
+  "automationName": "UiAutomator2",
+  "deviceName": "Pixel_4_API_31",
+  "app": "C:\\path\\to\\app-debug.apk",
+  "appPackage": "com.example.app",
+  "appActivity": "com.example.app.MainActivity",
+  "noReset": false
 }
 ```
+Best practices: Page Objects, explicit waits, secure secret management, parallelization via cloud/device farm when scaling.
 
-Quick local run steps
-1. Start an emulator or connect a device (verify with `adb devices`).
-2. Start Appium server (e.g. `npx appium` or Appium Desktop).
-3. Run your tests with the chosen client/runner. On failure capture screenshots
-	 and device logs and attach them to the test report (Allure is recommended).
+## 6. Troubleshooting
+- Ensure user pool changes (MFA required, token types) are deployed before testing new users.
+- If QR still does not appear add logging: `safePrint(result.nextStep.signInStep)` and `safePrint(result.nextStep.totpSetupDetails?.sharedSecret.length)`.
+- Clear local state by signing out and creating a brand new user for setup tests.
+- Verify system clock accuracy (TOTP codes depend on time sync).
 
-Notes and best practices
-- Use environment variables or CI secret storage — do not hard-code credentials.
-- Prefer explicit waits and the Page Object Model to reduce flakiness.
-- For parallel device runs use a device cloud (BrowserStack/Sauce/AWS Device Farm)
-	or an Appium Grid.
+## 7. Future Enhancements
+- Unify MFA verification screen text & rename for clarity.
+- Replace deprecated `withOpacity()` usages with `withValues()`.
+- Add integration tests covering full TOTP enrollment.
+
+---
+General Flutter references:
+- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
+- [Cookbook samples](https://docs.flutter.dev/cookbook)
 
