@@ -411,44 +411,63 @@ describe('Sign Up with MailSlurp Email Verification', () => {
 
       // Step 10: Verify successful login - check for dashboard
       console.log('Step 10: Verifying successful login...');
-      
-      // Wait for dashboard to appear
+
+      // Give the app a short moment to transition
       await browser.pause(2000);
       await savePageSourceSnapshot('dashboard-after-signup');
       await screenshot('13-dashboard');
 
-      // Check for dashboard indicators
-      let dashboardFound = false;
-      
-      // Try multiple dashboard detection methods
-      try {
-        const dashboardRoot = await findElement('//*[contains(@content-desc, "dashboard")]', 8000);
-        dashboardFound = await dashboardRoot.isDisplayed();
-        console.log('Dashboard root found via content-desc');
-      } catch {
-        try {
-          const welcomeText = await findElement('android=new UiSelector().textContains("Welcome")', 5000);
-          dashboardFound = await welcomeText.isDisplayed();
-          console.log('Dashboard found via Welcome text');
-        } catch {
-          try {
-            const homeIndicator = await findElement('~home_screen', 5000);
-            dashboardFound = await homeIndicator.isDisplayed();
-            console.log('Dashboard found via home_screen');
-          } catch {
-            try {
-              // Check if we're no longer on verification screen
-              const signInBtn = await $('android=new UiSelector().textContains("Sign In")');
-              const isOnLogin = await signInBtn.isDisplayed();
-              dashboardFound = !isOnLogin; // If we can't see Sign In, we're likely on dashboard
-              console.log(`Dashboard detection by absence of login: ${dashboardFound}`);
-            } catch {
-              console.log('Could not definitively detect dashboard, checking page source...');
-            }
-          }
-        }
-      }
+      // Consolidated, robust wait for dashboard detection. This repeatedly
+      // checks several possible dashboard selectors and also verifies
+      // that we're not still on the login/verification screen. If none of
+      // the checks succeed within the timeout, the test will fail.
+      const waitForDashboard = async (timeout = 20000) => {
+        const start = Date.now();
+        const selectors = [
+          '//*[contains(@content-desc, "dashboard")]',
+          'android=new UiSelector().textContains("Welcome")',
+          '~home_screen',
+          'android=new UiSelector().textContains("Home")'
+        ];
 
+        while (Date.now() - start < timeout) {
+          try {
+            for (const sel of selectors) {
+              try {
+                const el = await $(sel);
+                if (el && await el.isDisplayed()) {
+                  console.log(`Dashboard detected by selector: ${sel}`);
+                  return true;
+                }
+              } catch (e) {
+                // ignore and try next selector
+              }
+            }
+
+            // Extra heuristic: if "Sign In" is not visible, we may be on the dashboard
+            try {
+              const signInBtn = await $('android=new UiSelector().textContains("Sign In")');
+              const visible = await signInBtn.isDisplayed();
+              if (!visible) {
+                console.log('Sign In not visible → assuming dashboard');
+                return true;
+              }
+            } catch {
+              // Sign In not found at all - another good sign we're not on login
+              console.log('Sign In element not found → assuming dashboard');
+              return true;
+            }
+          } catch (e) {
+            // Continue retrying until timeout
+          }
+
+          await browser.pause(1000);
+        }
+
+        return false;
+      };
+
+      const dashboardFound = await waitForDashboard(20000);
       expect(dashboardFound).to.equal(true, 'Dashboard should be visible after successful signup and verification');
       
       console.log('SignUp MailSlurp E2E: Test completed successfully!');

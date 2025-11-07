@@ -12,7 +12,7 @@ describe('Password Reset with MailSlurp', () => {
   
   // Use existing MailSlurp inbox - get these from your MailSlurp account
   // These emails should already be created in both MailSlurp and Cognito
-  const EXISTING_MAILSLURP_EMAIL = process.env.MAILSLURP_EMAIL || '60316073-a4de-48ea-a638-08801b5c8354@mailslurp.biz';
+  const EXISTING_MAILSLURP_EMAIL = process.env.MAILSLURP_EMAIL || '7ed317c1-38ca-43bb-bed6-621c5da3169c@mailslurp.biz';
   const EXISTING_INBOX_ID = process.env.MAILSLURP_INBOX_ID; // Optional: if you know the inbox ID
 
   const findElement = async (selector, timeout = 15000) => {
@@ -52,28 +52,70 @@ describe('Password Reset with MailSlurp', () => {
   const getExistingMailSlurpInbox = async () => {
     try {
       console.log(`Using existing MailSlurp email: ${EXISTING_MAILSLURP_EMAIL}`);
-      
-      // Get all inboxes - getAllInboxes returns { content: [...], size, number, etc }
-      const result = await mailslurp.getAllInboxes(0, 100); // Get first 100 inboxes
-      const inboxes = result.content || [];
-      console.log(`Found ${inboxes.length} inboxes`);
-      
-      if (inboxes.length > 0) {
-        console.log('First few inboxes:', inboxes.slice(0, 3).map(i => i.emailAddress).join(', '));
+
+      // If an explicit inbox id was provided, try to fetch it directly first
+      if (EXISTING_INBOX_ID) {
+        try {
+          console.log(`Attempting to load inbox by ID: ${EXISTING_INBOX_ID}`);
+          const byId = await mailslurp.getInbox(EXISTING_INBOX_ID);
+          if (byId && byId.emailAddress) {
+            console.log(`✓ Found inbox by ID: ${byId.emailAddress}`);
+            return byId;
+          }
+        } catch (idErr) {
+          console.log('Could not load inbox by ID:', idErr.message || idErr);
+        }
       }
-      
-      const existingInbox = inboxes.find(i => i.emailAddress === EXISTING_MAILSLURP_EMAIL);
-      
+
+      // getAllInboxes can return different shapes depending on client version
+      const result = await mailslurp.getAllInboxes(0, 100); // try first 100
+      console.log('Raw getAllInboxes result keys:', Object.keys(result || {}).slice(0, 6));
+
+      // Normalize inbox list from possible response shapes
+      let inboxes = [];
+      if (Array.isArray(result)) inboxes = result;
+      else if (result && Array.isArray(result.content)) inboxes = result.content;
+      else if (result && Array.isArray(result.inboxes)) inboxes = result.inboxes;
+      else if (result && Array.isArray(result.value)) inboxes = result.value;
+      else if (result && result.results && Array.isArray(result.results)) inboxes = result.results;
+
+      console.log(`Found ${inboxes.length} inboxes (normalized)`);
+      if (inboxes.length > 0) console.log('First few inboxes:', inboxes.slice(0, 5).map(i => i.emailAddress).join(', '));
+
+      // Try exact match first, then case-insensitive contains
+      let existingInbox = inboxes.find(i => i.emailAddress === EXISTING_MAILSLURP_EMAIL);
+      if (!existingInbox) {
+        existingInbox = inboxes.find(i => i.emailAddress && i.emailAddress.toLowerCase().includes(EXISTING_MAILSLURP_EMAIL.toLowerCase()));
+      }
+
       if (existingInbox) {
         console.log(`✓ Found existing inbox: ${existingInbox.emailAddress}`);
         return existingInbox;
-      } else {
-        console.error(`✗ Could not find inbox for ${EXISTING_MAILSLURP_EMAIL}`);
-        console.log('Available inboxes:', inboxes.map(i => i.emailAddress).join(', '));
-        throw new Error(`Inbox for ${EXISTING_MAILSLURP_EMAIL} not found in MailSlurp`);
       }
+
+      // As a last resort, try to fetch inbox by searching pages (if many)
+      console.log('Inbox not found in first page; attempting a broader search (pages 0..9)');
+      for (let page = 0; page < 10; page++) {
+        try {
+          const pageResult = await mailslurp.getAllInboxes(page, 100);
+          const pageInboxes = Array.isArray(pageResult) ? pageResult : (pageResult.content || pageResult.inboxes || pageResult.value || pageResult.results || []);
+          if (!Array.isArray(pageInboxes) || pageInboxes.length === 0) break;
+          const found = pageInboxes.find(i => i.emailAddress === EXISTING_MAILSLURP_EMAIL || (i.emailAddress && i.emailAddress.toLowerCase().includes(EXISTING_MAILSLURP_EMAIL.toLowerCase())));
+          if (found) {
+            console.log(`✓ Found inbox on page ${page}`);
+            return found;
+          }
+        } catch (pageErr) {
+          console.log(`Page ${page} search error:`, pageErr.message || pageErr);
+          break;
+        }
+      }
+
+      console.error(`✗ Could not find inbox for ${EXISTING_MAILSLURP_EMAIL}`);
+      console.log('Available inboxes (sample):', inboxes.map(i => i.emailAddress).slice(0, 20).join(', '));
+      throw new Error(`Inbox for ${EXISTING_MAILSLURP_EMAIL} not found in MailSlurp`);
     } catch (e) {
-      console.error('Error getting MailSlurp inbox:', e);
+      console.error('Error getting MailSlurp inbox:', e.message || e);
       throw e;
     }
   };
