@@ -7,7 +7,12 @@ import 'login_screen.dart';
 import '../services/api_service.dart';
 
 class DashboardScreen extends StatefulWidget {
-  const DashboardScreen({super.key});
+  /// When true, the widget will skip loading remote user info (Amplify/API)
+  /// which is useful for widget tests that shouldn't depend on external
+  /// services. Default is false for normal app behavior.
+  final bool skipLoadUserInfo;
+
+  const DashboardScreen({super.key, this.skipLoadUserInfo = false});
 
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();
@@ -21,7 +26,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void initState() {
     super.initState();
-    _loadUserInfo();
+    if (!widget.skipLoadUserInfo) {
+      _loadUserInfo();
+    }
   }
 
   Future<void> _loadUserInfo() async {

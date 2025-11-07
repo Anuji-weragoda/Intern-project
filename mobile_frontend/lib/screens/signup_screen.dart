@@ -238,9 +238,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             ],
                           ),
                           child: Semantics(
-                            label: 'email_input',
-                            child: TextFormField(
-                              controller: _emailController,
+                              label: 'email_input',
+                              child: TextFormField(
+                                key: const ValueKey('signup_email_input'),
+                                controller: _emailController,
                               keyboardType: TextInputType.emailAddress,
                               style: const TextStyle(fontSize: 16),
                               decoration: const InputDecoration(
@@ -284,9 +285,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               ),
                             ],
                           ),
-                          child: Semantics(
+                            child: Semantics(
                             label: 'password_input',
                             child: TextFormField(
+                              key: const ValueKey('signup_password_input'),
                               controller: _passwordController,
                               obscureText: _obscurePassword,
                               style: const TextStyle(fontSize: 16),
@@ -344,9 +346,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               ),
                             ],
                           ),
-                          child: Semantics(
+                            child: Semantics(
                             label: 'confirm_password_input',
                             child: TextFormField(
+                              key: const ValueKey('signup_confirm_password_input'),
                               controller: _confirmPasswordController,
                               obscureText: _obscureConfirmPassword,
                               style: const TextStyle(fontSize: 16),
@@ -439,10 +442,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       SizedBox(
                         width: double.infinity,
                         height: 56,
-                        child: Semantics(
+                          child: Semantics(
                           label: _codeSent ? 'verify_button' : 'signup_button',
                           button: true,
                           child: ElevatedButton(
+                            key: const ValueKey('signup_button'),
                             onPressed: _loading
                                 ? null
                                 : (_codeSent ? _confirmSignUp : _signUp),

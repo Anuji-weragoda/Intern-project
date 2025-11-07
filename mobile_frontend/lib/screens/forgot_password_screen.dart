@@ -239,6 +239,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                         child: Semantics(
                           label: 'fp_email_input',
                           child: TextFormField(
+                          key: const ValueKey('fp_email_input'),
                           controller: _emailController,
                           keyboardType: TextInputType.emailAddress,
                           enabled: !_codeSent,
@@ -453,6 +454,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                           label: _codeSent ? 'fp_action_button_verify' : 'fp_action_button_send',
                           button: true,
                           child: ElevatedButton(
+                            key: const ValueKey('fp_action_button_send'),
                             onPressed: _loading
                                 ? null
                                 : (_codeSent ? _resetPassword : _requestResetCode),

@@ -261,7 +261,8 @@ class _MFAVerificationScreenState extends State<MFAVerificationScreen> {
                           width: double.infinity,
                           height: 56,
                           child: ElevatedButton(
-                            onPressed: _verifying ? null : _verifyCode,
+                              key: const ValueKey('mfa_verify_button'),
+                              onPressed: _verifying ? null : _verifyCode,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF3B82F6),
                               foregroundColor: Colors.white,

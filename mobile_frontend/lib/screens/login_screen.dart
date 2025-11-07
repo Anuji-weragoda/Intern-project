@@ -7,7 +7,9 @@ import 'forgot_password_screen.dart';
 import 'mfa_verification_screen.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+  final bool skipAuthCheck;
+
+  const LoginScreen({super.key, this.skipAuthCheck = false});
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -27,7 +29,9 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   void initState() {
     super.initState();
-    _checkAuthStatus();
+    if (!widget.skipAuthCheck) {
+      _checkAuthStatus();
+    }
   }
 
   @override
