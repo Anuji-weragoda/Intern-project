@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'dart:async';
 import 'package:amplify_flutter/amplify_flutter.dart';
 import 'mfa_verification_screen.dart';
 import 'totp_setup_screen.dart';
@@ -22,6 +24,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
   bool _codeSent = false;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
+  bool _resending = false;
+  int _resendCooldown = 0; // seconds remaining
+  Timer? _resendTimer;
 
   @override
   void dispose() {
@@ -29,7 +34,51 @@ class _SignUpScreenState extends State<SignUpScreen> {
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     _codeController.dispose();
+    _resendTimer?.cancel();
     super.dispose();
+  }
+
+  void _startResendCooldown([int seconds = 30]) {
+    setState(() => _resendCooldown = seconds);
+    _resendTimer?.cancel();
+    _resendTimer = Timer.periodic(const Duration(seconds: 1), (t) {
+      if (_resendCooldown <= 1) {
+        t.cancel();
+        if (mounted) setState(() => _resendCooldown = 0);
+      } else {
+        if (mounted) setState(() => _resendCooldown -= 1);
+      }
+    });
+  }
+
+  Future<void> _resendCode() async {
+    if (_resending || _resendCooldown > 0) return;
+    setState(() => _resending = true);
+    try {
+      await Amplify.Auth.resendSignUpCode(username: _emailController.text.trim());
+      if (!mounted) return;
+      _startResendCooldown(30);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Verification code resent'),
+          backgroundColor: Colors.green,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        ),
+      );
+    } on AuthException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to resend: ${e.message}'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _resending = false);
+    }
   }
 
   Future<void> _signUp() async {
@@ -291,8 +340,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
         child: SafeArea(
           child: Center(
             child: SingleChildScrollView(
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 32.0),
+                padding: EdgeInsets.only(
+                  left: 32,
+                  right: 32,
+                  bottom: MediaQuery.of(context).viewInsets.bottom + 32,
+                ),
                 child: Form(
                   key: _formKey,
                   child: Column(
@@ -557,17 +611,17 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               controller: _codeController,
                               keyboardType: TextInputType.number,
                               textAlign: TextAlign.center,
+                              maxLength: 6,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.digitsOnly,
+                              ],
                               style: const TextStyle(
                                 fontSize: 24,
                                 fontWeight: FontWeight.bold,
-                                letterSpacing: 8,
                               ),
                               decoration: const InputDecoration(
-                                hintText: 'Enter verification code',
-                                prefixIcon: Icon(
-                                  Icons.verified_user_outlined,
-                                  color: Color(0xFF3B82F6),
-                                ),
+                                hintText: '000000',
+                                counterText: '',
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.all(Radius.circular(16)),
                                   borderSide: BorderSide.none,
@@ -576,8 +630,30 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                 fillColor: Colors.white,
                                 contentPadding: EdgeInsets.all(20),
                               ),
+                              onFieldSubmitted: (_) => _loading ? null : _confirmSignUp(),
                             ),
                           ),
+                        ),
+                        const SizedBox(height: 16),
+                        // Resend code row
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              _resendCooldown > 0
+                                  ? 'Didn\'t get a code? '
+                                  : 'Didn\'t get a code? ',
+                              style: TextStyle(color: Colors.white.withOpacity(0.8)),
+                            ),
+                            TextButton(
+                              onPressed: (_resending || _resendCooldown > 0) ? null : _resendCode,
+                              child: Text(
+                                _resendCooldown > 0
+                                    ? 'Resend in ${_resendCooldown}s'
+                                    : (_resending ? 'Resending...' : 'Resend code'),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                       const SizedBox(height: 40),

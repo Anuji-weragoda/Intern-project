@@ -100,6 +100,7 @@ class _TotpSetupScreenState extends State<TotpSetupScreen> {
     final secret = widget.sharedSecret;
     final otpauthUrl = _buildOtpauthUrl();
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
@@ -109,14 +110,28 @@ class _TotpSetupScreenState extends State<TotpSetupScreen> {
           ),
         ),
         child: SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 32),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
+          child: LayoutBuilder(
+            builder: (ctx, constraints) {
+              return SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                padding: EdgeInsets.only(
+                  left: 32,
+                  right: 32,
+                  // Keep extra bottom space above keyboard so button never gets hidden
+                  bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+                  top: 12,
+                ),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minHeight: constraints.maxHeight - (MediaQuery.of(context).viewInsets.bottom),
+                  ),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
                     // Icon / Header
                     Container(
                       width: 100,
@@ -140,7 +155,7 @@ class _TotpSetupScreenState extends State<TotpSetupScreen> {
                         child: Icon(Icons.qr_code_2, size: 56, color: Colors.white),
                       ),
                     ),
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 28),
                     const Text(
                       'Set Up Authenticator',
                       style: TextStyle(
@@ -150,7 +165,7 @@ class _TotpSetupScreenState extends State<TotpSetupScreen> {
                         letterSpacing: -0.5,
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 10),
                     Text(
                       secret == null || secret.isEmpty
                           ? 'Missing TOTP secret. Please retry sign in.'
@@ -161,7 +176,7 @@ class _TotpSetupScreenState extends State<TotpSetupScreen> {
                       ),
                       textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 20),
                     // Step 1: Install
                     Align(
                       alignment: Alignment.centerLeft,
@@ -182,7 +197,7 @@ class _TotpSetupScreenState extends State<TotpSetupScreen> {
                         style: TextStyle(color: Colors.white.withOpacity(0.85), fontSize: 14),
                       ),
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 16),
                     // Step 2: Scan QR
                     Align(
                       alignment: Alignment.centerLeft,
@@ -268,7 +283,7 @@ class _TotpSetupScreenState extends State<TotpSetupScreen> {
                         ),
                     ],
                     if (secret != null && secret.isNotEmpty) ...[
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 20),
                       Align(
                         alignment: Alignment.centerLeft,
                         child: Text(
@@ -280,7 +295,7 @@ class _TotpSetupScreenState extends State<TotpSetupScreen> {
                           ),
                         ),
                       ),
-                      const SizedBox(height: 40),
+                      const SizedBox(height: 24),
                       // Code field
                       Container(
                         decoration: BoxDecoration(
@@ -312,6 +327,8 @@ class _TotpSetupScreenState extends State<TotpSetupScreen> {
                             fillColor: Colors.white,
                             contentPadding: EdgeInsets.all(20),
                           ),
+                          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                          autofocus: true,
                           validator: (value) {
                             if (value == null || value.isEmpty) return 'Enter code';
                               if (!RegExp(r'^\d{6}$').hasMatch(value)) return '6 digits';
@@ -320,7 +337,7 @@ class _TotpSetupScreenState extends State<TotpSetupScreen> {
                           onFieldSubmitted: (_) { if (!_verifying) _confirmTotpSetup(); },
                         ),
                       ),
-                      const SizedBox(height: 30),
+                      const SizedBox(height: 20),
                       SizedBox(
                         width: double.infinity,
                         height: 56,
@@ -349,9 +366,11 @@ class _TotpSetupScreenState extends State<TotpSetupScreen> {
                       ),
                     ],
                   ],
+                    ),
+                  ),
                 ),
-              ),
-            ),
+              );
+            },
           ),
         ),
       ),
