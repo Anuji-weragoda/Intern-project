@@ -51,7 +51,9 @@ export function redirect(
   } catch {}
 
   // Prefer a deterministic, non-throwing path in tests
-  const isTestEnv = !!(typeof process !== "undefined" && process?.env && (process.env.JEST_WORKER_ID || process.env.NODE_ENV === "test"));
+  // Avoid direct reference to Node's global `process` to keep browser builds type-safe
+  const proc = (globalThis as any)?.process;
+  const isTestEnv = !!(proc?.env && (proc.env.JEST_WORKER_ID || proc.env.NODE_ENV === "test"));
   const treatAsTest = options?.forceNonTest ? false : isTestEnv;
   if (treatAsTest) {
     navigateWithHistory(href);

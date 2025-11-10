@@ -5,7 +5,7 @@
     "useDefineForClassFields": true,
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
   "module": "ESNext",
-  "types": ["vite/client", "jest", "@testing-library/jest-dom"],        // include jest-dom matchers
+  "types": ["vite/client"],
     "skipLibCheck": true,
 
     /* Bundler mode */
@@ -28,5 +28,6 @@
     /* Fix for default React import in tests */
     "esModuleInterop": true
   },
-  "include": ["src", "src/tests"]           // <-- include tests
+  "include": ["src"],
+  "exclude": ["src/__tests__", "src/tests", "src/setupTests.ts"]
 }
