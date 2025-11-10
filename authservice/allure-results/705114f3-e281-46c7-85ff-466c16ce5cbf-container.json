@@ -1,1 +1,0 @@
-{"uuid":"705114f3-e281-46c7-85ff-466c16ce5cbf","name":"POST /api/v1/auth/sync creates/updates user and returns profile","children":["799dd6f9-5bcd-4c37-95c6-c3f8f6801847"],"befores":[],"afters":[],"start":1762034680021,"stop":1762034680087}
