@@ -1,7 +1,7 @@
 {
   "title": "should complete signup, email verification, then optional TOTP setup",
   "state": "passed",
-  "duration": 89811,
-  "timestamp": "2025-11-10T06:31:54.416Z",
-  "email": "b6f0dd5a-8d76-4587-9778-c1ad61f44bae@mailslurp.biz"
+  "duration": 90959,
+  "timestamp": "2025-11-10T06:39:01.267Z",
+  "email": "5f1d8d84-3c91-4b65-9620-2129faba0081@mailslurp.biz"
 }
