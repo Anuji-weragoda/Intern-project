@@ -137,7 +137,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
           child: Column(
             children: [
               // Header Section
-              Container(
+              Semantics(
+                label: 'dashboard_header',
+                child: Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
@@ -194,26 +196,34 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                     ),
                     const SizedBox(height: 24),
-                    const Text(
-                      'Staff Management',
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                    Semantics(
+                      label: 'dashboard_title',
+                      child: Text(
+                        'Staff Management',
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 8),
-                    Text(
-                      'Welcome, ${_displayName ?? _userEmail ?? 'User'}!',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.white.withOpacity(0.9),
+                    Semantics(
+                      label: 'dashboard_welcome_text',
+                      value: 'Welcome',
+                      child: Text(
+                        'Welcome, ${_displayName ?? _userEmail ?? 'User'}!',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.white.withOpacity(0.9),
+                        ),
+                        textAlign: TextAlign.center,
                       ),
-                      textAlign: TextAlign.center,
                     ),
                   ],
                 ),
-              ),
+              ), // end Container
+              ), // end Semantics
 
               // Menu Items
               Expanded(

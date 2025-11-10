@@ -151,19 +151,19 @@ class _SignUpScreenState extends State<SignUpScreen> {
       );
 
       if (result.isSignUpComplete && mounted) {
-        // Auto sign-in to continue MFA/TOTP setup immediately
+        // Auto sign-in to continue MFA/TOTP setup immediately using a compact handler.
         try {
           final signInRes = await Amplify.Auth.signIn(
             username: _emailController.text.trim(),
             password: _passwordController.text.trim(),
           );
-          safePrint('[Signup] auto sign-in nextStep: ${signInRes.nextStep.signInStep}');
-          safePrint('[Signup] allowed MFA types: ${signInRes.nextStep.allowedMfaTypes}');
+          final step = signInRes.nextStep.signInStep;
+          safePrint('[Signup] auto sign-in nextStep: $step');
 
           if (signInRes.isSignedIn) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: const Text('Sign up complete! Signed in.'),
+                content: const Text('Sign up complete — signed in!'),
                 backgroundColor: Colors.green,
                 behavior: SnackBarBehavior.floating,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -175,128 +175,79 @@ class _SignUpScreenState extends State<SignUpScreen> {
             return;
           }
 
-          final step = signInRes.nextStep.signInStep;
-          if (step == AuthSignInStep.confirmSignInWithSmsMfaCode ||
-              step == AuthSignInStep.confirmSignInWithTotpMfaCode) {
+          // Handle MFA/TOTP steps similarly to login flow but streamlined.
+          if (step == AuthSignInStep.confirmSignInWithTotpMfaCode ||
+              step == AuthSignInStep.confirmSignInWithSmsMfaCode) {
             Navigator.of(context).pushReplacement(
               MaterialPageRoute(
                 builder: (_) => MFAVerificationScreen(mfaStep: step),
               ),
             );
             return;
-          } else if (step == AuthSignInStep.continueSignInWithTotpSetup) {
-            // Explicitly call setupTotp to get secret
-            safePrint('[Signup] continueSignInWithTotpSetup -> setupTotp()');
+          }
+
+          if (step == AuthSignInStep.continueSignInWithTotpSetup) {
             final setupDetails = await Amplify.Auth.setUpTotp();
-            final secret = setupDetails.sharedSecret;
             Navigator.of(context).pushReplacement(
               MaterialPageRoute(
                 builder: (_) => TotpSetupScreen(
-                  sharedSecret: secret,
+                  sharedSecret: setupDetails.sharedSecret,
                   username: _emailController.text.trim(),
                   issuer: 'StaffMS',
                 ),
               ),
             );
             return;
-          } else if (step == AuthSignInStep.continueSignInWithMfaSelection ||
-              step.toString().contains('continueSignInWithMfaSetupSelection')) {
-            safePrint('[Signup] MFA setup selection step detected.');
-            // If secret already present in next step details, use it directly.
-            if (signInRes.nextStep.totpSetupDetails != null) {
-              final secret = signInRes.nextStep.totpSetupDetails!.sharedSecret;
-              safePrint('[Signup] Using pre-provided TOTP secret (first 6): ${secret.substring(0, secret.length < 6 ? secret.length : 6)}...');
-              Navigator.of(context).pushReplacement(
-                MaterialPageRoute(
-                  builder: (_) => TotpSetupScreen(
-                    sharedSecret: secret,
-                    username: _emailController.text.trim(),
-                    issuer: 'StaffMS',
-                  ),
-                ),
-              );
-              return;
-            }
-            // Otherwise attempt direct setUpTotp call.
-            try {
-              safePrint('[Signup] No secret provided; calling setUpTotp()');
-              final setupDetails = await Amplify.Auth.setUpTotp();
-              final secret = setupDetails.sharedSecret;
-              safePrint('[Signup] setupTotp obtained secret (first 6): ${secret.substring(0, secret.length < 6 ? secret.length : 6)}...');
-              Navigator.of(context).pushReplacement(
-                MaterialPageRoute(
-                  builder: (_) => TotpSetupScreen(
-                    sharedSecret: secret,
-                    username: _emailController.text.trim(),
-                    issuer: 'StaffMS',
-                  ),
-                ),
-              );
-              return;
-            } catch (e) {
-              safePrint('[Signup] Direct setUpTotp failed ($e); falling back to explicit selection');
-              try {
-                SignInResult selected;
-                try {
-                  selected = await Amplify.Auth.confirmSignIn(confirmationValue: 'SOFTWARE_TOKEN_MFA');
-                } catch (_) {
-                  selected = await Amplify.Auth.confirmSignIn(confirmationValue: 'totp');
-                }
-                final step2 = selected.nextStep.signInStep;
-                safePrint('[Signup] after fallback selection nextStep: $step2');
-                if (step2 == AuthSignInStep.continueSignInWithTotpSetup) {
-                  final setupDetails2 = await Amplify.Auth.setUpTotp();
-                  final secret2 = setupDetails2.sharedSecret;
-                  Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(
-                      builder: (_) => TotpSetupScreen(
-                        sharedSecret: secret2,
-                        username: _emailController.text.trim(),
-                        issuer: 'StaffMS',
-                      ),
-                    ),
-                  );
-                  return;
-                } else if (step2 == AuthSignInStep.confirmSignInWithTotpMfaCode ||
-                    step2 == AuthSignInStep.confirmSignInWithSmsMfaCode) {
-                  Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(
-                      builder: (_) => MFAVerificationScreen(mfaStep: step2),
-                    ),
-                  );
-                  return;
-                }
-              } catch (e2) {
-                safePrint('[Signup] MFA selection fallback failed: $e2');
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: const Text('MFA selection failed'),
-                    backgroundColor: Colors.red,
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  ),
-                );
-              }
-              return;
-            }
           }
 
-          // Fallback
+            if (step == AuthSignInStep.continueSignInWithMfaSelection ||
+                step.toString().contains('continueSignInWithMfaSetupSelection')) {
+              // Prefer provided secret; else attempt setup directly.
+              final details = signInRes.nextStep.totpSetupDetails;
+              if (details != null) {
+                Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(
+                    builder: (_) => TotpSetupScreen(
+                      sharedSecret: details.sharedSecret,
+                      username: _emailController.text.trim(),
+                      issuer: 'StaffMS',
+                    ),
+                  ),
+                );
+                return;
+              }
+              try {
+                final setupDetails = await Amplify.Auth.setUpTotp();
+                Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(
+                    builder: (_) => TotpSetupScreen(
+                      sharedSecret: setupDetails.sharedSecret,
+                      username: _emailController.text.trim(),
+                      issuer: 'StaffMS',
+                    ),
+                  ),
+                );
+                return;
+              } catch (e) {
+                safePrint('[Signup] setUpTotp during selection failed: $e');
+              }
+            }
+
+          // If no recognized step leads to immediate continuation, fall back to login screen without restarting signup flow.
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: const Text('Sign up complete. Continue to login.'),
-              backgroundColor: Colors.green,
+              content: const Text('Additional step required — please sign in.'),
+              backgroundColor: Colors.orange,
               behavior: SnackBarBehavior.floating,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
           );
           Navigator.pop(context);
         } catch (e) {
-          // If sign-in fails, go back to login screen as before
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Sign in after signup failed: $e'),
-              backgroundColor: Colors.orange,
+              content: Text('Auto sign-in failed: $e'),
+              backgroundColor: Colors.red,
               behavior: SnackBarBehavior.floating,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),

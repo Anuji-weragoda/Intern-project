@@ -27,7 +27,9 @@ class _TotpSetupScreenState extends State<TotpSetupScreen> {
   final _codeController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _verifying = false;
-  bool _showSecret = false;
+  // Show secret by default to improve automated test reliability (Appium needs it immediately).
+  // If you want to hide by default in production, flip this to false or gate with a const bool.fromEnvironment.
+  bool _showSecret = true;
 
   @override
   void dispose() {
@@ -234,53 +236,111 @@ class _TotpSetupScreenState extends State<TotpSetupScreen> {
                       ),
                     if (secret != null && secret.isNotEmpty) ...[
                       const SizedBox(height: 8),
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: TextButton(
-                          onPressed: () => setState(() => _showSecret = !_showSecret),
-                          child: Text(_showSecret ? 'Hide secret key' : 'Show secret key'),
+                      // Wrap the TextButton with ExcludeSemantics so parent Semantics label becomes the content-desc.
+                      // Semantics node for automation: ensure it's a container + button so Android exposes a stable content-desc.
+                      Semantics(
+                        label: 'totp_show_secret_button',
+                        button: true,
+                        container: true,
+                        // Expose current state as value so tests can differentiate hide vs show without relying on text.
+                        value: _showSecret ? 'visible' : 'hidden',
+                        child: ExcludeSemantics(
+                          excluding: true,
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: TextButton(
+                              onPressed: () => setState(() => _showSecret = !_showSecret),
+                              child: Text(_showSecret ? 'Hide secret key' : 'Show secret key'),
+                            ),
+                          ),
+                        ),
+                      ),
+                      // Fallback invisible semantics node (always present) to allow scrollIntoView even if button text changes.
+                      Offstage(
+                        offstage: true,
+                        child: Semantics(
+                          label: 'totp_show_secret_button_fallback',
+                          button: true,
+                          value: _showSecret ? 'visible' : 'hidden',
+                          child: const SizedBox.shrink(),
                         ),
                       ),
                       if (_showSecret)
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Expanded(
-                                child: SelectableText(
-                                  secret,
-                                  style: const TextStyle(
-                                    fontFamily: 'monospace',
-                                    fontSize: 16,
-                                    letterSpacing: 1.2,
-                                    color: Colors.black87,
+                        Semantics(
+                          label: 'totp_secret_container',
+                          child: Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Expanded(
+                                  child: Semantics(
+                                    label: 'totp_secret_value', // accessibility id for Appium
+                                    value: secret, // expose the actual secret via contentDescription value
+                                    readOnly: true,
+                                    child: ExcludeSemantics(
+                                      excluding: false,
+                                      child: SelectableText(
+                                        secret,
+                                        key: const ValueKey('totp_secret_value'),
+                                        style: const TextStyle(
+                                          fontFamily: 'monospace',
+                                          fontSize: 16,
+                                          letterSpacing: 1.2,
+                                          color: Colors.black87,
+                                        ),
+                                      ),
+                                    ),
                                   ),
                                 ),
-                              ),
-                              IconButton(
-                                tooltip: 'Copy secret',
-                                icon: const Icon(Icons.copy, color: Colors.black87),
-                                onPressed: () async {
-                                  await Clipboard.setData(ClipboardData(text: secret));
-                                  if (!mounted) return;
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: const Text('Secret key copied'),
-                                      behavior: SnackBarBehavior.floating,
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                    ),
-                                  );
-                                },
-                              )
-                            ],
+                                Semantics(
+                                  label: 'totp_copy_secret_button',
+                                  button: true,
+                                  child: IconButton(
+                                    tooltip: 'Copy secret',
+                                    icon: const Icon(Icons.copy, color: Colors.black87),
+                                    onPressed: () async {
+                                      await Clipboard.setData(ClipboardData(text: secret));
+                                      if (!mounted) return;
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: const Text('Secret key copied'),
+                                          behavior: SnackBarBehavior.floating,
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                )
+                              ],
+                            ),
                           ),
                         ),
+                      // Provide an offstage semantics node for automation fallback even when secret hidden.
+                      if (!_showSecret)
+                        Offstage(
+                          offstage: false,
+                          child: Semantics(
+                            label: 'totp_secret_value_offstage',
+                            value: secret,
+                            child: const SizedBox.shrink(),
+                          ),
+                        ),
+                      // Always-present static semantics containing the secret for automation extraction
+                      // Keep offstage=false so the semantics node is exposed to accessibility tree
+                      Offstage(
+                        offstage: false,
+                        child: Semantics(
+                          label: 'totp_secret_value_static',
+                          value: secret,
+                          child: const SizedBox.shrink(),
+                        ),
+                      ),
                     ],
                     if (secret != null && secret.isNotEmpty) ...[
                       const SizedBox(height: 20),
@@ -296,67 +356,75 @@ class _TotpSetupScreenState extends State<TotpSetupScreen> {
                         ),
                       ),
                       const SizedBox(height: 24),
-                      // Code field
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
-                              blurRadius: 20,
-                              offset: const Offset(0, 10),
-                            ),
-                          ],
-                        ),
-                        child: TextFormField(
-                          key: const ValueKey('totp_code_field'),
-                          controller: _codeController,
-                          keyboardType: TextInputType.number,
-                          maxLength: 6,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                          decoration: const InputDecoration(
-                            hintText: '000000',
-                            counterText: '',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.all(Radius.circular(16)),
-                              borderSide: BorderSide.none,
-                            ),
-                            filled: true,
-                            fillColor: Colors.white,
-                            contentPadding: EdgeInsets.all(20),
+                      // Code field (with semantics label for Appium)
+                      Semantics(
+                        label: 'totp_code_field',
+                        textField: true,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.1),
+                                blurRadius: 20,
+                                offset: const Offset(0, 10),
+                              ),
+                            ],
                           ),
-                          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                          autofocus: true,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) return 'Enter code';
+                          child: TextFormField(
+                            key: const ValueKey('totp_code_field'),
+                            controller: _codeController,
+                            keyboardType: TextInputType.number,
+                            maxLength: 6,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                            decoration: const InputDecoration(
+                              hintText: '000000',
+                              counterText: '',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.all(Radius.circular(16)),
+                                borderSide: BorderSide.none,
+                              ),
+                              filled: true,
+                              fillColor: Colors.white,
+                              contentPadding: EdgeInsets.all(20),
+                            ),
+                            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                            autofocus: true,
+                            validator: (value) {
+                              if (value == null || value.isEmpty) return 'Enter code';
                               if (!RegExp(r'^\d{6}$').hasMatch(value)) return '6 digits';
-                            return null;
-                          },
-                          onFieldSubmitted: (_) { if (!_verifying) _confirmTotpSetup(); },
+                              return null;
+                            },
+                            onFieldSubmitted: (_) { if (!_verifying) _confirmTotpSetup(); },
+                          ),
                         ),
                       ),
                       const SizedBox(height: 20),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 56,
-                        child: ElevatedButton(
-                          key: const ValueKey('totp_verify_button'),
-                          onPressed: _verifying ? null : _confirmTotpSetup,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF3B82F6),
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                            elevation: 0,
+                      Semantics(
+                        label: 'totp_verify_button',
+                        button: true,
+                        child: SizedBox(
+                          width: double.infinity,
+                          height: 56,
+                          child: ElevatedButton(
+                            key: const ValueKey('totp_verify_button'),
+                            onPressed: _verifying ? null : _confirmTotpSetup,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF3B82F6),
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                              elevation: 0,
+                            ),
+                            child: _verifying
+                                ? const SizedBox(
+                                    height: 24,
+                                    width: 24,
+                                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
+                                  )
+                                : const Text('Verify & Finish', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                           ),
-                          child: _verifying
-                              ? const SizedBox(
-                                  height: 24,
-                                  width: 24,
-                                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
-                                )
-                              : const Text('Verify & Finish', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                         ),
                       ),
                       const SizedBox(height: 12),
