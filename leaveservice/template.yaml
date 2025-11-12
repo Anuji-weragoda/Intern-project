@@ -1,0 +1,54 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  LeaveService - Staff Leave & Attendance Microservice
+
+Globals:
+  Function:
+    Timeout: 10
+    Runtime: nodejs18.x
+    Environment:
+      Variables:
+        DB_HOST: !Ref DBHost
+        DB_USER: !Ref DBUser
+        DB_PASS: !Ref DBPass
+        DB_NAME: !Ref DBName
+        DB_PORT: !Ref DBPort
+
+Parameters:
+  DBHost:
+    Type: String
+    Description: PostgreSQL host
+  DBUser:
+    Type: String
+    Description: PostgreSQL user
+  DBPass:
+    Type: String
+    Description: PostgreSQL password
+  DBName:
+    Type: String
+    Description: PostgreSQL database name
+  DBPort:
+    Type: String
+    Default: '5432'
+    Description: PostgreSQL port
+
+Resources:
+  LeaveServiceFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/app.handler
+      CodeUri: .
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /{proxy+}
+            Method: ANY
+      Environment:
+        Variables:
+          DB_HOST: !Ref DBHost
+          DB_USER: !Ref DBUser
+          DB_PASS: !Ref DBPass
+          DB_NAME: !Ref DBName
+          DB_PORT: !Ref DBPort
