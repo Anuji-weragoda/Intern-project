@@ -2,13 +2,19 @@
   "info": {
     "name": "Leave Service API",
     "_postman_id": "leaveservice-collection",
-    "description": "Collection to test Leave & Attendance microservice locally",
+    "description": "Collection to test Leave & Attendance microservice locally.\n\nPre-req: Provide a valid Cognito ID token in the collection variable `idToken` or configure `token_url`, `client_id`, `client_secret`, `username`, `password` to fetch one at runtime (if your Cognito pool allows ROPC).",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
     { "key": "baseUrl", "value": "http://localhost:3000" },
     { "key": "sampleUserId", "value": "00000000-0000-4000-8000-000000000001" },
     { "key": "approverId", "value": "11111111-1111-4111-8111-111111111111" },
+    { "key": "idToken", "value": "" },
+    { "key": "token_url", "value": "" },
+    { "key": "client_id", "value": "" },
+    { "key": "client_secret", "value": "" },
+    { "key": "username", "value": "" },
+    { "key": "password", "value": "" },
     { "key": "bearerToken", "value": "" },
     { "key": "lastRequestId", "value": "" }
   ],
@@ -16,16 +22,64 @@
     {
       "listen": "prerequest",
       "script": {
-        "exec": [
-          "// Collection-level pre-request: set a simple unsigned JWT for local testing",
+          "exec": [
+          "// Collection-level pre-request: obtain a real ID token if available, otherwise fall back to unsigned JWT for local testing",
           "(function(){",
           "  try {",
-          "    // simple base64 helper (Postman sandbox provides btoa)",
-          "    var hdr = btoa(JSON.stringify({ alg: 'none', typ: 'JWT' }));",
-          "    var payload = btoa(JSON.stringify({ sub: pm.variables.get('sampleUserId'), roles: ['approver'], iat: Math.floor(Date.now()/1000) }));",
-          "    pm.variables.set('bearerToken', hdr + '.' + payload + '.');",
+          "    var provided = pm.variables.get('idToken');",
+          "    if (provided && provided.length>10) {",
+          "      pm.variables.set('bearerToken', provided);",
+          "    } else {",
+          "      // If token_url and credentials are configured, try to fetch an ID token (ROPC grant).",
+          "      var tokenUrl = pm.variables.get('token_url');",
+          "      var clientId = pm.variables.get('client_id');",
+          "      var clientSecret = pm.variables.get('client_secret');",
+          "      var username = pm.variables.get('username');",
+          "      var password = pm.variables.get('password');",
+          "      if (tokenUrl && tokenUrl.length>5 && clientId && username && password) {",
+          "        var body = 'grant_type=password&username=' + encodeURIComponent(username) + '&password=' + encodeURIComponent(password) + '&client_id=' + encodeURIComponent(clientId);",
+          "        var headers = { 'Content-Type': 'application/x-www-form-urlencoded' };",
+          "        if (clientSecret && clientSecret.length>0) {",
+          "          headers['Authorization'] = 'Basic ' + btoa(clientId + ':' + clientSecret);",
+          "        }",
+          "        pm.sendRequest({",
+          "          url: tokenUrl,",
+          "          method: 'POST',",
+          "          header: headers,",
+          "          body: { mode: 'raw', raw: body }",
+          "        }, function (err, response) {",
+          "          if (err || !response) return;",
+          "          try {",
+          "            var json = response.json();",
+          "            // Prefer id_token, fall back to access_token",
+          "            var tok = json.id_token || json.access_token || '';",
+          "            if (tok) pm.variables.set('bearerToken', tok);",
+          "          } catch (e) { /* ignore */ }",
+          "        });",
+          "      } else {",
+          "        // fallback unsigned JWT used only for local dev where auth is permissive",
+          "        var hdr = btoa(JSON.stringify({ alg: 'none', typ: 'JWT' }));",
+          "        // If sampleUserId is present, keep it; otherwise default to a placeholder until we decode token",
+          "        var initialSub = pm.variables.get('sampleUserId') || '00000000-0000-4000-8000-000000000001';",
+          "        var payload = btoa(JSON.stringify({ sub: initialSub, roles: ['approver'], iat: Math.floor(Date.now()/1000) }));",
+          "        pm.variables.set('bearerToken', hdr + '.' + payload + '.');",
+          "      }",
+          "    }",
+          "    // If we have a bearerToken now, try to decode its payload and set sampleUserId from sub so requests use the real user",
+          "    var bt = pm.variables.get('bearerToken');",
+          "    if (bt && bt.split('.').length >= 2) {",
+          "      try {",
+          "        var parts = bt.split('.');",
+          "        var payloadB64 = parts[1];",
+          "        // add padding if needed",
+          "        while (payloadB64.length % 4) payloadB64 += '=';",
+          "        var decoded = atob(payloadB64.replace(/-/g, '+').replace(/_/g, '/'));",
+          "        var obj = JSON.parse(decoded);",
+          "        if (obj && obj.sub) pm.variables.set('sampleUserId', obj.sub);",
+          "      } catch (e) { /* ignore decode errors */ }",
+          "    }",
           "  } catch (e) {",
-          "    // fallback: leave bearerToken unchanged",
+          "    // noop",
           "  }",
           "})();"
         ],
@@ -35,120 +89,169 @@
   ],
   "item": [
     {
-      "name": "Health",
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": "{{baseUrl}}/healthz"
-      }
-    },
-    {
-      "name": "Get Leave Balances",
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": "{{baseUrl}}/api/leaves?user_id={{sampleUserId}}"
-      }
-    },
-    {
-      "name": "Create Leave Request",
-      "event": [
+      "name": "Positive Tests",
+      "item": [
         {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "if (pm.response.code === 201) {",
-              "  try {",
-              "    var json = pm.response.json();",
-              "    pm.variables.set('lastRequestId', json.id || (json.request && json.request.id) || '');",
-              "  } catch (e) {}",
-              "}"
-            ],
-            "type": "text/javascript"
-          }
+          "name": "Health",
+          "event": [ { "listen": "test", "script": { "exec": [ "pm.test(\"health check returns 200\", function(){ pm.response.to.have.status(200); });" ], "type": "text/javascript" } } ],
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/healthz" }
+        },
+        {
+          "name": "Get Leave Balances",
+          "event": [ { "listen": "test", "script": { "exec": [ "pm.test(\"get balances returns 200\", function(){ pm.response.to.have.status(200); });" ], "type": "text/javascript" } } ],
+          "request": { "method": "GET", "header": [ { "key": "Authorization", "value": "Bearer {{bearerToken}}" } ], "url": "{{baseUrl}}/api/leaves?user_id={{sampleUserId}}" }
+        },
+        {
+          "name": "Create Leave Request",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"create leave returns 201\", function(){ pm.response.to.have.status(201); });",
+                  "try {",
+                  "  if (pm.response.code === 201) {",
+                  "    var json = null;",
+                  "    try { json = pm.response.json(); } catch(e) { json = null; }",
+                  "    var id = json && (json.id || (json.request && json.request.id) || (json.data && json.data.id) || json.requestId || (json.leave && json.leave.id));",
+                  "    if (id) { pm.variables.set('lastRequestId', id); } else {",
+                  "      console.log('Create Leave Request: response did not include id. Body:', pm.response.text());",
+                  "      pm.test('create leave returned an id', function(){ pm.expect(id).to.be.ok; });",
+                  "    }",
+                  "  } else {",
+                  "    console.log('Create Leave Request: unexpected status', pm.response.code, pm.response.text());",
+                  "    pm.test('create leave status is 201', function(){ pm.expect(pm.response.code).to.equal(201); });",
+                  "  }",
+                  "} catch (e) { console.log('Error in create leave test script', e); pm.test('create leave script exception', function(){ throw e; }); }"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": { "method": "POST", "header": [ { "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{bearerToken}}" } ], "body": { "mode": "raw", "raw": "{\n  \"user_id\": \"{{sampleUserId}}\",\n  \"policy_id\": 1,\n  \"start_date\": \"2028-06-01\",\n  \"end_date\": \"2028-06-03\",\n  \"reason\": \"Postman seeded request\"\n}" }, "url": "{{baseUrl}}/api/leaves" }
+        },
+        {
+          "name": "List Leave Requests",
+          "event": [ { "listen": "test", "script": { "exec": [ "pm.test(\"list leaves returns 200\", function(){ pm.response.to.have.status(200); });" ], "type": "text/javascript" } } ],
+          "request": { "method": "GET", "header": [ { "key": "Authorization", "value": "Bearer {{bearerToken}}" } ], "url": "{{baseUrl}}/api/leaves?user_id={{sampleUserId}}" }
+        },
+        {
+          "name": "Approve Last Leave Request",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                              "// Ensure approverId is set to the currently-logged-in user's id (decoded from bearerToken) before calling approve",
+                              "(function(){",
+                              "  try {",
+                              "    var bt = pm.variables.get('bearerToken') || '';",
+                              "    var sub = pm.variables.get('sampleUserId') || '';",
+                              "    if (bt && bt.split('.').length >= 2) {",
+                              "      try {",
+                              "        var payload = bt.split('.')[1];",
+                              "        while (payload.length % 4) payload += '=';",
+                              "        var decoded = atob(payload.replace(/-/g, '+').replace(/_/g, '/'));",
+                              "        var obj = JSON.parse(decoded);",
+                              "        if (obj && obj.sub) sub = obj.sub;",
+                              "      } catch (e) { /* ignore */ }",
+                              "    }",
+                              "    if (sub) pm.variables.set('approverId', sub);",
+                              "    var last = pm.variables.get('lastRequestId');",
+                              "    if (!last || last.length < 3) {",
+                              "      console.log('Approve: lastRequestId is empty - create leave may have failed. lastRequestId=' + last);",
+                              "      pm.test('lastRequestId present', function(){ pm.expect(last, 'lastRequestId').to.be.ok; });",
+                          "      try { if (pm && pm.execution && typeof pm.execution.setNextRequest === 'function') { pm.execution.setNextRequest(null); } else if (typeof postman !== 'undefined' && postman.setNextRequest) { postman.setNextRequest(null); } } catch(e) { /* ignore if runner doesn't support */ }",
+                              "      pm.variables.set('skipApproveRequest','true');",
+                              "    }",
+                              "  } catch (e) { console.log('error in approver prereq', e); }",
+                              "})();"
+                            ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": { "method": "PATCH", "header": [ { "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{bearerToken}}" } ], "body": { "mode": "raw", "raw": "{ \"action\": \"approve\", \"approver_id\": \"{{approverId}}\" }" }, "url": "{{baseUrl}}/api/leaves/{{lastRequestId}}/approve" }
+        },
+        {
+          "name": "Reject Last Leave Request",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                              "// Ensure approverId is set to the currently-logged-in user's id (decoded from bearerToken) before calling reject",
+                              "(function(){",
+                              "  try {",
+                              "    var bt = pm.variables.get('bearerToken') || '';",
+                              "    var sub = pm.variables.get('sampleUserId') || '';",
+                              "    if (bt && bt.split('.').length >= 2) {",
+                              "      try {",
+                              "        var payload = bt.split('.')[1];",
+                              "        while (payload.length % 4) payload += '=';",
+                              "        var decoded = atob(payload.replace(/-/g, '+').replace(/_/g, '/'));",
+                              "        var obj = JSON.parse(decoded);",
+                              "        if (obj && obj.sub) sub = obj.sub;",
+                              "      } catch (e) { /* ignore */ }",
+                              "    }",
+                              "    if (sub) pm.variables.set('approverId', sub);",
+                              "    var last = pm.variables.get('lastRequestId');",
+                              "    if (!last || last.length < 3) {",
+                              "      console.log('Reject: lastRequestId is empty - create leave may have failed. lastRequestId=' + last);",
+                              "      pm.test('lastRequestId present', function(){ pm.expect(last, 'lastRequestId').to.be.ok; });",
+                          "      try { if (pm && pm.execution && typeof pm.execution.setNextRequest === 'function') { pm.execution.setNextRequest(null); } else if (typeof postman !== 'undefined' && postman.setNextRequest) { postman.setNextRequest(null); } } catch(e) { /* ignore if runner doesn't support */ }",
+                              "      pm.variables.set('skipRejectRequest','true');",
+                              "    }",
+                              "  } catch (e) { console.log('error in reject prereq', e); }",
+                              "})();"
+                            ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": { "method": "PATCH", "header": [ { "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{bearerToken}}" } ], "body": { "mode": "raw", "raw": "{ \"action\": \"reject\", \"approver_id\": \"{{approverId}}\", \"note\": \"Not available\" }" }, "url": "{{baseUrl}}/api/leaves/{{lastRequestId}}/reject" }
+        },
+        {
+          "name": "Clock In",
+          "event": [ { "listen": "test", "script": { "exec": [ "pm.test(\"clock-in returns 201\", function(){ pm.response.to.have.status(201); });", "try { var json = pm.response.json(); if (json && json.id) pm.variables.set('lastAttendanceId', json.id); } catch(e) {}" ], "type": "text/javascript" } } ],
+          "request": { "method": "POST", "header": [ { "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{bearerToken}}" } ], "body": { "mode": "raw", "raw": "{ \"user_id\": \"{{sampleUserId}}\", \"method\": \"mobile\" }" }, "url": "{{baseUrl}}/api/attendance/clock-in" }
+        },
+        {
+          "name": "Clock Out",
+          "event": [ { "listen": "test", "script": { "exec": [ "pm.test(\"clock-out returns 200 or 201\", function(){ pm.expect(pm.response.code).to.be.oneOf([200,201]); });", "try { var json = pm.response.json(); if (json && json.id) pm.variables.set('lastAttendanceId', json.id); } catch(e) {}" ], "type": "text/javascript" } } ],
+          "request": { "method": "POST", "header": [ { "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{bearerToken}}" } ], "body": { "mode": "raw", "raw": "{ \"user_id\": \"{{sampleUserId}}\" }" }, "url": "{{baseUrl}}/api/attendance/clock-out" }
+        },
+        {
+          "name": "Attendance History",
+          "event": [ { "listen": "test", "script": { "exec": [ "pm.test(\"attendance history returns 200\", function(){ pm.response.to.have.status(200); });" ], "type": "text/javascript" } } ],
+          "request": { "method": "GET", "header": [ { "key": "Authorization", "value": "Bearer {{bearerToken}}" } ], "url": "{{baseUrl}}/api/attendance?user_id={{sampleUserId}}" }
         }
-      ],
-      "request": {
-        "method": "POST",
-        "header": [
-          { "key": "Content-Type", "value": "application/json" }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"user_id\": \"{{sampleUserId}}\",\n  \"policy_id\": 1,\n  \"start_date\": \"2025-12-01\",\n  \"end_date\": \"2025-12-03\",\n  \"reason\": \"Postman seeded request\"\n}"
-      },
-      "url": "{{baseUrl}}/api/leaves"
-      }
+      ]
     },
     {
-      "name": "List Leave Requests",
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": "{{baseUrl}}/api/leaves?user_id={{sampleUserId}}"
-      }
-    },
-    {
-      "name": "Approve Last Leave Request",
-      "request": {
-        "method": "PATCH",
-        "header": [
-          { "key": "Content-Type", "value": "application/json" },
-          { "key": "Authorization", "value": "Bearer {{bearerToken}}" }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{ \"action\": \"approve\", \"approver_id\": \"{{approverId}}\" }"
+      "name": "Negative Tests",
+      "item": [
+        {
+          "name": "Create Missing Fields",
+          "request": { "method": "POST", "header": [ { "key": "Content-Type", "value": "application/json" } ], "body": { "mode": "raw", "raw": "{ \"user_id\": \"{{sampleUserId}}\" }" }, "url": "{{baseUrl}}/api/leaves" }
         },
-        "url": "{{baseUrl}}/api/leaves/{{lastRequestId}}/approve"
-      }
-    },
-    {
-      "name": "Reject Last Leave Request",
-      "request": {
-        "method": "PATCH",
-        "header": [
-          { "key": "Content-Type", "value": "application/json" },
-          { "key": "Authorization", "value": "Bearer {{bearerToken}}" }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{ \"action\": \"reject\", \"approver_id\": \"{{approverId}}\", \"note\": \"Not available\" }"
+        {
+          "name": "Create Invalid Date Range",
+          "request": { "method": "POST", "header": [ { "key": "Content-Type", "value": "application/json" } ], "body": { "mode": "raw", "raw": "{ \"user_id\": \"{{sampleUserId}}\", \"policy_id\": 1, \"start_date\": \"2025-12-05\", \"end_date\": \"2025-12-01\" }" }, "url": "{{baseUrl}}/api/leaves" }
         },
-        "url": "{{baseUrl}}/api/leaves/{{lastRequestId}}/reject"
-      }
-    },
-    {
-      "name": "Clock In",
-      "request": {
-        "method": "POST",
-        "header": [ { "key": "Content-Type", "value": "application/json" } ],
-        "body": {
-          "mode": "raw",
-          "raw": "{ \"user_id\": \"{{sampleUserId}}\", \"method\": \"mobile\", \"geo\": { \"lat\": 6.9271, \"lon\": 79.8612 } }"
+        {
+          "name": "Approve Without Auth",
+          "request": { "method": "PATCH", "header": [ { "key": "Content-Type", "value": "application/json" } ], "body": { "mode": "raw", "raw": "{ \"action\": \"approve\" }" }, "url": "{{baseUrl}}/api/leaves/1/approve" }
         },
-        "url": "{{baseUrl}}/api/attendance/clock-in"
-      }
-    },
-    {
-      "name": "Clock Out",
-      "request": {
-        "method": "POST",
-        "header": [ { "key": "Content-Type", "value": "application/json" } ],
-        "body": {
-          "mode": "raw",
-          "raw": "{ \"user_id\": \"{{sampleUserId}}\" }"
+        {
+          "name": "Clock Out Without Clock In",
+          "request": { "method": "POST", "header": [ { "key": "Content-Type", "value": "application/json" } ], "body": { "mode": "raw", "raw": "{ \"user_id\": \"00000000-0000-4000-8000-000000000999\" }" }, "url": "{{baseUrl}}/api/attendance/clock-out" }
         },
-        "url": "{{baseUrl}}/api/attendance/clock-out"
-      }
-    },
-    {
-      "name": "Attendance History",
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": "{{baseUrl}}/api/attendance?user_id={{sampleUserId}}"
-      }
+        {
+          "name": "Create Overlapping Request",
+          "request": { "method": "POST", "header": [ { "key": "Content-Type", "value": "application/json" } ], "body": { "mode": "raw", "raw": "{ \"user_id\": \"{{sampleUserId}}\", \"policy_id\": 1, \"start_date\": \"2025-12-02\", \"end_date\": \"2025-12-04\" }" }, "url": "{{baseUrl}}/api/leaves" }
+        }
+      ]
     }
   ]
 }

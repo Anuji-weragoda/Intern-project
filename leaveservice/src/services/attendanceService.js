@@ -6,12 +6,19 @@ export async function clockIn(data) {
   const { user_id, method, geo } = data;
   if (!user_id) throw new Error('user_id is required');
 
-  const payload = { user_id, clock_in: new Date(), method: method || 'mobile' };
+  // create a payload with a Date object for clock_in (pg driver will send as timestamp param)
+  const now = new Date();
+  // Dev debug: log the Date string and ISO representation before insert
+  // eslint-disable-next-line no-console
+
+  const payload = { user_id, clock_in: now, method: method || 'mobile' };
   if (geo && geo.lat && geo.lon) {
     payload.geo_location = { type: 'Point', coordinates: [geo.lon, geo.lat] };
   }
 
   const entry = await AttendanceLog.create(payload);
+  // eslint-disable-next-line no-console
+  // production: avoid verbose console logs here; rely on structured logger if needed
   return entry;
 }
 

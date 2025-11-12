@@ -8,12 +8,15 @@ import { requireAuth } from '../middleware/authClaims.js';
 const router = express.Router();
 
 // POST /api/leaves - Submit leave request
-router.post('/', validateBody(createLeaveSchema), submitLeaveRequest);
+// Require authentication for creating leave and viewing personal leave requests
+router.post('/', requireAuth(), validateBody(createLeaveSchema), submitLeaveRequest);
 // PATCH /api/leaves/:id/approve - Approve leave request (protected)
-router.patch('/:id/approve', requireAuth(), validateBody(patchLeaveSchema), approveLeaveRequest);
+// Only HR users may approve leave requests
+router.patch('/:id/approve', requireAuth(['hr']), validateBody(patchLeaveSchema), approveLeaveRequest);
 // PATCH /api/leaves/:id/reject - Reject leave request (protected)
-router.patch('/:id/reject', requireAuth(), validateBody(patchLeaveSchema), rejectLeaveRequest);
+// Only HR users may reject leave requests
+router.patch('/:id/reject', requireAuth(['hr']), validateBody(patchLeaveSchema), rejectLeaveRequest);
 // GET /api/leaves - View leave requests
-router.get('/', viewLeaveRequests);
+router.get('/', requireAuth(), viewLeaveRequests);
 
 export default router;

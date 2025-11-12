@@ -5,8 +5,12 @@
   "main": "src/app.js",
   "scripts": {
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand",
-    "start": "node src/app.js",
+  "start": "node src/app.js",
     "seed": "node scripts/seed-db.js",
+  "init-balances": "node scripts/init-balances.js",
+  "create-balance": "node scripts/create-balance.js",
+  "migrate:add-unique-balance": "node scripts/run-specific-migration.js migrations/002_add_unique_constraint_leave_balances.sql",
+    "postman:run": "newman run postman/leave-service.postman_collection.json -e postman/leave-service.environment.json",
     "db:test": "node src/dbTest.js",
     "migrate": "node scripts/run-migrations.js"
   },
@@ -22,6 +26,7 @@
   "devDependencies": {
     "jest": "^29.7.0",
     "supertest": "^6.3.3"
+    ,"newman": "^5.3.3"
   },
   "jest": {
     "testEnvironment": "node",

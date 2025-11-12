@@ -1,0 +1,21 @@
+{
+  "id": "leaveservice-env",
+  "name": "Leave Service Local",
+  "values": [
+    { "key": "baseUrl", "value": "http://localhost:3000", "enabled": true },
+  { "key": "sampleUserId", "value": "", "enabled": true },
+  { "key": "approverId", "value": "", "enabled": true },
+  { "key": "idToken", "value": "eyJraWQiOiJ4d0ZmZ3lGdktTVVM1Nm5lakE5RlRmbXlkZDFHdWxnK0JWeUFMK2ptM2owPSIsImFsZyI6IlJTMjU2In0.eyJhdF9oYXNoIjoiVngyQmhra3FLc3dYcFJMUmZQVUo1USIsInN1YiI6IjEwZmNhOTNjLWEwMTEtNzA5Zi1kNjhkLWExYTY4MzdlOTUwYiIsImNvZ25pdG86Z3JvdXBzIjpbIkFETUlOIl0sImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJpc3MiOiJodHRwczpcL1wvY29nbml0by1pZHAuZXUtbm9ydGgtMS5hbWF6b25hd3MuY29tXC9ldS1ub3J0aC0xX2VPdkF4OG5sdSIsImNvZ25pdG86dXNlcm5hbWUiOiIxMGZjYTkzYy1hMDExLTcwOWYtZDY4ZC1hMWE2ODM3ZTk1MGIiLCJub25jZSI6IjIxbFFQTnl2bmxYMGxhc3RHYnN1aDBsQWhaNkE2S1I2V1I1LWF3QnZxMGsiLCJvcmlnaW5fanRpIjoiMjg1MjQyY2UtOTM4MS00N2MyLThkMTYtOGE4NTViODNjMTE4IiwiYXVkIjoiN2Y4Yjh0Z2hvNzZ0Y2w5ZG1pcnEydG9tYXIiLCJldmVudF9pZCI6IjVhN2E3M2Q2LTFiY2MtNGQxZi1iNDcxLTI1MTgzNjlmZWZhYiIsInRva2VuX3VzZSI6ImlkIiwiYXV0aF90aW1lIjoxNzYyOTM3NTczLCJleHAiOjE3NjI5NDExNzMsImlhdCI6MTc2MjkzNzU3MywianRpIjoiNWQzYzhiNmQtMmY1MC00Mzg3LTkxZWYtOGQ1MmQyMDY3NmJlIiwiZW1haWwiOiJhbnVqaW5pc2hhbGFAZ21haWwuY29tIn0.ZOYV_TVPitGEotJ0YMgs-YIQrybrbhEVXd2Hft3GD5TJI-GmmNI_GUYhpVvVCLaqjbh2O31ZPv3IR1cAWQWrrcG0OAag5igrtPAfSlQeaALS-V16PNbVXBfI7_wNm9lgPhCH6PPZhkTn3drDevxpkxzuG2i55FyUxcWvIhZnPpaXbFUV1PYlb_r0DEHLhOFIz8mjVRkJcR64qZhzMnYm1O2_aApD_yhSoZVSa11HzbF6lcFuJfTD5JT2m-MvKSN7run1kOj9ixrefSw6-t-MGDNsrhV5mrnHnUz1FfBs4kTVckGrrb7QAW0WE70zaNcRPfmM04Yp0VpjQjTEeNctBg", "enabled": true },
+    { "key": "token_url", "value": "", "enabled": true },
+    { "key": "client_id", "value": "", "enabled": true },
+    { "key": "client_secret", "value": "", "enabled": true },
+    { "key": "username", "value": "", "enabled": true },
+    { "key": "password", "value": "", "enabled": true },
+  { "key": "bearerToken", "value": "eyJraWQiOiJ4d0ZmZ3lGdktTVVM1Nm5lakE5RlRmbXlkZDFHdWxnK0JWeUFMK2ptM2owPSIsImFsZyI6IlJTMjU2In0.eyJhdF9oYXNoIjoiVngyQmhra3FLc3dYcFJMUmZQVUo1USIsInN1YiI6IjEwZmNhOTNjLWEwMTEtNzA5Zi1kNjhkLWExYTY4MzdlOTUwYiIsImNvZ25pdG86Z3JvdXBzIjpbIkFETUlOIl0sImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJpc3MiOiJodHRwczpcL1wvY29nbml0by1pZHAuZXUtbm9ydGgtMS5hbWF6b25hd3MuY29tXC9ldS1ub3J0aC0xX2VPdkF4OG5sdSIsImNvZ25pdG86dXNlcm5hbWUiOiIxMGZjYTkzYy1hMDExLTcwOWYtZDY4ZC1hMWE2ODM3ZTk1MGIiLCJub25jZSI6IIjIxbFFQTnl2bmxYMGxhc3RHYnN1aDBsQWhaNkE2S1I2V1I1LWF3QnZxMGsiLCJvcmlnaW5fanRpIjoiMjg1MjQyY2UtOTM4MS00N2MyLThkMTYtOGE4NTViODNjMTE4IiwiYXVkIjoiN2Y4Yjh0Z2hvNzZ0Y2w5ZG1pcnEydG9tYXIiLCJldmVudF9pZCI6IjVVhN2E3M2Q2LTFiY2MtNGQxZi1iNDcxLTI1MTgzNjlmZWZhYiIsInRva2VuX3VzZSI6ImlkIiwiYXV0aF90aW1lIjoxNzYyOTM3NTczLCJleHAiOjE3NjI5NDExNzMsImlhdCI6MTc2MjkzNzU3MywianRpIjoiNWQzYzhiNmQtMmY1MC00Mzg3LTkxZWYtOGQ1MmQyMDY3NmJlIiwiZW1haWwiOiJhbnVqaW5pc2hhbGFAZ21haWwuY29tIn0.ZOYV_TVPitGEotJ0YMgs-YIQrybrbhEVXd2Hft3GD5TJI-GmmNI_GUYhpVvVCLaqjbh2O31ZPv3IR1cAWQWrrcG0OAag5igrtPAfSlQeaALS-V16PNbVXBfI7_wNm9lgPhCH6PPZhkTn3drDevxpkxzuG2i55FyUxcWvIhZnPpaXbFUV1PYlb_r0DEHLhOFIz8mjVRkJcR64qZhzMnYm1O2_aApD_yhSoZVSa11HzbF6lcFuJfTD5JT2m-MvKSN7run1kOj9ixrefSw6-t-MGDNsrhV5mrnHnUz1FfBs4kTVckGrrb7QAW0WE70zaNcRPfmM04Yp0VpjQjTEeNctBg", "enabled": true },
+    { "key": "lastRequestId", "value": "", "enabled": true }
+  ],
+  "timestamp": 0,
+  "_postman_variable_scope": "environment",
+  "_postman_exported_at": "2025-11-12T00:00:00.000Z",
+  "_postman_exported_using": "Postman/10.0"
+}

@@ -7,11 +7,11 @@ import { requireAuth } from '../middleware/authClaims.js';
 
 const router = express.Router();
 
-// POST /api/attendance/clock-in - Clock in
-router.post('/clock-in', validateBody(clockInSchema), clockIn);
-// POST /api/attendance/clock-out - Clock out
-router.post('/clock-out', validateBody(clockOutSchema), clockOut);
-// GET /api/attendance - Attendance history
-router.get('/', attendanceHistory);
+// POST /api/attendance/clock-in - Clock in (requires auth)
+router.post('/clock-in', requireAuth(), validateBody(clockInSchema), clockIn);
+// POST /api/attendance/clock-out - Clock out (requires auth)
+router.post('/clock-out', requireAuth(), validateBody(clockOutSchema), clockOut);
+// GET /api/attendance - Attendance history (requires auth)
+router.get('/', requireAuth(), attendanceHistory);
 
 export default router;

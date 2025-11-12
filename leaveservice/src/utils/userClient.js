@@ -51,6 +51,23 @@ async function fetchUserFromService(userId) {
   }
 }
 
+// List users from authservice (requires AUTH_SERVICE_URL and client credentials)
+async function listUsersFromService() {
+  if (!AUTH_SERVICE_URL) return null;
+  try {
+    const token = await fetchServiceToken();
+    const headers = { 'Accept': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    const res = await fetch(`${AUTH_SERVICE_URL.replace(/\/$/, '')}/api/v1/users`, { headers, timeout: 10000 });
+    if (!res.ok) return null;
+    const data = await res.json();
+    // Expecting an array of users
+    return Array.isArray(data) ? data : (data.users || null);
+  } catch (err) {
+    return null;
+  }
+}
+
 async function userExists(userId) {
   if (!userId) return false;
   if (!AUTH_SERVICE_URL) return true; // permissive fallback for dev
@@ -73,4 +90,4 @@ async function getUser(userId) {
   return user;
 }
 
-export default { userExists, getUser };
+export default { userExists, getUser, listUsersFromService };
