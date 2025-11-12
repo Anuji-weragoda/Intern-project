@@ -90,8 +90,26 @@ export function requireAuth(requiredRoles = []) {
     }
 
     if (requiredRoles && requiredRoles.length > 0) {
-      const roles = req.user.roles || req.user.role || [];
-      const has = requiredRoles.some(r => (Array.isArray(roles) ? roles.includes(r) : roles === r));
+      // Collect roles from a variety of common JWT claim locations.
+      // Tokens may use 'roles', 'role', 'groups', 'cognito:groups', or realm_access.roles (Keycloak).
+      const collected = [];
+      if (req.user.roles) collected.push(req.user.roles);
+      if (req.user.role) collected.push(req.user.role);
+      if (req.user.groups) collected.push(req.user.groups);
+      if (req.user['cognito:groups']) collected.push(req.user['cognito:groups']);
+      if (req.user.cognitogroups) collected.push(req.user.cognitogroups);
+      if (req.user['cognito_groups']) collected.push(req.user['cognito_groups']);
+      if (req.user.realm_access && Array.isArray(req.user.realm_access.roles)) collected.push(req.user.realm_access.roles);
+
+      // Flatten, normalize to strings and lowercase
+      let roles = collected.flat().filter(Boolean).map(r => {
+        if (typeof r === 'string') return r.toLowerCase();
+        if (typeof r === 'object' && r.name) return String(r.name).toLowerCase();
+        return String(r).toLowerCase();
+      });
+      roles = Array.from(new Set(roles));
+
+      const has = requiredRoles.some(r => roles.includes(String(r).toLowerCase()));
       if (!has) return res.status(403).json({ error: 'Forbidden' });
     }
 

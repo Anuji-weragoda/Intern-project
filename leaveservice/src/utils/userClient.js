@@ -42,9 +42,19 @@ async function fetchUserFromService(userId) {
     const token = await fetchServiceToken();
     const headers = { 'Accept': 'application/json' };
     if (token) headers['Authorization'] = `Bearer ${token}`;
-    const res = await fetch(`${AUTH_SERVICE_URL.replace(/\/$/, '')}/api/v1/users/${userId}`, { headers, timeout: 5000 });
+    // Try the canonical users endpoint first (some deployments may expose /api/v1/users/:id)
+    let res = await fetch(`${AUTH_SERVICE_URL.replace(/\/$/, '')}/api/v1/users/${userId}`, { headers, timeout: 5000 });
     if (res.status === 200) return await res.json();
-    if (res.status === 404) return null;
+    // If not found, try the authservice 'by-sub' lookup which returns the current user profile by cognito sub
+    if (res.status === 404) {
+      try {
+        res = await fetch(`${AUTH_SERVICE_URL.replace(/\/$/, '')}/api/v1/me/by-sub/${userId}`, { headers, timeout: 5000 });
+        if (res.status === 200) return await res.json();
+        if (res.status === 404) return null;
+      } catch (err) {
+        return null;
+      }
+    }
     return null;
   } catch (err) {
     return null;

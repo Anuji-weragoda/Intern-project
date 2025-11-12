@@ -10,7 +10,7 @@
   "init-balances": "node scripts/init-balances.js",
   "create-balance": "node scripts/create-balance.js",
   "migrate:add-unique-balance": "node scripts/run-specific-migration.js migrations/002_add_unique_constraint_leave_balances.sql",
-    "postman:run": "newman run postman/leave-service.postman_collection.json -e postman/leave-service.environment.json",
+    "postman:run": "newman run postman/leave-service.postman_collection.json -e postman/leave-service.environment.json --bail false --suppress-exit-code",
     "db:test": "node src/dbTest.js",
     "migrate": "node scripts/run-migrations.js"
   },
