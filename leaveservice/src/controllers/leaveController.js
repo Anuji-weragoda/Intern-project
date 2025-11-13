@@ -1,28 +1,17 @@
 import * as leaveService from '../services/leaveService.js';
 import userClient from '../utils/userClient.js';
+import { trimStringsDeep } from '../utils/trim.js';
 
-// ✅ Log helper
+// ✅ Log helper (only prints in Lambda, avoids noise in tests)
 const log = (...args) => {
   if (process.env.AWS_LAMBDA_FUNCTION_NAME) console.log('[LeaveController]', ...args);
   else console.log(...args);
 };
 
-// Utility: trim all string fields in an object
-const trimQueryParams = (query = {}) => {
-  const trimmed = {};
-  Object.keys(query).forEach(key => {
-    const value = query[key];
-    trimmed[key] = typeof value === 'string' ? value.trim() : value;
-  });
-  return trimmed;
-};
-
 export async function getLeaveBalance(req, res) {
   try {
-    const user_id = (req.user && req.user.sub)
-      ? req.user.sub
-      : (req.query && req.query.user_id ? String(req.query.user_id).trim() : undefined);
-
+    // Prefer authenticated user id when available; otherwise read from query and trim whitespace/newlines
+    let user_id = (req.user && req.user.sub) ? req.user.sub : (req.query && req.query.user_id ? String(req.query.user_id).trim() : undefined);
     if (!user_id) return res.status(400).json({ error: 'user_id is required' });
 
     log('Fetching leave balance for user_id:', user_id);
@@ -45,12 +34,10 @@ export async function getLeaveBalance(req, res) {
 
 export async function listLeaveRequests(req, res) {
   try {
-    const query = trimQueryParams(req.query); // ✅ trim all query params
-    log('Listing leave requests with query:', query);
-
+    log('Listing leave requests with query:', req.query);
+    const query = trimStringsDeep(req.query || {});
     const results = await leaveService.viewLeaveRequests(query);
     log('Leave requests fetched:', results?.length || 0);
-
     return res.json(results);
   } catch (err) {
     log('❌ Error in listLeaveRequests:', err);
@@ -75,8 +62,6 @@ export async function createLeaveRequest(req, res) {
   }
 }
 
-// Patch, approve, reject, submitLeaveRequest functions remain unchanged
-// Only listLeaveRequests needed trimming fix
 export async function patchLeaveRequest(req, res) {
   try {
     const id = req.params.id;
@@ -106,8 +91,65 @@ export async function submitLeaveRequest(req, res) {
   return createLeaveRequest(req, res);
 }
 
-export async function approveLeaveRequest(req, res) { /* unchanged */ }
-export async function rejectLeaveRequest(req, res) { /* unchanged */ }
+export async function approveLeaveRequest(req, res) {
+  const id = req.params.id;
+  try {
+    const approver = req.user && req.user.sub;
+    if (!approver) return res.status(401).json({ error: 'Unauthorized' });
+
+    log('Approve leave request called by approver:', approver, 'for leave_id:', id);
+
+    // Determine HR/admin privileges from ID token groups or token roles only.
+    const tokenGroups = req.user['cognito:groups'] || req.user.groups || [];
+    const normalizedGroups = Array.isArray(tokenGroups) ? tokenGroups.map(g => String(g).toLowerCase()) : [String(tokenGroups).toLowerCase()];
+    const tokenRoles = req.user.roles || (req.user.role ? [req.user.role] : []);
+    const normalizedRoles = Array.isArray(tokenRoles) ? tokenRoles.map(r => String(r).toLowerCase()) : [String(tokenRoles).toLowerCase()];
+
+    const hasHr = normalizedGroups.includes('hr') || normalizedGroups.includes('admin') || normalizedRoles.includes('hr') || normalizedRoles.includes('admin');
+    if (!hasHr) return res.status(403).json({ error: 'Forbidden: HR or ADMIN role required to approve leave' });
+
+    const payload = Object.assign({}, req.body, { approver_id: approver });
+    const result = await leaveService.approveLeaveRequest(id, payload);
+    log('Leave approved successfully:', result);
+    return res.json(result);
+  } catch (err) {
+    log('❌ Error in approveLeaveRequest:', err);
+    if (err.message?.toLowerCase().startsWith('forbidden')) {
+      return res.status(403).json({ error: err.message });
+    }
+    return res.status(400).json({ error: err.message });
+  }
+}
+
+export async function rejectLeaveRequest(req, res) {
+  const id = req.params.id;
+  try {
+    const approver = req.user && req.user.sub;
+    if (!approver) return res.status(401).json({ error: 'Unauthorized' });
+
+    log('Reject leave request called by approver:', approver, 'for leave_id:', id);
+
+    // Determine HR/admin privileges from ID token groups or token roles only.
+    const tokenGroups = req.user['cognito:groups'] || req.user.groups || [];
+    const normalizedGroups = Array.isArray(tokenGroups) ? tokenGroups.map(g => String(g).toLowerCase()) : [String(tokenGroups).toLowerCase()];
+    const tokenRoles = req.user.roles || (req.user.role ? [req.user.role] : []);
+    const normalizedRoles = Array.isArray(tokenRoles) ? tokenRoles.map(r => String(r).toLowerCase()) : [String(tokenRoles).toLowerCase()];
+
+    const hasHr = normalizedGroups.includes('hr') || normalizedGroups.includes('admin') || normalizedRoles.includes('hr') || normalizedRoles.includes('admin');
+    if (!hasHr) return res.status(403).json({ error: 'Forbidden: HR or ADMIN role required to reject leave' });
+
+    const payload = Object.assign({}, req.body, { approver_id: approver });
+    const result = await leaveService.rejectLeaveRequest(id, payload);
+    log('Leave rejected successfully:', result);
+    return res.json(result);
+  } catch (err) {
+    log('❌ Error in rejectLeaveRequest:', err);
+    if (err.message?.toLowerCase().startsWith('forbidden')) {
+      return res.status(403).json({ error: err.message });
+    }
+    return res.status(400).json({ error: err.message });
+  }
+}
 
 export async function viewLeaveRequests(req, res) {
   return listLeaveRequests(req, res);

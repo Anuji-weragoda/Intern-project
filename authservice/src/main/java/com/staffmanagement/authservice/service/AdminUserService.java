@@ -149,9 +149,9 @@ public class AdminUserService {
 
                     // If this role maps to a Cognito group we should remove the user from that group (queue it)
                     try {
-                        if (allowedGroups.contains(roleName) && cognitoSyncGroups) {
-                            String cognitoGroup = mapToCognitoGroup(roleName);
-                            if (cognitoGroup != null) groupsToRemove.add(cognitoGroup);
+                        String cognitoGroup = mapToCognitoGroup(roleName);
+                        if (cognitoGroup != null && allowedGroups.contains(cognitoGroup) && cognitoSyncGroups) {
+                            groupsToRemove.add(cognitoGroup);
                         }
                     } catch (Exception e) {
                         log.warn("Failed to remove Cognito group for user {} role {}: {}", targetUser.getEmail(), roleName, e.getMessage());
@@ -176,9 +176,9 @@ public class AdminUserService {
 
                         // If this role maps to a Cognito group we should add the user to that group (queue it)
                         try {
-                            if (allowedGroups.contains(roleName) && cognitoSyncGroups) {
-                                String cognitoGroup = mapToCognitoGroup(roleName);
-                                if (cognitoGroup != null) groupsToAdd.add(cognitoGroup);
+                            String cognitoGroup = mapToCognitoGroup(roleName);
+                            if (cognitoGroup != null && allowedGroups.contains(cognitoGroup) && cognitoSyncGroups) {
+                                groupsToAdd.add(cognitoGroup);
                             }
                         } catch (Exception e) {
                             log.warn("Failed to add Cognito group for user {} role {}: {}", targetUser.getEmail(), roleName, e.getMessage());
@@ -230,9 +230,9 @@ public class AdminUserService {
 
                 // Queue cognito removal if applicable
                 try {
-                    if (allowedGroups.contains(rn) && cognitoSyncGroups) {
-                        String cognitoGroup = mapToCognitoGroup(rn);
-                        if (cognitoGroup != null) groupsToRemove.add(cognitoGroup);
+                    String cognitoGroup = mapToCognitoGroup(rn);
+                    if (cognitoGroup != null && allowedGroups.contains(cognitoGroup) && cognitoSyncGroups) {
+                        groupsToRemove.add(cognitoGroup);
                     }
                 } catch (Exception e) {
                     log.warn("Failed to queue Cognito group removal for user {} role {}: {}", targetUser.getEmail(), rn, e.getMessage());
@@ -255,9 +255,9 @@ public class AdminUserService {
 
                 // Queue cognito add if applicable
                 try {
-                    if (allowedGroups.contains(roleName) && cognitoSyncGroups) {
-                        String cognitoGroup = mapToCognitoGroup(roleName);
-                        if (cognitoGroup != null) groupsToAdd.add(cognitoGroup);
+                    String cognitoGroup = mapToCognitoGroup(roleName);
+                    if (cognitoGroup != null && allowedGroups.contains(cognitoGroup) && cognitoSyncGroups) {
+                        groupsToAdd.add(cognitoGroup);
                     }
                 } catch (Exception e) {
                     log.warn("Failed to queue Cognito group add for user {} role {}: {}", targetUser.getEmail(), roleName, e.getMessage());
@@ -300,16 +300,26 @@ public class AdminUserService {
 
     /**
      * Map application role names to Cognito group names.
-     * Per request, ML1/ML2/ML3 (and HR) should also map to the ADMIN Cognito group.
+     * Map DB role names to Cognito group names.
+     * DB role names like ML1/ML2/ML3 will map to Cognito groups MANAGEMENT_L1/2/3.
      */
     private String mapToCognitoGroup(String roleName) {
         if (roleName == null) return null;
-        // Per product decision: map ML-level roles and HR to the ADMIN Cognito group
-        // so that management/HR roles receive the ADMIN group in Cognito.
-        if (roleName.equalsIgnoreCase("HR")) return "ADMIN";
-        if (roleName.toUpperCase().startsWith("ML")) return "ADMIN";
-        // Default: map role name directly to Cognito group
-        return roleName;
+        String rn = roleName.trim().toUpperCase();
+        // Direct mappings for common roles
+        if (rn.equals("ADMIN")) return "ADMIN";
+        if (rn.equals("HR")) return "HR";
+        if (rn.equals("USER")) return "USER";
+
+        // MLn roles -> MANAGEMENT_Ln groups (allow both ML1 and MANAGEMENT_L1 forms)
+        if (rn.matches("^ML\\d+$")) {
+            String num = rn.substring(2);
+            return "MANAGEMENT_L" + num;
+        }
+        if (rn.startsWith("MANAGEMENT_L")) return rn; // already in desired form
+
+        // Default: return the role name uppercased (best-effort)
+        return rn;
     }
 
 

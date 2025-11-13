@@ -94,55 +94,29 @@ export function requireAuth(requiredRoles = []) {
     }
 
     if (requiredRoles && requiredRoles.length > 0) {
-      // Prefer authoritative role list from authservice DB. Call
-      // authservice /api/v1/me with the same bearer token to get the
-      // user's profile (which includes DB roles). Fall back to token
-      // roles only if the call fails.
+      // Use Cognito groups embedded in the ID token (cognito:groups) for role checks.
+      // Do NOT call the authservice /api/v1/me here — authorization is determined from
+      // the token's groups or the token `roles` claim as a fallback.
       const auth = req.headers?.authorization || req.headers?.Authorization;
       const parts = auth ? auth.split(' ') : [];
       const token = (parts.length === 2 && parts[0].toLowerCase() === 'bearer') ? parts[1] : null;
 
-      let dbRoles = null;
-      if (token) {
-        try {
-          const authServiceUrl = 'http://localhost:8081';
-          console.warn(`[authClaims] Calling authservice at ${authServiceUrl}/api/v1/me`);
-          const resp = await fetch(`${authServiceUrl}/api/v1/me`, {
-            headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' }
-          });
-          console.warn(`[authClaims] fetch returned status ${resp.status}`);
-          if (resp.ok) {
-            const profile = await resp.json();
-            // attach DB id if present for downstream handlers
-            if (profile && profile.id) req.user.dbId = profile.id;
-            if (profile && Array.isArray(profile.roles)) dbRoles = profile.roles.map(r => String(r).toLowerCase());
-            // expose canonical DB roles to downstream handlers (controller expects this)
-            if (!req.user) req.user = {};
-            req.user.dbRoles = dbRoles;
-            console.log('[authClaims] Fetched dbRoles:', dbRoles);
-          } else {
-            // Log status + body to help debugging when authservice rejects the token
-            try {
-              const text = await resp.text();
-              console.warn(`[authClaims] /api/v1/me returned ${resp.status} ${resp.statusText}: ${text}`);
-            } catch (e) {
-              console.warn(`[authClaims] /api/v1/me returned ${resp.status} ${resp.statusText} and body could not be read`);
-            }
-          }
-        } catch (e) {
-          // network/authservice failure - will fall back to token roles
-          console.warn('[authClaims] failed to call authservice /api/v1/me:', e && e.message ? e.message : e);
-          dbRoles = null;
-        }
+      // Check token groups first (Cognito ID token usually contains `cognito:groups`)
+      let tokenGroups = [];
+      if (req.user) {
+        tokenGroups = req.user['cognito:groups'] || req.user['groups'] || [];
+        if (!Array.isArray(tokenGroups) && typeof tokenGroups === 'string') tokenGroups = [tokenGroups];
+        tokenGroups = tokenGroups.map(g => String(g).toLowerCase());
       }
 
       let has = false;
-      if (dbRoles && dbRoles.length > 0) {
-        has = requiredRoles.some(rr => dbRoles.includes(String(rr).toLowerCase()));
+      if (tokenGroups && tokenGroups.length > 0) {
+        has = requiredRoles.some(rr => tokenGroups.includes(String(rr).toLowerCase()));
       } else {
-        // fallback: check roles present on token payload (if any)
+        // No groups available on token — fall back to token `roles` claim only
         const roles = req.user.roles || req.user.role || [];
-        has = requiredRoles.some(r => (Array.isArray(roles) ? roles.map(x => String(x).toLowerCase()).includes(String(r).toLowerCase()) : String(roles).toLowerCase() === String(r).toLowerCase()));
+        const tokenRoles = Array.isArray(roles) ? roles.map(x => String(x).toLowerCase()) : [String(roles).toLowerCase()];
+        has = requiredRoles.some(rr => tokenRoles.includes(String(rr).toLowerCase()));
       }
 
       if (!has) {
