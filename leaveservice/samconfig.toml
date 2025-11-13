@@ -4,6 +4,7 @@ version = 0.1
 
 [default.global.parameters]
 stack_name = "leaveservice"
+region = "eu-north-1"
 
 [default.build.parameters]
 cached = true
@@ -16,6 +17,11 @@ lint = true
 capabilities = "CAPABILITY_IAM"
 confirm_changeset = true
 resolve_s3 = true
+stack_name = "LeaveServiceStack"
+s3_prefix = "LeaveServiceStack"
+region = "eu-north-1"
+parameter_overrides = "DBHost=\"database-1.cxi6yasm077l.eu-north-1.rds.amazonaws.com\" DBUser=\"postgres\" DBPass=\"Pg$Aws1234\" DBName=\"leave_service_db\" DBPort=\"5432\" NodeEnv=\"development\" SyncDB=\"false\""
+image_repositories = []
 
 [default.package.parameters]
 resolve_s3 = true

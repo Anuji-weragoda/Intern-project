@@ -1,22 +1,36 @@
-// Sequelize instance setup
-import dotenv from 'dotenv';
+// sequelize.js
 import { Sequelize } from 'sequelize';
+import dotenv from 'dotenv';
 
-// Load environment variables from .env when present
 dotenv.config();
 
-const sequelize = new Sequelize(process.env.DB_NAME || 'leave_service_db', process.env.DB_USER || 'postgres', process.env.DB_PASS || '', {
-  host: process.env.DB_HOST || 'localhost',
-  port: process.env.DB_PORT ? Number(process.env.DB_PORT) : 5432,
-  dialect: 'postgres',
-  // Enable SQL logging when SEQ_LOGGING=true (useful for debugging parameter values)
-  logging: process.env.SEQ_LOGGING === 'true' ? console.log : false,
-  // Force UTC timezone for the client connection to avoid locale timezone names like 'GMT+0530'
-  timezone: process.env.DB_TIMEZONE || '+00:00',
-  dialectOptions: {
-    // For pg, ensure timestamps are treated consistently. Keep options minimal here.
-    application_name: process.env.APP_NAME || 'leave-service-local'
-  },
-});
+const sequelize = new Sequelize(
+  process.env.DB_NAME,
+  process.env.DB_USER,
+  process.env.DB_PASS,
+  {
+    host: process.env.DB_HOST,
+    port: Number(process.env.DB_PORT) || 5432,
+    dialect: 'postgres',
+    logging: process.env.SEQ_LOGGING === 'true' ? console.log : false,
+    timezone: process.env.DB_TIMEZONE || '+00:00',
+    dialectOptions: {
+      ssl: {
+        require: true,
+        rejectUnauthorized: false // For testing; for production, provide RDS CA
+      },
+      application_name: process.env.APP_NAME || 'leave-service-lambda'
+    }
+  }
+);
+
+(async () => {
+  try {
+    await sequelize.authenticate();
+    console.log('✅ Database connected successfully with SSL');
+  } catch (err) {
+    console.error('❌ Database connection error:', err);
+  }
+})();
 
 export default sequelize;

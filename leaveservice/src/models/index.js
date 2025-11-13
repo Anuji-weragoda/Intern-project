@@ -5,7 +5,18 @@ import AttendanceDefault from './attendanceModel.js';
 
 const { AttendanceLog } = AttendanceDefault;
 
-// Ensure associations are initialized by importing models (associations are set inside model files)
+// ✅ Check DB connection on initialization
+(async () => {
+  try {
+    await sequelize.authenticate();
+    console.log('✅ Database connected successfully');
+  } catch (err) {
+    console.error('❌ Database connection error:', err);
+  }
+})();
+
+// Ensure associations are initialized by importing models
+// (associations are set inside model files)
 
 export {
   sequelize,

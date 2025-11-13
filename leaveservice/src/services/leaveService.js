@@ -1,6 +1,7 @@
 // Service for leave business logic
 import { sequelize, LeaveRequest, LeavePolicy, LeaveBalance, LeaveAudit } from '../models/index.js';
 import { Op } from 'sequelize';
+import { trimStringsDeep } from '../utils/trim.js';
 
 function daysBetween(startDate, endDate) {
   const s = new Date(startDate);
@@ -12,6 +13,8 @@ function daysBetween(startDate, endDate) {
 
 // Submit a leave request: basic overlap and balance check, then create request and audit
 export async function submitLeaveRequest(data) {
+  // Trim incoming string fields to avoid trailing whitespace/newlines from callers
+  data = trimStringsDeep(data);
   let { user_id, policy_id, start_date, end_date, reason } = data;
   if (!user_id || !policy_id || !start_date || !end_date) {
     throw new Error('Missing required fields');
@@ -73,6 +76,8 @@ export async function submitLeaveRequest(data) {
 
 // Approve a leave request: update status, decrement balance, write audit in a transaction
 export async function approveLeaveRequest(id, data) {
+  // Trim data payload string fields
+  data = trimStringsDeep(data);
   const approver_id = data?.approver_id || null;
 
   return await sequelize.transaction(async (t) => {
@@ -113,6 +118,8 @@ export async function approveLeaveRequest(id, data) {
 
 // Reject a leave request: update status and audit
 export async function rejectLeaveRequest(id, data) {
+  // Trim data payload string fields
+  data = trimStringsDeep(data);
   const approver_id = data?.approver_id || null;
   const note = data?.note || null;
 
@@ -138,6 +145,8 @@ export async function rejectLeaveRequest(id, data) {
 }
 
 export async function viewLeaveRequests(query) {
+  // Trim query string fields to normalize input before building DB where clauses
+  query = trimStringsDeep(query || {});
   const where = {};
   if (query.user_id) where.user_id = query.user_id;
   if (query.status) where.status = query.status;
@@ -155,6 +164,8 @@ export async function viewLeaveRequests(query) {
 
 // Compute leave balances for a user
 export async function getLeaveBalances(user_id) {
+  // Normalize user_id by trimming whitespace if it's a string
+  if (typeof user_id === 'string') user_id = user_id.trim();
   if (!user_id) throw new Error('user_id is required');
   let balances = await LeaveBalance.findAll({ where: { user_id }, include: [{ model: LeavePolicy, foreignKey: 'policy_id' }] });
   // If no balances are present for the user, initialize balances for all policies using policy defaults (useful for testing/new users)
@@ -184,6 +195,8 @@ export async function getLeaveBalances(user_id) {
 
 // Cancel a leave request. If already approved, refund the balance.
 export async function cancelLeaveRequest(id, data) {
+  // Trim data payload string fields
+  data = trimStringsDeep(data);
   const cancelled_by = data?.cancelled_by || null;
 
   return await sequelize.transaction(async (t) => {

@@ -6,22 +6,15 @@ Description: >
 Globals:
   Function:
     Timeout: 10
-    Runtime: nodejs18.x
-    Environment:
-      Variables:
-        DB_HOST: !Ref DBHost
-        DB_USER: !Ref DBUser
-        DB_PASS: !Ref DBPass
-        DB_NAME: !Ref DBName
-        DB_PORT: !Ref DBPort
+    Runtime: nodejs22.x
 
 Parameters:
   DBHost:
     Type: String
-    Description: PostgreSQL host
+    Description: PostgreSQL host (RDS endpoint)
   DBUser:
     Type: String
-    Description: PostgreSQL user
+    Description: PostgreSQL username
   DBPass:
     Type: String
     Description: PostgreSQL password
@@ -32,6 +25,14 @@ Parameters:
     Type: String
     Default: '5432'
     Description: PostgreSQL port
+  NodeEnv:
+    Type: String
+    Default: development
+    Description: Node environment (development or production)
+  SyncDB:
+    Type: String
+    Default: 'false'
+    Description: "Whether to run sequelize.sync({ alter: true })"
 
 Resources:
   LeaveServiceFunction:
@@ -39,16 +40,20 @@ Resources:
     Properties:
       Handler: src/app.handler
       CodeUri: .
+      Timeout: 10
+      Runtime: nodejs22.x
+      Environment:
+        Variables:
+          NODE_ENV: !Ref NodeEnv
+          DB_HOST: !Ref DBHost
+          DB_USER: !Ref DBUser
+          DB_PASS: !Ref DBPass
+          DB_NAME: !Ref DBName
+          DB_PORT: !Ref DBPort
+          SYNC_DB: !Ref SyncDB
       Events:
         Api:
           Type: Api
           Properties:
             Path: /{proxy+}
             Method: ANY
-      Environment:
-        Variables:
-          DB_HOST: !Ref DBHost
-          DB_USER: !Ref DBUser
-          DB_PASS: !Ref DBPass
-          DB_NAME: !Ref DBName
-          DB_PORT: !Ref DBPort

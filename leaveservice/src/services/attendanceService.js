@@ -1,8 +1,11 @@
 // Service for attendance business logic
 import { AttendanceLog } from '../models/attendanceModel.js';
 import { Op } from 'sequelize';
+import { trimStringsDeep } from '../utils/trim.js';
 
 export async function clockIn(data) {
+  // Trim incoming payload string fields
+  data = trimStringsDeep(data || {});
   const { user_id, method, geo } = data;
   if (!user_id) throw new Error('user_id is required');
 
@@ -23,6 +26,7 @@ export async function clockIn(data) {
 }
 
 export async function clockOut(data) {
+  data = trimStringsDeep(data || {});
   const { user_id } = data;
   if (!user_id) throw new Error('user_id is required');
 
@@ -36,6 +40,8 @@ export async function clockOut(data) {
 }
 
 export async function attendanceHistory(query) {
+  // Trim query string fields to normalize input before building DB where clauses
+  query = trimStringsDeep(query || {});
   const where = {};
   if (query.user_id) where.user_id = query.user_id;
   if (query.range) {
