@@ -82,26 +82,32 @@ export async function approveLeaveRequest(req, res) {
     const tokenRoles = req.user.roles || (req.user.role ? [req.user.role] : []);
     let hasHr = Array.isArray(tokenRoles) && tokenRoles.includes('hr');
 
-    // Also check Cognito groups if present (tokens sometimes carry `cognito:groups`).
-    // If the token has a top-level admin group, we will consult the local user DB to see
-    // whether this admin user also has an 'hr' role assigned locally (useful when groups
-    // are generic like ADMIN but fine-grained roles are stored in authservice DB).
-    const tokenGroups = req.user['cognito:groups'] || req.user['cognito_groups'] || req.user.groups || [];
-    const hasAdminGroup = Array.isArray(tokenGroups) && tokenGroups.some(g => String(g).toLowerCase() === 'admin');
+    // If middleware already fetched DB roles, use them
+    if (req.user.dbRoles && Array.isArray(req.user.dbRoles)) {
+      hasHr = req.user.dbRoles.includes('hr');
+      console.log('[approveLeaveRequest] Using dbRoles:', req.user.dbRoles, 'hasHr:', hasHr);
+    } else {
+      // Also check Cognito groups if present (tokens sometimes carry `cognito:groups`).
+      // If the token has a top-level admin group, we will consult the local user DB to see
+      // whether this admin user also has an 'hr' role assigned locally (useful when groups
+      // are generic like ADMIN but fine-grained roles are stored in authservice DB).
+      const tokenGroups = req.user['cognito:groups'] || req.user['cognito_groups'] || req.user.groups || [];
+      const hasAdminGroup = Array.isArray(tokenGroups) && tokenGroups.some(g => String(g).toLowerCase() === 'admin');
 
-    // If token doesn't include hr directly, and we detected an admin group, fall back to
-    // fetching the user from the authservice DB and check the stored roles for 'hr'.
-    if (!hasHr && hasAdminGroup) {
-      const user = await userClient.getUser(approver).catch(() => null);
-      const userRoles = (user && (user.roles || (user.role ? [user.role] : []))) || [];
-      hasHr = Array.isArray(userRoles) && userRoles.includes('hr');
-    }
+      // If token doesn't include hr directly, and we detected an admin group, fall back to
+      // fetching the user from the authservice DB and check the stored roles for 'hr'.
+      if (!hasHr && hasAdminGroup) {
+        const user = await userClient.getUser(approver).catch(() => null);
+        const userRoles = (user && (user.roles || (user.role ? [user.role] : []))) || [];
+        hasHr = Array.isArray(userRoles) && userRoles.includes('hr');
+      }
 
-    // If token had no admin group either, perform the existing fallback: check local DB when token roles absent
-    if (!hasHr && (!Array.isArray(tokenRoles) || tokenRoles.length === 0) && !hasAdminGroup) {
-      const user = await userClient.getUser(approver).catch(() => null);
-      const userRoles = (user && (user.roles || (user.role ? [user.role] : []))) || [];
-      hasHr = Array.isArray(userRoles) && userRoles.includes('hr');
+      // If token had no admin group either, perform the existing fallback: check local DB when token roles absent
+      if (!hasHr && (!Array.isArray(tokenRoles) || tokenRoles.length === 0) && !hasAdminGroup) {
+        const user = await userClient.getUser(approver).catch(() => null);
+        const userRoles = (user && (user.roles || (user.role ? [user.role] : []))) || [];
+        hasHr = Array.isArray(userRoles) && userRoles.includes('hr');
+      }
     }
 
     if (!hasHr) return res.status(403).json({ error: 'Forbidden: HR role required to approve leave' });

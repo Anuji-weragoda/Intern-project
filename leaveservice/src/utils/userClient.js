@@ -1,4 +1,4 @@
-const AUTH_SERVICE_URL = process.env.AUTH_SERVICE_URL || process.env.AUTH_URL || null;
+const AUTH_SERVICE_URL = 'http://localhost:8081';
 const AUTH_CLIENT_ID = process.env.AUTH_CLIENT_ID || null;
 const AUTH_CLIENT_SECRET = process.env.AUTH_CLIENT_SECRET || null;
 const AUTH_TOKEN_URL = process.env.AUTH_TOKEN_URL || (AUTH_SERVICE_URL ? `${AUTH_SERVICE_URL.replace(/\/$/, '')}/oauth/token` : null);
@@ -39,22 +39,16 @@ async function fetchServiceToken() {
 async function fetchUserFromService(userId) {
   if (!AUTH_SERVICE_URL) return null;
   try {
-    const token = await fetchServiceToken();
+    let token = await fetchServiceToken();
+    if (!token) {
+      // fallback for dev: use bearerToken from env
+      token = process.env.bearerToken || process.env.BEARER_TOKEN;
+    }
     const headers = { 'Accept': 'application/json' };
     if (token) headers['Authorization'] = `Bearer ${token}`;
-    // Try the canonical users endpoint first (some deployments may expose /api/v1/users/:id)
-    let res = await fetch(`${AUTH_SERVICE_URL.replace(/\/$/, '')}/api/v1/users/${userId}`, { headers, timeout: 5000 });
+    const res = await fetch(`${AUTH_SERVICE_URL.replace(/\/$/, '')}/api/v1/me/by-sub/${userId}`, { headers, timeout: 5000 });
     if (res.status === 200) return await res.json();
-    // If not found, try the authservice 'by-sub' lookup which returns the current user profile by cognito sub
-    if (res.status === 404) {
-      try {
-        res = await fetch(`${AUTH_SERVICE_URL.replace(/\/$/, '')}/api/v1/me/by-sub/${userId}`, { headers, timeout: 5000 });
-        if (res.status === 200) return await res.json();
-        if (res.status === 404) return null;
-      } catch (err) {
-        return null;
-      }
-    }
+    if (res.status === 404) return null;
     return null;
   } catch (err) {
     return null;

@@ -11,11 +11,11 @@ const router = express.Router();
 // Require authentication for creating leave and viewing personal leave requests
 router.post('/', requireAuth(), validateBody(createLeaveSchema), submitLeaveRequest);
 // PATCH /api/leaves/:id/approve - Approve leave request (protected)
-// Only HR or Admin users may approve leave requests
-router.patch('/:id/approve', requireAuth(['hr', 'admin']), validateBody(patchLeaveSchema), approveLeaveRequest);
+// Only HR users may approve leave requests
+router.patch('/:id/approve', requireAuth(['hr']), validateBody(patchLeaveSchema), approveLeaveRequest);
 // PATCH /api/leaves/:id/reject - Reject leave request (protected)
-// Only HR or Admin users may reject leave requests
-router.patch('/:id/reject', requireAuth(['hr', 'admin']), validateBody(patchLeaveSchema), rejectLeaveRequest);
+// Only HR users may reject leave requests
+router.patch('/:id/reject', requireAuth(['hr']), validateBody(patchLeaveSchema), rejectLeaveRequest);
 // GET /api/leaves - View leave requests
 router.get('/', requireAuth(), viewLeaveRequests);
 

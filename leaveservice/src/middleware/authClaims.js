@@ -55,6 +55,9 @@ export async function authMiddleware(req, res, next) {
     const payloadJson = base64UrlDecode(parts2[1]);
     const payload = safeJsonParse(payloadJson);
     if (payload) {
+      // Attach the decoded token payload to req.user. Do NOT rely on
+      // token groups for authorization here; the requireAuth middleware
+      // will call the authservice DB to obtain canonical roles.
       req.user = payload;
     }
     return next();
@@ -67,6 +70,7 @@ export async function authMiddleware(req, res, next) {
 // requireAuth middleware: enforces presence of req.user (and optional role check).
 export function requireAuth(requiredRoles = []) {
   return async (req, res, next) => {
+    console.log('[authClaims] requireAuth called with roles:', requiredRoles);
     if (!req.user) {
       // Attempt a last-ditch verification if Authorization header present
       const auth = req.headers?.authorization || req.headers?.Authorization;
@@ -90,27 +94,67 @@ export function requireAuth(requiredRoles = []) {
     }
 
     if (requiredRoles && requiredRoles.length > 0) {
-      // Collect roles from a variety of common JWT claim locations.
-      // Tokens may use 'roles', 'role', 'groups', 'cognito:groups', or realm_access.roles (Keycloak).
-      const collected = [];
-      if (req.user.roles) collected.push(req.user.roles);
-      if (req.user.role) collected.push(req.user.role);
-      if (req.user.groups) collected.push(req.user.groups);
-      if (req.user['cognito:groups']) collected.push(req.user['cognito:groups']);
-      if (req.user.cognitogroups) collected.push(req.user.cognitogroups);
-      if (req.user['cognito_groups']) collected.push(req.user['cognito_groups']);
-      if (req.user.realm_access && Array.isArray(req.user.realm_access.roles)) collected.push(req.user.realm_access.roles);
+      // Prefer authoritative role list from authservice DB. Call
+      // authservice /api/v1/me with the same bearer token to get the
+      // user's profile (which includes DB roles). Fall back to token
+      // roles only if the call fails.
+      const auth = req.headers?.authorization || req.headers?.Authorization;
+      const parts = auth ? auth.split(' ') : [];
+      const token = (parts.length === 2 && parts[0].toLowerCase() === 'bearer') ? parts[1] : null;
 
-      // Flatten, normalize to strings and lowercase
-      let roles = collected.flat().filter(Boolean).map(r => {
-        if (typeof r === 'string') return r.toLowerCase();
-        if (typeof r === 'object' && r.name) return String(r.name).toLowerCase();
-        return String(r).toLowerCase();
-      });
-      roles = Array.from(new Set(roles));
+      let dbRoles = null;
+      if (token) {
+        try {
+          const authServiceUrl = 'http://localhost:8081';
+          console.warn(`[authClaims] Calling authservice at ${authServiceUrl}/api/v1/me`);
+          const resp = await fetch(`${authServiceUrl}/api/v1/me`, {
+            headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' }
+          });
+          console.warn(`[authClaims] fetch returned status ${resp.status}`);
+          if (resp.ok) {
+            const profile = await resp.json();
+            // attach DB id if present for downstream handlers
+            if (profile && profile.id) req.user.dbId = profile.id;
+            if (profile && Array.isArray(profile.roles)) dbRoles = profile.roles.map(r => String(r).toLowerCase());
+            // expose canonical DB roles to downstream handlers (controller expects this)
+            if (!req.user) req.user = {};
+            req.user.dbRoles = dbRoles;
+            console.log('[authClaims] Fetched dbRoles:', dbRoles);
+          } else {
+            // Log status + body to help debugging when authservice rejects the token
+            try {
+              const text = await resp.text();
+              console.warn(`[authClaims] /api/v1/me returned ${resp.status} ${resp.statusText}: ${text}`);
+            } catch (e) {
+              console.warn(`[authClaims] /api/v1/me returned ${resp.status} ${resp.statusText} and body could not be read`);
+            }
+          }
+        } catch (e) {
+          // network/authservice failure - will fall back to token roles
+          console.warn('[authClaims] failed to call authservice /api/v1/me:', e && e.message ? e.message : e);
+          dbRoles = null;
+        }
+      }
 
-      const has = requiredRoles.some(r => roles.includes(String(r).toLowerCase()));
-      if (!has) return res.status(403).json({ error: 'Forbidden' });
+      let has = false;
+      if (dbRoles && dbRoles.length > 0) {
+        has = requiredRoles.some(rr => dbRoles.includes(String(rr).toLowerCase()));
+      } else {
+        // fallback: check roles present on token payload (if any)
+        const roles = req.user.roles || req.user.role || [];
+        has = requiredRoles.some(r => (Array.isArray(roles) ? roles.map(x => String(x).toLowerCase()).includes(String(r).toLowerCase()) : String(roles).toLowerCase() === String(r).toLowerCase()));
+      }
+
+      if (!has) {
+        try {
+          const sub = req.user && (req.user.sub || req.user.username || req.user.email) ? (req.user.sub || req.user.username || req.user.email) : '<unknown>';
+          const tokenRoles = (req.user && (req.user.roles || req.user.role)) || [];
+          console.warn(`[authClaims] Authorization failed for user=${sub} required=${JSON.stringify(requiredRoles)} dbRoles=${JSON.stringify(dbRoles)} tokenRoles=${JSON.stringify(tokenRoles)}`);
+        } catch (e) {
+          // ignore logging errors
+        }
+        return res.status(403).json({ error: 'Forbidden' });
+      }
     }
 
     return next();
