@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import apiFetch from "../api";
 import { Users, Shield, Briefcase, User, Search, Filter, X, Check, AlertCircle } from "lucide-react";
 
 interface AdminUser {
@@ -146,13 +147,12 @@ const UserManagement: React.FC = () => {
     // try backend first
     try {
       const token = getJWT();
-      const res = await fetch('http://localhost:8081/api/v1/admin/roles', {
+      const res = await apiFetch('/api/v1/admin/roles', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
           ...(token ? { 'Authorization': `Bearer ${token}` } : {})
         },
-        credentials: 'include'
       });
 
       if (!res.ok) {
@@ -204,15 +204,14 @@ const UserManagement: React.FC = () => {
   // Token found, making API call
 
     try {
-      const response = await fetch(
-        "http://localhost:8081/api/v1/admin/users?page=0&size=20",
+      const response = await apiFetch(
+        "/api/v1/admin/users?page=0&size=20",
         {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
             "Authorization": `Bearer ${token}`
           },
-          credentials: "include",
         }
       );
 
@@ -307,11 +306,10 @@ const UserManagement: React.FC = () => {
 
     try {
       // Send only the roleNames array as per the backend API
-      const response = await fetch(
-        `http://localhost:8081/api/v1/admin/users/${selectedUser.id}/roles`,
+      const response = await apiFetch(
+        `/api/v1/admin/users/${selectedUser.id}/roles`,
         {
           method: "PATCH",
-          credentials: "include",
           headers: {
             "Content-Type": "application/json",
             "Authorization": `Bearer ${token}`

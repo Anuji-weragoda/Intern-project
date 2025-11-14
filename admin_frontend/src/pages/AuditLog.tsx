@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import apiFetch from "../api";
 import { ChevronLeft, ChevronRight, Search, Filter, Download, RefreshCw, CheckCircle, XCircle } from "lucide-react";
 
 interface Audit {
@@ -55,15 +56,14 @@ const AuditLog: React.FC = () => {
     }
 
     try {
-      const response = await fetch(
-        "http://localhost:8081/api/v1/admin/audit-log",
+      const response = await apiFetch(
+        "/api/v1/admin/audit-log",
         {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          credentials: "include",
         }
       );
 

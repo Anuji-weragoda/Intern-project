@@ -1,5 +1,8 @@
-// Resolve API base URL without using import.meta to keep Jest/CommonJS happy
+// Resolve API base URL. Prefer Vite's `import.meta.env` at runtime,
+// fall back to a test-friendly global process env, then final local default.
 const API_BASE =
+  // Prefer Vite-provided env when running in the browser build
+  ((typeof import.meta !== 'undefined' ? (import.meta as any)?.VITE_API_BASE_URL : undefined) as string | undefined) ||
   // Fallback to Node/process env in tests/CI without relying on Node types
   ((globalThis as any)?.process?.env?.VITE_API_BASE_URL as string | undefined) ||
   // Default local backend

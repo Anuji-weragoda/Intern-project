@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import apiFetch from "../api";
 import { User, Shield, Users, BarChart3, Settings, FileText, Activity, Clock, Calendar, CheckCircle, XCircle, TrendingUp } from "lucide-react";
 
 interface UserProfile {
@@ -68,12 +69,11 @@ const Dashboard: React.FC = () => {
 
     try {
       // Fetch user profile
-      const userResponse = await fetch("http://localhost:8081/api/v1/me", {
+      const userResponse = await apiFetch("/api/v1/me", {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        credentials: "include",
       });
 
       if (!userResponse.ok) throw new Error(`Failed to fetch user: ${userResponse.status}`);
@@ -82,12 +82,11 @@ const Dashboard: React.FC = () => {
 
       // Fetch audit logs for statistics
       try {
-        const auditResponse = await fetch("http://localhost:8081/api/v1/admin/audit-log", {
+        const auditResponse = await apiFetch("/api/v1/admin/audit-log", {
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          credentials: "include",
         });
 
         if (auditResponse.ok) {

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import apiFetch from "../api";
 import { 
   User, Mail, Phone, Globe, Shield, CheckCircle, XCircle, 
   Edit2, Save, X, Clock, Calendar, Key, AlertCircle 
@@ -65,12 +66,11 @@ const Profile: React.FC = () => {
     }
 
     try {
-      const response = await fetch("http://localhost:8081/api/v1/me", {
+      const response = await apiFetch("/api/v1/me", {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        credentials: "include",
       });
 
       if (!response.ok) throw new Error(`Error ${response.status}`);
@@ -104,13 +104,12 @@ const Profile: React.FC = () => {
     }
 
     try {
-      const response = await fetch("http://localhost:8081/api/v1/me", {
+      const response = await apiFetch("/api/v1/me", {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        credentials: "include",
         body: JSON.stringify(formData),
       });
 
