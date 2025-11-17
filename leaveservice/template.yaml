@@ -12,29 +12,36 @@ Parameters:
   DBHost:
     Type: String
     Description: PostgreSQL host (RDS endpoint)
+
   DBUser:
     Type: String
     Description: PostgreSQL username
+
   DBPass:
     Type: String
     Description: PostgreSQL password
+
   DBName:
     Type: String
     Description: PostgreSQL database name
+
   DBPort:
     Type: String
     Default: '5432'
     Description: PostgreSQL port
+
   NodeEnv:
     Type: String
     Default: development
     Description: Node environment (development or production)
+
   SyncDB:
     Type: String
     Default: 'false'
     Description: "Whether to run sequelize.sync({ alter: true })"
 
 Resources:
+
   LeaveServiceFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -51,9 +58,43 @@ Resources:
           DB_NAME: !Ref DBName
           DB_PORT: !Ref DBPort
           SYNC_DB: !Ref SyncDB
+
       Events:
-        Api:
+        ProxyApi:
           Type: Api
           Properties:
             Path: /{proxy+}
             Method: ANY
+
+       
+  # CORS FIX — applies to all API responses
+  GatewayCORSResponse4XX:
+    Type: AWS::ApiGateway::GatewayResponse
+    Properties:
+      RestApiId: !Ref ServerlessRestApi
+      ResponseType: DEFAULT_4XX
+      StatusCode: '200'
+      ResponseParameters:
+        gatewayresponse.header.Access-Control-Allow-Origin: "'http://localhost:5173'"
+        gatewayresponse.header.Access-Control-Allow-Headers: "'Content-Type,Authorization'"
+        gatewayresponse.header.Access-Control-Allow-Methods: "'OPTIONS,GET,POST,PATCH,PUT,DELETE'"
+      ResponseTemplates:
+        application/json: '{"message":"CORS OK"}'
+
+  GatewayCORSResponse5XX:
+    Type: AWS::ApiGateway::GatewayResponse
+    Properties:
+      RestApiId: !Ref ServerlessRestApi
+      ResponseType: DEFAULT_5XX
+      StatusCode: '200'
+      ResponseParameters:
+        gatewayresponse.header.Access-Control-Allow-Origin: "'http://localhost:5173'"
+        gatewayresponse.header.Access-Control-Allow-Headers: "'Content-Type,Authorization'"
+        gatewayresponse.header.Access-Control-Allow-Methods: "'OPTIONS,GET,POST,PATCH,PUT,DELETE'"
+      ResponseTemplates:
+        application/json: '{"message":"CORS OK"}'
+
+Outputs:
+  ApiUrl:
+    Description: "Invoke URL for the Leave Service API"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/"

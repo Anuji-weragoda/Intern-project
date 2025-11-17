@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate } from "react-router-dom";
 import Navbar from "./components/Navbar";
+import { LeaveRequests, Attendance, LeavePolicies } from "./pages/leave";
 import UserManagement from "./pages/UserManagement";
 import Unauthorized from "./pages/Unauthorized";
 import AuditLog from "./pages/AuditLog";
@@ -53,6 +54,11 @@ const AppContent: React.FC = () => {
           <Route path="/admin/users" element={<PrivateRoute><UserManagement /></PrivateRoute>} />
           <Route path="/unauthorized" element={<Unauthorized />} />
           <Route path="/admin/audit-log" element={<PrivateRoute><AuditLog /></PrivateRoute>} />
+
+          {/* Leave & Attendance routes */}
+          <Route path="/admin/leave" element={<PrivateRoute><LeaveRequests /></PrivateRoute>} />
+          <Route path="/admin/leave/attendance" element={<PrivateRoute><Attendance /></PrivateRoute>} />
+          <Route path="/admin/leave/policies" element={<PrivateRoute><LeavePolicies /></PrivateRoute>} />
         </Routes>
       </div>
     </>

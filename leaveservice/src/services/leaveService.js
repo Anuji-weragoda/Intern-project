@@ -16,8 +16,10 @@ export async function submitLeaveRequest(data) {
   // Trim incoming string fields to avoid trailing whitespace/newlines from callers
   data = trimStringsDeep(data);
   let { user_id, policy_id, start_date, end_date, reason } = data;
-  if (!user_id || !policy_id || !start_date || !end_date) {
-    throw new Error('Missing required fields');
+  // user_id may be filled by controller from authenticated token; policy_id may be omitted by clients
+  if (!user_id) {
+    // caller should normally be authenticated and controller will set user_id; if not present, reject
+    throw new Error('user_id is required');
   }
 
   // Normalize incoming date values to ISO date-only (YYYY-MM-DD) to avoid locale timezone strings
@@ -52,6 +54,13 @@ export async function submitLeaveRequest(data) {
   if (overlap) throw new Error('Overlapping leave request exists');
 
   // check balance
+  // If policy_id not provided, attempt to use a default policy
+  if (!policy_id) {
+    const defaultPol = await LeavePolicy.findOne();
+    if (defaultPol) policy_id = defaultPol.id;
+    else throw new Error('policy_id is required and no default policy available');
+  }
+
   let balance = await LeaveBalance.findOne({ where: { user_id, policy_id } });
   // If no balance exists for this user/policy, attempt to create a default balance from the policy
   if (!balance) {

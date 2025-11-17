@@ -7,10 +7,12 @@ import {
   LogOut,
   Users,
   ClipboardList,
+  FileText,
   Menu,
   X,
   ChevronDown,
   LayoutDashboard,
+  Calendar,
 } from "lucide-react";
 
 interface NavLinkProps {
@@ -87,6 +89,15 @@ const Navbar: React.FC = () => {
                   </NavLink>
                   <NavLink to="/admin/audit-log" icon={ClipboardList}>
                     Audit Log
+                  </NavLink>
+                  <NavLink to="/admin/leave" icon={ClipboardList}>
+                    Leave
+                  </NavLink>
+                  <NavLink to="/admin/leave/attendance" icon={Calendar}>
+                    Attendance
+                  </NavLink>
+                  <NavLink to="/admin/leave/policies" icon={FileText}>
+                    Policies
                   </NavLink>
                 </div>
 
@@ -216,6 +227,16 @@ const Navbar: React.FC = () => {
               </NavLink>
               <NavLink to="/admin/audit-log" icon={ClipboardList}>
                 Audit Log
+              </NavLink>
+
+              <NavLink to="/admin/leave" icon={ClipboardList}>
+                Leave
+              </NavLink>
+              <NavLink to="/admin/leave/attendance" icon={Calendar}>
+                Attendance
+              </NavLink>
+              <NavLink to="/admin/leave/policies" icon={FileText}>
+                Policies
               </NavLink>
 
               <button
