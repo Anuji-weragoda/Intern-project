@@ -8,13 +8,13 @@ type Props = {
 };
 
 const LeaveRequestForm: React.FC<Props> = ({ onSubmit, onCancel, policies }) => {
-  const [policyId, setPolicyId] = useState(1);
+  const [policyId, setPolicyId] = useState<number>(() => (policies && policies.length ? policies[0].id : 1));
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [reason, setReason] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const leaveTypes = [
+  const defaultLeaveTypes = [
     { id: 1, label: 'Annual Leave', icon: '🏖️', color: 'bg-blue-50 border-blue-200 text-blue-700', type: 'ANNUAL' },
     { id: 2, label: 'Sick Leave', icon: '🏥', color: 'bg-red-50 border-red-200 text-red-700', type: 'SICK' },
     { id: 3, label: 'Unpaid Leave', icon: '📋', color: 'bg-gray-50 border-gray-200 text-gray-700', type: 'UNPAID' },
@@ -22,6 +22,12 @@ const LeaveRequestForm: React.FC<Props> = ({ onSubmit, onCancel, policies }) => 
     { id: 5, label: 'Maternity Leave', icon: '👶', color: 'bg-pink-50 border-pink-200 text-pink-700', type: 'MATERNITY' },
     { id: 6, label: 'Paternity Leave', icon: '👨‍👧', color: 'bg-indigo-50 border-indigo-200 text-indigo-700', type: 'PATERNITY' }
   ];
+
+  // If `policies` prop is provided, derive the leave types from it so the component
+  // actually uses the prop and remains flexible. Otherwise fall back to defaults.
+  const leaveTypes = (policies && policies.length)
+    ? policies.map(p => ({ id: p.id, label: p.policy_name || p.leave_type || `Policy ${p.id}`, icon: '🏖️', color: 'bg-blue-50 border-blue-200 text-blue-700', type: p.leave_type || 'ANNUAL' }))
+    : defaultLeaveTypes;
 
   const selectedLeaveType = leaveTypes.find(type => type.id === policyId) || leaveTypes[0];
 
@@ -43,6 +49,14 @@ const LeaveRequestForm: React.FC<Props> = ({ onSubmit, onCancel, policies }) => 
 
     if (new Date(endDate) < new Date(startDate)) {
       alert('End date must be after start date');
+      return;
+    }
+
+    // Prevent creating requests in the past: start date must be today or later
+    const tzOffset = new Date().getTimezoneOffset() * 60000;
+    const todayLocal = new Date(Date.now() - tzOffset).toISOString().slice(0, 10);
+    if (startDate < todayLocal) {
+      alert('Start date cannot be in the past');
       return;
     }
 
@@ -74,6 +88,9 @@ const LeaveRequestForm: React.FC<Props> = ({ onSubmit, onCancel, policies }) => 
   };
 
   const days = calculateDays();
+  // Compute today's date (local) in YYYY-MM-DD for use as min on date inputs
+  const tzOffset = new Date().getTimezoneOffset() * 60000;
+  const todayLocal = new Date(Date.now() - tzOffset).toISOString().slice(0, 10);
 
   return (
     <div className="bg-white rounded-2xl shadow-xl p-6 max-w-3xl mx-auto max-h-[90vh] overflow-y-auto">
@@ -82,6 +99,9 @@ const LeaveRequestForm: React.FC<Props> = ({ onSubmit, onCancel, policies }) => 
         <div>
           <h2 className="text-2xl font-bold text-slate-900 mb-1">Request Time Off</h2>
           <p className="text-sm text-slate-500">Fill in the details for your leave request</p>
+          <div className="text-sm text-slate-500 mt-1">
+            Selected type: <span className="font-medium text-slate-700 ml-2">{selectedLeaveType.label}</span>
+          </div>
         </div>
         {onCancel && (
           <button
@@ -130,6 +150,7 @@ const LeaveRequestForm: React.FC<Props> = ({ onSubmit, onCancel, policies }) => 
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
+              min={todayLocal}
               className="w-full px-4 py-2 border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
               required
             />

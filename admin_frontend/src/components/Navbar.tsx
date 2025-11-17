@@ -12,7 +12,6 @@ import {
   X,
   ChevronDown,
   LayoutDashboard,
-  Calendar,
 } from "lucide-react";
 
 interface NavLinkProps {
@@ -91,10 +90,7 @@ const Navbar: React.FC = () => {
                     Audit Log
                   </NavLink>
                   <NavLink to="/admin/leave" icon={ClipboardList}>
-                    Leave
-                  </NavLink>
-                  <NavLink to="/admin/leave/attendance" icon={Calendar}>
-                    Attendance
+                    Leave & Attendance
                   </NavLink>
                   <NavLink to="/admin/leave/policies" icon={FileText}>
                     Policies
@@ -230,10 +226,7 @@ const Navbar: React.FC = () => {
               </NavLink>
 
               <NavLink to="/admin/leave" icon={ClipboardList}>
-                Leave
-              </NavLink>
-              <NavLink to="/admin/leave/attendance" icon={Calendar}>
-                Attendance
+                Leave and Attendance
               </NavLink>
               <NavLink to="/admin/leave/policies" icon={FileText}>
                 Policies

@@ -52,6 +52,23 @@ export async function createLeaveRequest(req, res) {
 
     log('Creating leave request for user:', payload.user_id);
 
+    // Server-side validation: do not allow creating leave requests with a start_date in the past.
+    try {
+      const sd = payload.start_date || payload.startDate || null;
+      if (sd) {
+        const start = new Date(String(sd));
+        // compute server-local start-of-day for today
+        const tzOffset = new Date().getTimezoneOffset() * 60000;
+        const todayLocalStr = new Date(Date.now() - tzOffset).toISOString().slice(0,10);
+        const todayStart = new Date(todayLocalStr + 'T00:00:00');
+        if (start < todayStart) {
+          return res.status(400).json({ error: 'start_date cannot be in the past' });
+        }
+      }
+    } catch (e) {
+      // ignore parsing errors and let service layer handle them
+    }
+
     const result = await leaveService.submitLeaveRequest(payload);
     log('Leave request created successfully:', result);
 

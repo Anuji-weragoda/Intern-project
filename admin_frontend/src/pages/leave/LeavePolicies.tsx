@@ -9,7 +9,8 @@ const samplePolicies = [
 ];
 
 const LeavePolicies: React.FC = () => {
-  const [policies, setPolicies] = useState(samplePolicies);
+  // Only read `policies` for now; the setter is unused because this page is read-only.
+  const [policies] = useState(samplePolicies);
 
   useEffect(() => {
     // If you add a backend endpoint (e.g. GET /api/v1/leave/policies), fetch here

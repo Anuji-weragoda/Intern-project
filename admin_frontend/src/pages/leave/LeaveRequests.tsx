@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { Calendar, Clock, CheckCircle, XCircle, Ban, Plus, X, AlertCircle, User, FileText } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Calendar, Clock, CheckCircle, XCircle, Ban, Plus, X, AlertCircle, User, FileText, Users } from 'lucide-react';
 import {
   getLeaveRequests,
   createLeaveRequest as leaveCreate,
@@ -8,6 +8,9 @@ import {
 } from '../../api/leaveApi';
 import LeaveRequestForm from '../../components/leave/LeaveRequestForm';
 import { getUserBySub } from '../../api/userApi';
+import BalanceView from './BalanceView';
+import Attendance from './Attendance';
+
 
 const LeaveManagementSystem = () => {
   const [requests, setRequests] = useState<any[]>([]);
@@ -114,8 +117,8 @@ const LeaveManagementSystem = () => {
           if (approverId && !approverEmail) missingIds.add(String(approverId));
         }
         if (missingIds.size > 0) {
-          // fetch profiles in parallel (limited to N)
-          const ids = Array.from(missingIds).slice(0, 20);
+          // fetch profiles in parallel (limited to N). Increase limit to cover more users.
+          const ids = Array.from(missingIds).slice(0, 100);
           const promises = ids.map(id => getUserBySub(id).catch(() => null));
           const results = await Promise.all(promises);
           const map: Record<string, any> = {};
@@ -125,13 +128,25 @@ const LeaveManagementSystem = () => {
               const uid = String(r.user_id || r.userId || r.requester_id || r.user?.id || r.user?.sub || '');
               const aid = String(r.approver_id || r.approverId || r.approver?.id || r.approver?.sub || '');
               let out = { ...r };
-              if (uid && map[uid] && ! (r.userEmail || r.user_email || r.email || r.requester_email || r.user?.email)) {
-                const email = map[uid].email || map[uid].username || map[uid].userEmail || map[uid].email_address || null;
-                out = { ...out, userEmail: email };
+              if (uid && map[uid]) {
+                if (! (r.userEmail || r.user_email || r.email || r.requester_email || r.user?.email)) {
+                  const email = map[uid].email || map[uid].username || map[uid].userEmail || map[uid].email_address || null;
+                  out = { ...out, userEmail: email };
+                }
+                if (! (r.userName || r.user_name || r.requester_name || r.user?.name)) {
+                  const name = map[uid].name || map[uid].displayName || map[uid].username || null;
+                  if (name) out = { ...out, userName: name };
+                }
               }
-              if (aid && map[aid] && ! (r.approverEmail || r.approver_email || r.approver?.email)) {
-                const aemail = map[aid].email || map[aid].username || map[aid].userEmail || map[aid].email_address || null;
-                out = { ...out, approverEmail: aemail };
+              if (aid && map[aid]) {
+                if (! (r.approverEmail || r.approver_email || r.approver?.email)) {
+                  const aemail = map[aid].email || map[aid].username || map[aid].userEmail || map[aid].email_address || null;
+                  out = { ...out, approverEmail: aemail };
+                }
+                if (! (r.approverName || r.approver_name || r.approver?.name)) {
+                  const aname = map[aid].name || map[aid].displayName || map[aid].username || null;
+                  if (aname) out = { ...out, approverName: aname };
+                }
               }
               return out;
             });
@@ -311,8 +326,8 @@ const LeaveManagementSystem = () => {
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-slate-900 mb-2">Leave Management</h1>
-          <p className="text-slate-600">Manage your time off requests and balances</p>
+          <h1 className="text-4xl font-bold text-slate-900 mb-2">Leave & Attendance Management</h1>
+          <p className="text-slate-600">Monitor and manage employee attendance record, leave requests, and leave balances</p>
         </div>
 
         {/* Tabs */}
@@ -326,7 +341,18 @@ const LeaveManagementSystem = () => {
             }`}
           >
             <Calendar className="w-4 h-4 inline mr-2" />
-            Leave Requests
+            Leave
+          </button>
+          <button
+            onClick={() => setActiveTab('attendance')}
+            className={`px-6 py-3 font-medium transition-all ${
+              activeTab === 'attendance'
+                ? 'text-indigo-600 border-b-2 border-indigo-600'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <Users className="w-4 h-4 inline mr-2" />
+            Attendance
           </button>
           <button
             onClick={() => setActiveTab('balances')}
@@ -416,12 +442,14 @@ const LeaveManagementSystem = () => {
                         <div>
                           {(() => {
                             const userEmail = request.userEmail || request.user_email || request.email || request.requester_email || request.user?.email || request.user?.username || '';
+                            const userName = request.userName || request.user_name || request.requester_name || request.user?.name || '';
                             const userId = request.user_id || request.userId || request.requester_id || request.user?.id || request.user?.sub || '';
-                            // If email is missing but the request belongs to current user, use the id token email as fallback
-                            const resolvedEmail = userEmail || ((currentUser && currentUser.id && userId && String(currentUser.id) === String(userId)) ? (currentUser.email || '') : '');
+                            // If email/name is missing but the request belongs to current user, use the id token email as fallback
+                            const fallbackEmail = (currentUser && currentUser.id && userId && String(currentUser.id) === String(userId)) ? (currentUser.email || '') : '';
+                            const display = userName || userEmail || fallbackEmail || 'Unknown user';
                             return (
                               <>
-                                <h4 className="font-semibold text-slate-900">{resolvedEmail || 'Unknown user'}</h4>
+                                <h4 className="font-semibold text-slate-900">{display}</h4>
                                 {userId && <div className="text-xs text-slate-400">ID: {String(userId)}</div>}
                               </>
                             );
@@ -506,48 +534,16 @@ const LeaveManagementSystem = () => {
           </div>
         )}
 
+        {/* Attendance Tab */}
+        {activeTab === 'attendance' && (
+          <div>
+            <Attendance />
+          </div>
+        )}
+
         {/* Leave Balances Tab */}
         {activeTab === 'balances' && (
-          <div>
-            {loadingUsersBalances ? (
-              <div className="col-span-full text-center py-8">Loading user balances...</div>
-            ) : rawBalances && rawBalances.length > 0 ? (
-              <div className="overflow-x-auto bg-white rounded border">
-                <table className="min-w-full text-sm">
-                  <thead>
-                    <tr className="text-left">
-                      <th className="px-4 py-2">ID</th>
-                      <th className="px-4 py-2">User ID</th>
-                      <th className="px-4 py-2">Policy ID</th>
-                      <th className="px-4 py-2">Allocated</th>
-                      <th className="px-4 py-2">Used</th>
-                      <th className="px-4 py-2">Balance</th>
-                      <th className="px-4 py-2">Year</th>
-                      <th className="px-4 py-2">Created At</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {rawBalances.map((bal: any) => (
-                      <tr key={bal.id} className="border-t">
-                        <td className="px-4 py-2">{bal.id}</td>
-                        <td className="px-4 py-2">{bal.user_id}</td>
-                        <td className="px-4 py-2">{bal.policy_id}</td>
-                        <td className="px-4 py-2">{bal.total_allocated ?? 0}</td>
-                        <td className="px-4 py-2">{bal.total_used ?? 0}</td>
-                        <td className="px-4 py-2">{bal.balance_days ?? ((bal.total_allocated || 0) - (bal.total_used || 0))}</td>
-                        <td className="px-4 py-2">{bal.year ?? ''}</td>
-                        <td className="px-4 py-2">{(() => { const d = parseDbTimestampToLocal(bal.created_at); return d ? d.toLocaleString() : (bal.created_at ? String(bal.created_at) : ''); })()}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <div className="text-center py-8 bg-white rounded-xl border border-slate-200">
-                <p className="text-slate-600">No leave balances available. Ensure the `raw-leave-balances` endpoint is deployed on the server.</p>
-              </div>
-            )}
-          </div>
+          <BalanceView rawBalances={rawBalances} loadingUsersBalances={loadingUsersBalances} />
         )}
       </div>
     </div>
