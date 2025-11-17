@@ -63,3 +63,18 @@ export async function userBalances(req, res) {
     return res.status(500).json({ error: err.message });
   }
 }
+
+// Return raw rows from leave_balances table (no grouping) - useful for simple UI dumps
+export async function rawLeaveBalances(req, res) {
+  try {
+    const limit = req.query.limit ? Math.min(Number(req.query.limit), 2000) : 1000;
+    const offset = req.query.offset ? Number(req.query.offset) : 0;
+    // Note: the leave_balances table defines `updated_at` (no `created_at`),
+    // so expose it as `created_at` for the UI to consume the timestamp column.
+    const sql = `SELECT id, user_id, policy_id, total_allocated, total_used, balance_days, year, updated_at AS created_at FROM leave_balances ORDER BY id LIMIT :limit OFFSET :offset`;
+    const rows = await sequelize.query(sql, { type: QueryTypes.SELECT, replacements: { limit, offset } });
+    return res.json(rows);
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+}

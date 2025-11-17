@@ -2,22 +2,22 @@ import React, { useEffect, useState } from 'react';
 import { Calendar, Clock, CheckCircle, XCircle, Ban, Plus, X, AlertCircle, User, FileText } from 'lucide-react';
 import {
   getLeaveRequests,
-  getLeaveBalance,
   createLeaveRequest as leaveCreate,
   patchLeaveRequest as leavePatch,
+  getRawLeaveBalances,
 } from '../../api/leaveApi';
 import LeaveRequestForm from '../../components/leave/LeaveRequestForm';
-import { getUserBySub, getUsers } from '../../api/userApi';
+import { getUserBySub } from '../../api/userApi';
 
 const LeaveManagementSystem = () => {
   const [requests, setRequests] = useState<any[]>([]);
-  const [balances, setBalances] = useState<any[]>([]);
+  // legacy balances state removed; we use `usersBalances` (report) instead
   const [loading, setLoading] = useState(true);
   const [showNewRequest, setShowNewRequest] = useState(false);
   const [activeTab, setActiveTab] = useState('requests');
   const [filterStatus, setFilterStatus] = useState('all');
   const [currentUser, setCurrentUser] = useState<{ id?: string; email?: string } | null>(null);
-  const [usersBalances, setUsersBalances] = useState<Array<any>>([]);
+  const [rawBalances, setRawBalances] = useState<Array<any>>([]);
   const [loadingUsersBalances, setLoadingUsersBalances] = useState(false);
 
   useEffect(() => {
@@ -54,39 +54,30 @@ const LeaveManagementSystem = () => {
     } catch (e) {}
   }, []);
 
-  // When balances tab is opened, fetch per-user balances (limit to first 50 users)
+  // When balances tab is opened, fetch raw leave_balances rows from the server
   useEffect(() => {
     if (activeTab !== 'balances') return;
     let mounted = true;
     const fetchAllUserBalances = async () => {
       setLoadingUsersBalances(true);
       try {
-        const users = await getUsers();
-        if (!users || !Array.isArray(users) || users.length === 0) {
-          setUsersBalances([]);
-          return;
-        }
-        const slice = users.slice(0, 50);
-        // For each user, request their leave balances from leaveApi
-        const promises = slice.map(async (u: any) => {
-          try {
-            const uid = u.sub || u.id || u.userId || u.username;
-            if (!uid) return { user: u, balances: [] };
-            const res = await getLeaveBalance(String(uid));
-            if (!res.ok) return { user: u, balances: [] };
-            const data = await res.json().catch(async () => null);
-            const resolvedBalances = Array.isArray(data) ? data : (data?.balances || data?.data || []);
-            return { user: u, balances: resolvedBalances };
-          } catch (e) {
-            return { user: u, balances: [] };
+        // Prefer a raw dump endpoint that returns rows from `leave_balances`.
+        try {
+          const res = await getRawLeaveBalances({ limit: 200 });
+          if (res && res.ok) {
+            const j = await res.json().catch(() => null);
+            const rows = Array.isArray(j) ? j : (j?.data || j?.rows || []);
+            if (mounted) { setRawBalances(rows || []); return; }
           }
-        });
-        const results = await Promise.all(promises);
-        if (mounted) setUsersBalances(results.filter(r => r));
+        } catch (e) {
+          // endpoint missing or errored
+        }
+        // If the raw endpoint is not available, set empty
+        if (mounted) setRawBalances([]);
       } catch (e) {
-        setUsersBalances([]);
+        if (mounted) setRawBalances([]);
       } finally {
-        setLoadingUsersBalances(false);
+        if (mounted) setLoadingUsersBalances(false);
       }
     };
     fetchAllUserBalances();
@@ -151,22 +142,21 @@ const LeaveManagementSystem = () => {
         // ignore errors resolving user profiles
       }
       
-      // Fetch balances - you may need to pass actual user_id here
-      // For now, it will use the authenticated user from the backend
-      // getLeaveBalance expects a parameter; pass empty string to let server infer authenticated user
-      const balancesRes = await getLeaveBalance('');
-      if (!balancesRes.ok) {
-        const t = await balancesRes.text();
-        throw new Error(`Failed to fetch leave balances: ${balancesRes.status} ${balancesRes.statusText}: ${t.slice(0,400)}`);
+      // Fetch raw leave_balances rows for the balances tab
+      try {
+        const res = await getRawLeaveBalances({ limit: 200 });
+        if (res && res.ok) {
+          const j = await res.json().catch(() => null);
+          const rows = Array.isArray(j) ? j : (j?.data || j?.rows || []);
+          setRawBalances(rows || []);
+        } else {
+          try { const txt = await (res ? res.clone().text() : Promise.resolve('no-response')); console.warn('[LeaveRequests] raw-leave-balances unavailable:', res ? `${res.status} ${res.statusText}` : 'no response', txt.slice ? txt.slice(0,400) : txt); } catch (e) {}
+          setRawBalances([]);
+        }
+      } catch (e) {
+        console.warn('[LeaveRequests] error fetching raw leave_balances:', (e as any)?.message || e);
+        setRawBalances([]);
       }
-      const balancesData = await balancesRes.json().catch(async () => {
-        const t = await balancesRes.text();
-        throw new Error(`Invalid JSON from leave balances: ${t.slice(0,400)}`);
-      });
-      const resolvedBalances = Array.isArray(balancesData)
-        ? balancesData
-        : (balancesData?.balances || balancesData?.data || []);
-      setBalances(resolvedBalances || []);
     } catch (error) {
       console.error('Failed to load data:', (error as any)?.message || error);
       // non-blocking: log a warning but don't interrupt the user with an alert
@@ -294,6 +284,26 @@ const LeaveManagementSystem = () => {
     const s = new Date(start);
     const e = new Date(end);
     return Math.round((e.getTime() - s.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+  };
+
+  // Parse timestamps returned by the DB (which may be in 'YYYY-MM-DD HH:mm:ss.SSS' form)
+  // Treat such timestamps as UTC and convert to a local Date for display.
+  const parseDbTimestampToLocal = (ts: string | undefined | null) => {
+    if (!ts) return null;
+    try {
+      // If string contains a space between date and time (Postgres default), convert to ISO and append Z to mark UTC
+      if (typeof ts === 'string' && ts.match(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/)) {
+        const iso = ts.replace(' ', 'T') + 'Z';
+        const d = new Date(iso);
+        if (!Number.isNaN(d.getTime())) return d;
+      }
+      // Fallback: let Date attempt to parse
+      const d2 = new Date(ts as any);
+      if (!Number.isNaN(d2.getTime())) return d2;
+    } catch (e) {
+      // ignore
+    }
+    return null;
   };
 
   return (
@@ -432,8 +442,25 @@ const LeaveManagementSystem = () => {
                       {request.status === 'approved' && (
                         <div className="mt-2 text-sm text-slate-600">
                           <strong>Approved by:</strong> {request.approverEmail || request.approver_email || request.approver_id || request.approver || 'Unknown'}
-                          {request.approved_at && (
-                            <span className="ml-3 text-xs text-slate-500">on {new Date(request.approved_at).toLocaleString()}</span>
+                          { (request.approved_at || request.updated_at || request.updatedAt) && (
+                            (() => {
+                              const ts = request.approved_at || request.updated_at || request.updatedAt;
+                              const d = parseDbTimestampToLocal(ts);
+                              return (<span className="ml-3 text-xs text-slate-500">on {d ? d.toLocaleString() : String(ts)}</span>);
+                            })()
+                          )}
+                        </div>
+                      )}
+
+                      {request.status === 'rejected' && (
+                        <div className="mt-2 text-sm text-slate-600">
+                          <strong>Rejected by:</strong> {request.approverEmail || request.approver_email || request.approver_id || request.approver || 'Unknown'}
+                          { (request.approved_at || request.updated_at || request.updatedAt) && (
+                            (() => {
+                              const ts = request.approved_at || request.updated_at || request.updatedAt;
+                              const d = parseDbTimestampToLocal(ts);
+                              return (<span className="ml-3 text-xs text-slate-500">on {d ? d.toLocaleString() : String(ts)}</span>);
+                            })()
                           )}
                         </div>
                       )}
@@ -447,7 +474,11 @@ const LeaveManagementSystem = () => {
                         </span>
                         <span className="flex items-center gap-1">
                           <Clock className="w-4 h-4" />
-                          {new Date(request.created_at || request.createdAt).toLocaleDateString()}
+                          {(() => {
+                            const createdTs = request.created_at || request.createdAt || request.updated_at || request.updatedAt;
+                            const cd = parseDbTimestampToLocal(createdTs);
+                            return cd ? cd.toLocaleDateString() : (createdTs ? String(createdTs).slice(0,10) : '');
+                          })()}
                         </span>
                       </div>
 
@@ -477,60 +508,44 @@ const LeaveManagementSystem = () => {
 
         {/* Leave Balances Tab */}
         {activeTab === 'balances' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div>
             {loadingUsersBalances ? (
               <div className="col-span-full text-center py-8">Loading user balances...</div>
-            ) : usersBalances && usersBalances.length > 0 ? (
-              usersBalances.map(({ user, balances: b }: any) => (
-                <div key={user.sub || user.id || user.userId || user.username} className="bg-white rounded-xl border border-slate-200 p-6 hover:shadow-lg transition-all">
-                  <h3 className="text-lg font-semibold text-slate-900 mb-2">{user.email || user.username || user.name || user.preferred_username || 'Unknown'}</h3>
-                  <div className="text-xs text-slate-500 mb-4">ID: {user.sub || user.id || user.userId || user.username}</div>
-                  {Array.isArray(b) && b.length > 0 ? (
-                    <div className="space-y-3">
-                      {b.map((balance: any) => (
-                        <div key={balance.policy_id} className="p-3 rounded-lg border border-slate-100">
-                          <div className="flex justify-between">
-                            <div className="text-slate-600">{balance.policy_name || `Policy ${balance.policy_id}`}</div>
-                            <div className="font-semibold text-slate-900">{balance.balance_days} days</div>
-                          </div>
-                          <div className="text-xs text-slate-500">Allocated: {balance.total_allocated || 0} — Used: {balance.total_used || 0}</div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-slate-500">No balances available</div>
-                  )}
-                </div>
-              ))
+            ) : rawBalances && rawBalances.length > 0 ? (
+              <div className="overflow-x-auto bg-white rounded border">
+                <table className="min-w-full text-sm">
+                  <thead>
+                    <tr className="text-left">
+                      <th className="px-4 py-2">ID</th>
+                      <th className="px-4 py-2">User ID</th>
+                      <th className="px-4 py-2">Policy ID</th>
+                      <th className="px-4 py-2">Allocated</th>
+                      <th className="px-4 py-2">Used</th>
+                      <th className="px-4 py-2">Balance</th>
+                      <th className="px-4 py-2">Year</th>
+                      <th className="px-4 py-2">Created At</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rawBalances.map((bal: any) => (
+                      <tr key={bal.id} className="border-t">
+                        <td className="px-4 py-2">{bal.id}</td>
+                        <td className="px-4 py-2">{bal.user_id}</td>
+                        <td className="px-4 py-2">{bal.policy_id}</td>
+                        <td className="px-4 py-2">{bal.total_allocated ?? 0}</td>
+                        <td className="px-4 py-2">{bal.total_used ?? 0}</td>
+                        <td className="px-4 py-2">{bal.balance_days ?? ((bal.total_allocated || 0) - (bal.total_used || 0))}</td>
+                        <td className="px-4 py-2">{bal.year ?? ''}</td>
+                        <td className="px-4 py-2">{(() => { const d = parseDbTimestampToLocal(bal.created_at); return d ? d.toLocaleString() : (bal.created_at ? String(bal.created_at) : ''); })()}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             ) : (
-              balances.map(balance => (
-                <div key={balance.policy_id} className="bg-white rounded-xl border border-slate-200 p-6 hover:shadow-lg transition-all">
-                  <h3 className="text-lg font-semibold text-slate-900 mb-4">{balance.policy_name}</h3>
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center">
-                      <span className="text-slate-600">Total Allocated</span>
-                      <span className="font-semibold text-slate-900">{balance.total_allocated} days</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-slate-600">Used</span>
-                      <span className="font-semibold text-red-600">{balance.total_used} days</span>
-                    </div>
-                    <div className="border-t border-slate-200 pt-3">
-                      <div className="flex justify-between items-center">
-                        <span className="text-slate-900 font-medium">Balance</span>
-                        <span className="text-2xl font-bold text-indigo-600">{balance.balance_days} days</span>
-                      </div>
-                    </div>
-                    <div className="w-full bg-slate-200 rounded-full h-2 mt-4">
-                      <div
-                        className="bg-indigo-600 h-2 rounded-full transition-all"
-                        style={{ width: `${(balance.balance_days / balance.total_allocated) * 100}%` }}
-                      ></div>
-                    </div>
-                    <p className="text-xs text-slate-500 text-center">Year {balance.year}</p>
-                  </div>
-                </div>
-              ))
+              <div className="text-center py-8 bg-white rounded-xl border border-slate-200">
+                <p className="text-slate-600">No leave balances available. Ensure the `raw-leave-balances` endpoint is deployed on the server.</p>
+              </div>
             )}
           </div>
         )}

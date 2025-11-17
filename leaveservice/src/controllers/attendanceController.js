@@ -5,7 +5,25 @@ export async function getAttendance(req, res) {
   try {
   // If authenticated, restrict/override query user_id to the token subject
   const query = trimStringsDeep(Object.assign({}, req.query));
-  if (req.user && req.user.sub) query.user_id = req.user.sub;
+  // If a user is authenticated, we normally restrict to their own records when no explicit user_id is provided.
+  // However, users in privileged groups (e.g., 'hr' or 'admin') should be allowed to query across users.
+  if (req.user && !query.user_id) {
+    try {
+      const groups = req.user['cognito:groups'] || req.user.groups || [];
+      const roles = req.user.roles || req.user.role || [];
+      const normGroups = Array.isArray(groups) ? groups.map(g => String(g).toLowerCase()) : [String(groups).toLowerCase()];
+      const normRoles = Array.isArray(roles) ? roles.map(r => String(r).toLowerCase()) : [String(roles).toLowerCase()];
+      const privileged = [...normGroups, ...normRoles].some(x => ['hr', 'admin'].includes(x));
+      if (!privileged) {
+        // non-privileged: restrict to their own sub
+        if (req.user.sub) query.user_id = req.user.sub;
+      }
+      // privileged users: allow leaving query.user_id undefined to fetch all users
+    } catch (e) {
+      // on unexpected token shape, be conservative and restrict to subject when available
+      if (req.user.sub) query.user_id = req.user.sub;
+    }
+  }
   const results = await attendanceService.attendanceHistory(query);
     return res.json(results);
   } catch (err) {

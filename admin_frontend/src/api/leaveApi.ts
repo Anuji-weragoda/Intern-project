@@ -230,10 +230,20 @@ async function leaveFetch(path: string, options?: ApiOptions) {
 }
 
 export async function getLeaveBalance(userId: number | string) {
-  if (userId === undefined || userId === null || userId === '') {
-    return await leaveFetch(`/api/leaves/balance`);
+  const legacy = (userId === undefined || userId === null || userId === '')
+    ? `/api/leaves/balance`
+    : `/api/leaves/balance?user_id=${encodeURIComponent(String(userId))}`;
+  const v1 = (userId === undefined || userId === null || userId === '')
+    ? `/api/v1/leave/balance`
+    : `/api/v1/leave/balance?user_id=${encodeURIComponent(String(userId))}`;
+
+  // Try legacy path first for compatibility; if server responds 404, retry v1 path
+  let res = await leaveFetch(legacy);
+  if (res.status === 404) {
+    try { console.info('[leaveApi] legacy balance endpoint 404, retrying v1 path'); } catch (e) {}
+    res = await leaveFetch(v1);
   }
-  return await leaveFetch(`/api/leaves/balance?user_id=${encodeURIComponent(String(userId))}`);
+  return res;
 }
 
 export async function getLeaveRequests(query: Record<string, any> = {}) {
@@ -281,6 +291,18 @@ export async function getLeaveSummary(query: Record<string, any> = {}) {
   const params = new URLSearchParams();
   Object.entries(query).forEach(([k, v]) => { if (v !== undefined && v !== null) params.set(k, String(v)); });
   return await leaveFetch(`/api/v1/reports/leave-summary?${params.toString()}`);
+}
+
+export async function getUserBalances(query: Record<string, any> = {}) {
+  const params = new URLSearchParams();
+  Object.entries(query).forEach(([k, v]) => { if (v !== undefined && v !== null) params.set(k, String(v)); });
+  return await leaveFetch(`/api/v1/reports/user-balances?${params.toString()}`);
+}
+
+export async function getRawLeaveBalances(query: Record<string, any> = {}) {
+  const params = new URLSearchParams();
+  Object.entries(query).forEach(([k, v]) => { if (v !== undefined && v !== null) params.set(k, String(v)); });
+  return await leaveFetch(`/api/v1/reports/raw-leave-balances?${params.toString()}`);
 }
 
 export async function healthz() {

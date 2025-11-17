@@ -1,5 +1,5 @@
 import express from 'express';
-import { leaveSummary, userBalances } from '../controllers/reportsController.js';
+import { leaveSummary, userBalances, rawLeaveBalances } from '../controllers/reportsController.js';
 
 const router = express.Router();
 
@@ -8,5 +8,8 @@ router.get('/leave-summary', leaveSummary);
 
 // GET /api/v1/reports/user-balances?year=2025&limit=100&offset=0
 router.get('/user-balances', userBalances);
+
+// GET /api/v1/reports/raw-leave-balances?limit=100&offset=0
+router.get('/raw-leave-balances', rawLeaveBalances);
 
 export default router;
