@@ -31,3 +31,35 @@ export async function leaveSummary(req, res) {
     return res.status(500).json({ error: err.message });
   }
 }
+
+// Return per-user leave balances grouped by user
+export async function userBalances(req, res) {
+  try {
+    const year = req.query.year ? Number(req.query.year) : new Date().getFullYear();
+    const limit = req.query.limit ? Math.min(Number(req.query.limit), 1000) : 500;
+    const offset = req.query.offset ? Number(req.query.offset) : 0;
+
+    // Pull balances joined with policy names
+    const sql = `SELECT lb.user_id, lb.policy_id, lp.policy_name, lb.total_allocated, lb.total_used, lb.balance_days, lb.year
+      FROM leave_balances lb
+      LEFT JOIN leave_policies lp ON lp.id = lb.policy_id
+      WHERE lb.year = :year
+      ORDER BY lb.user_id, lb.policy_id
+      LIMIT :limit OFFSET :offset`;
+
+    const rows = await sequelize.query(sql, { type: QueryTypes.SELECT, replacements: { year, limit, offset } });
+
+    // Group by user_id
+    const map = {};
+    for (const r of rows) {
+      const uid = String(r.user_id || '');
+      if (!map[uid]) map[uid] = { user_id: uid, balances: [] };
+      map[uid].balances.push({ policy_id: r.policy_id, policy_name: r.policy_name, total_allocated: r.total_allocated, total_used: r.total_used, balance_days: r.balance_days, year: r.year });
+    }
+
+    const result = Object.values(map);
+    return res.json({ data: result, count: result.length });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+}

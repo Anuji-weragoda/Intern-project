@@ -99,14 +99,86 @@ async function leaveFetch(path: string, options?: ApiOptions) {
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     } as Record<string, string>;
 
+    // Ensure JSON bodies are stringified consistently here (clients may pass object or string)
+    const opts: RequestInit = { ...(options || {}) };
+    if (opts.body !== undefined) {
+      // If body is an object, stringify it. If it's already a string, try to parse and normalize dates for leave endpoints.
+      if (typeof opts.body !== 'string') {
+        try {
+          // If body is an object, normalize date fields to local YYYY-MM-DD before stringifying
+          const obj = (opts as any).body;
+          if (obj && (obj.start_date || obj.end_date)) {
+            const toLocalDateOnly = (val: any) => {
+              if (!val) return val;
+              try {
+                const dt = new Date(val);
+                if (Number.isNaN(dt.getTime())) return val;
+                const y = dt.getFullYear();
+                const m = String(dt.getMonth() + 1).padStart(2, '0');
+                const d = String(dt.getDate()).padStart(2, '0');
+                return `${y}-${m}-${d}`;
+              } catch (e) {
+                return val;
+              }
+            };
+            obj.start_date = toLocalDateOnly(obj.start_date);
+            obj.end_date = toLocalDateOnly(obj.end_date);
+          }
+          (opts as any).body = JSON.stringify(obj);
+        } catch (e) {
+          // leave as-is if stringify fails
+        }
+      } else {
+        // If the body is already a JSON string, attempt to parse and normalize date fields for /api/leaves
+        try {
+          const maybeObj = JSON.parse((opts as any).body);
+          if (maybeObj && (maybeObj.start_date || maybeObj.end_date)) {
+            const toLocalDateOnly = (val: any) => {
+              if (!val) return val;
+              try {
+                const dt = new Date(val);
+                if (Number.isNaN(dt.getTime())) return val;
+                const y = dt.getFullYear();
+                const m = String(dt.getMonth() + 1).padStart(2, '0');
+                const d = String(dt.getDate()).padStart(2, '0');
+                return `${y}-${m}-${d}`;
+              } catch (e) {
+                return val;
+              }
+            };
+            maybeObj.start_date = toLocalDateOnly(maybeObj.start_date);
+            maybeObj.end_date = toLocalDateOnly(maybeObj.end_date);
+            (opts as any).body = JSON.stringify(maybeObj);
+          }
+        } catch (e) {
+          // not JSON or parse failed — ignore
+        }
+      }
+    }
+
+    // Debug outgoing request (trim long bodies)
+    try {
+      // eslint-disable-next-line no-console
+      console.debug('[leaveApi] request ->', { url, method: opts.method || 'GET', headers: mergedHeaders, bodyPreview: (opts as any).body ? String((opts as any).body).slice(0, 1000) : undefined });
+    } catch (e) {}
+
     const res = await fetch(url, {
       credentials: "include",
-      ...options,
+      ...opts,
       headers: mergedHeaders,
     });
 
     if (res.status === 401) {
       try { console.warn('[leaveApi] 401 Unauthorized from', url, 'tokenPresent=', !!token); } catch (e) {}
+    }
+
+    if (!res.ok) {
+      try {
+        const txt = await res.clone().text();
+        try { console.error('[leaveApi] non-OK response body:', JSON.parse(txt)); } catch (e) { console.error('[leaveApi] non-OK response text:', txt); }
+      } catch (e) {
+        // ignore
+      }
     }
 
     return res;
@@ -123,14 +195,35 @@ async function leaveFetch(path: string, options?: ApiOptions) {
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
   } as Record<string, string>;
 
+  const opts: RequestInit = { ...(options || {}) };
+  if (opts.body !== undefined && typeof opts.body !== 'string') {
+    try {
+      (opts as any).body = JSON.stringify(opts.body);
+    } catch (e) {
+      // leave as-is
+    }
+  }
+
+  try {
+    // eslint-disable-next-line no-console
+    console.debug('[leaveApi] request (absolute) ->', { url: path, method: opts.method || 'GET', headers: mergedHeaders, bodyPreview: (opts as any).body ? String((opts as any).body).slice(0,1000) : undefined });
+  } catch (e) {}
+
   const res = await fetch(path, {
     credentials: "include",
-    ...options,
+    ...opts,
     headers: mergedHeaders,
   });
 
   if (res.status === 401) {
     try { console.warn('[leaveApi] 401 Unauthorized from absolute URL', path, 'tokenPresent=', !!token); } catch (e) {}
+  }
+
+  if (!res.ok) {
+    try {
+      const txt = await res.clone().text();
+      try { console.error('[leaveApi] non-OK response body (absolute):', JSON.parse(txt)); } catch (e) { console.error('[leaveApi] non-OK response text (absolute):', txt); }
+    } catch (e) {}
   }
 
   return res;
