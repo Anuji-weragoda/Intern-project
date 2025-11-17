@@ -1,12 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Calendar, Clock, CheckCircle, XCircle, Ban, Plus, X, AlertCircle, User, FileText, Users } from 'lucide-react';
+import { Calendar, Clock, CheckCircle, XCircle, Ban, AlertCircle, User, FileText, Users } from 'lucide-react';
 import {
   getLeaveRequests,
-  createLeaveRequest as leaveCreate,
   patchLeaveRequest as leavePatch,
   getRawLeaveBalances,
 } from '../../api/leaveApi';
-import LeaveRequestForm from '../../components/leave/LeaveRequestForm';
 import { getUserBySub } from '../../api/userApi';
 import BalanceView from './BalanceView';
 import Attendance from './Attendance';
@@ -16,7 +14,7 @@ const LeaveManagementSystem = () => {
   const [requests, setRequests] = useState<any[]>([]);
   // legacy balances state removed; we use `usersBalances` (report) instead
   const [loading, setLoading] = useState(true);
-  const [showNewRequest, setShowNewRequest] = useState(false);
+  // Admin panel: no creation of new requests from this UI (approve/reject only)
   const [activeTab, setActiveTab] = useState('requests');
   const [filterStatus, setFilterStatus] = useState('all');
   const [currentUser, setCurrentUser] = useState<{ id?: string; email?: string } | null>(null);
@@ -181,85 +179,25 @@ const LeaveManagementSystem = () => {
     }
   };
 
-  const handleCreateRequest = async (formData: any) => {
-    try {
-      // Ensure user id (uuid) is present. Try to extract from a stored JWT if missing.
-      const payload = { ...formData } as any;
-      // Map leaveType to policy_id if provided by the form component
-      if (!payload.policy_id && payload.leaveType) {
-        const map: Record<string, number> = { ANNUAL: 1, SICK: 2, UNPAID: 3, PERSONAL: 4, MATERNITY: 5, PATERNITY: 6 };
-        const pid = map[payload.leaveType as string];
-        if (pid) payload.policy_id = pid;
-      }
-      if (!payload.user_id) {
-        const token = (() => {
-          try {
-            const keys = ['jwt_token', 'id_token', 'access_token', 'token'];
-            for (const k of keys) {
-              try {
-                const v = localStorage.getItem(k);
-                if (v && v.length > 20) return v;
-              } catch (e) {}
-              try {
-                const v2 = sessionStorage.getItem(k);
-                if (v2 && v2.length > 20) return v2;
-              } catch (e) {}
-            }
-            // cookies
-            try {
-              const cookies = document.cookie ? document.cookie.split(';') : [];
-              for (const c of cookies) {
-                const [name, ...rest] = c.trim().split('=');
-                const value = rest.join('=');
-                if (['jwt_token','id_token','access_token','token'].includes(name) && value) {
-                  return decodeURIComponent(value);
-                }
-              }
-            } catch (e) {}
-          } catch (e) {}
-          return null;
-        })();
-
-        if (token) {
-          try {
-            const parts = token.split('.');
-            if (parts.length >= 2) {
-              const payloadJson = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
-              const sub = payloadJson.sub || payloadJson.user_id || payloadJson.username || payloadJson['cognito:username'];
-              if (sub) payload.user_id = sub;
-            }
-          } catch (e) {
-            // ignore decode errors
-            console.warn('Could not decode JWT to extract user id', e);
-          }
-        }
-      }
-
-      // Log final payload for debugging
-      try { console.debug('[LeaveRequests] creating leave with payload:', payload); } catch (e) {}
-
-      const res = await leaveCreate(payload);
-      if (!res.ok) {
-        const t = await res.text();
-        console.error('[LeaveRequests] create response body:', t);
-        throw new Error(`Failed to create leave request: ${res.status} ${res.statusText}: ${t.slice(0,400)}`);
-      }
-      await loadData();
-      setShowNewRequest(false);
-      alert('Leave request created successfully!');
-    } catch (error) {
-      alert('Failed to create request: ' + ((error as any)?.message || error));
-    }
-  };
+  // Creation of leave requests is not supported from this admin panel.
 
   const handleAction = async (id: number | string, action: string) => {
     const actionText = action === 'approve' ? 'approve' : action === 'reject' ? 'reject' : 'cancel';
     if (!confirm(`Are you sure you want to ${actionText} this leave request?`)) {
       return;
     }
-    
+
     try {
-      const res = await leavePatch(id, { action });
+      // If rejecting, prompt admin for a rejection reason and include it as `note`.
+      let body: any = { action };
+      if (action === 'reject') {
+        const reason = window.prompt('Please enter a reason for rejecting this request:');
+        if (reason === null) return; // user cancelled the prompt
+        if (!reason.trim()) { alert('Rejection reason is required'); return; }
+        body.note = reason.trim();
+      }
+
+      const res = await leavePatch(id, body);
       if (!res.ok) {
         const t = await res.text();
         throw new Error(`Failed to ${actionText} leave request: ${res.status} ${res.statusText}: ${t.slice(0,400)}`);
@@ -387,35 +325,10 @@ const LeaveManagementSystem = () => {
                   </button>
                 ))}
               </div>
-              <button
-                onClick={() => setShowNewRequest(true)}
-                className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-all shadow-lg hover:shadow-xl"
-              >
-                <Plus className="w-5 h-5" />
-                New Request
-              </button>
+              {/* Admin panel: creation of new requests disabled here */}
             </div>
 
-            {/* New Request Modal */}
-            {showNewRequest && (
-              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
-                  <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-2xl font-bold text-slate-900">New Leave Request</h3>
-                    <button
-                      onClick={() => setShowNewRequest(false)}
-                      className="text-slate-400 hover:text-slate-600 transition-colors"
-                    >
-                      <X className="w-6 h-6" />
-                    </button>
-                  </div>
-                  <LeaveRequestForm
-                    onSubmit={handleCreateRequest}
-                    onCancel={() => setShowNewRequest(false)}
-                  />
-                </div>
-              </div>
-            )}
+            {/* New request UI removed for admin panel */}
 
             {/* Requests List */}
             {loading ? (
@@ -491,6 +404,17 @@ const LeaveManagementSystem = () => {
                             })()
                           )}
                         </div>
+                      )}
+                      {request.status === 'rejected' && (
+                        (() => {
+                          const rejectionReason = request.note || request.rejection_note || request.rejectionReason || request.rejection_reason || (request.audit && request.audit.details && (request.audit.details.note || request.audit.details.reason)) || (request.details && (request.details.note || request.details.reason));
+                          if (!rejectionReason) return null;
+                          return (
+                            <div className="mt-2 text-sm text-slate-600">
+                              <strong>Reason:</strong> <span className="ml-2">{String(rejectionReason)}</span>
+                            </div>
+                          );
+                        })()
                       )}
                     </div>
 
