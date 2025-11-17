@@ -8,6 +8,7 @@ import {
 import { getUserBySub } from '../../api/userApi';
 import BalanceView from './BalanceView';
 import Attendance from './Attendance';
+import { useToast } from '../../components/ui/ToastProvider';
 
 
 const LeaveManagementSystem = () => {
@@ -20,6 +21,10 @@ const LeaveManagementSystem = () => {
   const [currentUser, setCurrentUser] = useState<{ id?: string; email?: string } | null>(null);
   const [rawBalances, setRawBalances] = useState<Array<any>>([]);
   const [loadingUsersBalances, setLoadingUsersBalances] = useState(false);
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [rejectTarget, setRejectTarget] = useState<number | string | null>(null);
+  const [rejectReason, setRejectReason] = useState('');
+  const toast = useToast();
 
   useEffect(() => {
     loadData();
@@ -186,27 +191,51 @@ const LeaveManagementSystem = () => {
     if (!confirm(`Are you sure you want to ${actionText} this leave request?`)) {
       return;
     }
+    // For reject, open a modal to collect a reason instead of using `prompt`.
+    if (action === 'reject') {
+      setRejectTarget(id);
+      setRejectReason('');
+      setShowRejectModal(true);
+      return;
+    }
 
     try {
-      // If rejecting, prompt admin for a rejection reason and include it as `note`.
-      let body: any = { action };
-      if (action === 'reject') {
-        const reason = window.prompt('Please enter a reason for rejecting this request:');
-        if (reason === null) return; // user cancelled the prompt
-        if (!reason.trim()) { alert('Rejection reason is required'); return; }
-        body.note = reason.trim();
-      }
-
+      const body: any = { action };
       const res = await leavePatch(id, body);
       if (!res.ok) {
         const t = await res.text();
         throw new Error(`Failed to ${actionText} leave request: ${res.status} ${res.statusText}: ${t.slice(0,400)}`);
       }
       await loadData();
-      alert(`Leave request ${actionText}ed successfully!`);
+      toast.success(`Leave request ${actionText}ed successfully!`);
     } catch (error) {
-      alert(`Failed to ${actionText} request: ` + ((error as any)?.message || error));
+      toast.error(`Failed to ${actionText} request: ` + ((error as any)?.message || error));
     }
+  };
+
+  const submitReject = async () => {
+    if (!rejectTarget) return;
+    if (!rejectReason.trim()) { toast.error('Rejection reason is required'); return; }
+    try {
+      const res = await leavePatch(rejectTarget, { action: 'reject', note: rejectReason.trim() });
+      if (!res.ok) {
+        const t = await res.text();
+        throw new Error(`Failed to reject leave request: ${res.status} ${res.statusText}: ${t.slice(0,400)}`);
+      }
+      setShowRejectModal(false);
+      setRejectTarget(null);
+      setRejectReason('');
+      await loadData();
+      toast.success('Leave request rejected successfully!');
+    } catch (e) {
+      toast.error('Failed to reject request: ' + ((e as any)?.message || e));
+    }
+  };
+
+  const cancelReject = () => {
+    setShowRejectModal(false);
+    setRejectTarget(null);
+    setRejectReason('');
   };
 
   const filteredRequests = filterStatus === 'all'
@@ -262,6 +291,26 @@ const LeaveManagementSystem = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       <div className="max-w-7xl mx-auto px-4 py-8">
+          {showRejectModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center">
+              <div className="absolute inset-0 bg-black/40" onClick={cancelReject}></div>
+              <div className="bg-white rounded-lg p-6 z-10 w-full max-w-lg mx-4 shadow-lg">
+                <h3 className="text-lg font-semibold mb-2">Reject Leave Request</h3>
+                <p className="text-sm text-slate-600 mb-4">Provide a reason for rejecting this request. This will be recorded in the audit trail.</p>
+                <textarea
+                  value={rejectReason}
+                  onChange={(e) => setRejectReason(e.target.value)}
+                  rows={5}
+                  className="w-full border border-slate-200 rounded-md p-2 mb-4"
+                  placeholder="Enter rejection reason..."
+                />
+                <div className="flex justify-end gap-2">
+                  <button onClick={cancelReject} className="px-4 py-2 bg-white border rounded-md">Cancel</button>
+                  <button onClick={submitReject} className="px-4 py-2 bg-red-600 text-white rounded-md">Confirm Reject</button>
+                </div>
+              </div>
+            </div>
+          )}
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-slate-900 mb-2">Leave & Attendance Management</h1>

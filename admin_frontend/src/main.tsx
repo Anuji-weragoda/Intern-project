@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import { AuthProvider } from './contexts/AuthContext'
+import { ToastProvider } from './components/ui/ToastProvider'
 
 // Set up runtime override for leave API before dynamically importing app modules
 try {
@@ -21,7 +22,9 @@ async function bootstrap() {
   root.render(
     <StrictMode>
       <AuthProvider>
-        <App />
+        <ToastProvider>
+          <App />
+        </ToastProvider>
       </AuthProvider>
     </StrictMode>,
   );
