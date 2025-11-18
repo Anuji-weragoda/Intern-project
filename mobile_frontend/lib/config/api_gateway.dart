@@ -4,4 +4,4 @@
 // file will use the deployed endpoint even if no --dart-define is passed.
 
 // If empty, no generated API Gateway URL was written.
-const String GENERATED_API_GATEWAY_URL = "https://8vkj44idn5.execute-api.eu-north-1.amazonaws.com/Prod";
+const String generatedApiGatewayUrl = "https://8vkj44idn5.execute-api.eu-north-1.amazonaws.com/Prod";

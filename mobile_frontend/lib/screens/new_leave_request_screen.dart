@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:amplify_flutter/amplify_flutter.dart';
+import 'dart:convert';
 import '../services/api_service.dart';
 
 class NewLeaveRequestScreen extends StatefulWidget {
@@ -18,13 +19,13 @@ class _NewLeaveRequestScreenState extends State<NewLeaveRequestScreen> {
   bool _submitting = false;
 
   final List<Map<String, dynamic>> _leaveTypes = [
-    {'value': 'Annual', 'label': 'Annual Leave', 'icon': Icons.beach_access_rounded, 'color': Colors.blue},
-    {'value': 'Sick', 'label': 'Sick Leave', 'icon': Icons.local_hospital_rounded, 'color': Colors.red},
-    {'value': 'Casual', 'label': 'Casual Leave', 'icon': Icons.event_rounded, 'color': Colors.orange},
-    {'value': 'Emergency', 'label': 'Emergency Leave', 'icon': Icons.warning_rounded, 'color': Colors.deepOrange},
-    {'value': 'Maternity', 'label': 'Maternity Leave', 'icon': Icons.child_care_rounded, 'color': Colors.pink},
-    {'value': 'Paternity', 'label': 'Paternity Leave', 'icon': Icons.family_restroom_rounded, 'color': Colors.indigo},
-    {'value': 'Unpaid', 'label': 'Unpaid Leave', 'icon': Icons.money_off_rounded, 'color': Colors.grey},
+    {'value': 'Annual', 'label': 'Annual Leave', 'icon': Icons.beach_access_rounded, 'color': Colors.blue, 'policy_id': 1},
+    {'value': 'Sick', 'label': 'Sick Leave', 'icon': Icons.local_hospital_rounded, 'color': Colors.red, 'policy_id': 2},
+    {'value': 'Casual', 'label': 'Casual Leave', 'icon': Icons.event_rounded, 'color': Colors.orange, 'policy_id': 3},
+    {'value': 'Emergency', 'label': 'Emergency Leave', 'icon': Icons.warning_rounded, 'color': Colors.deepOrange, 'policy_id': 4},
+    {'value': 'Maternity', 'label': 'Maternity Leave', 'icon': Icons.child_care_rounded, 'color': Colors.pink, 'policy_id': 5},
+    {'value': 'Paternity', 'label': 'Paternity Leave', 'icon': Icons.family_restroom_rounded, 'color': Colors.indigo, 'policy_id': 6},
+    {'value': 'Unpaid', 'label': 'Unpaid Leave', 'icon': Icons.money_off_rounded, 'color': Colors.grey, 'policy_id': 7},
   ];
 
   Future<void> _pickStart() async {
@@ -96,11 +97,11 @@ class _NewLeaveRequestScreenState extends State<NewLeaveRequestScreen> {
   }
 
   String _formatDateForApi(DateTime date) {
-    // Format: YYYY-MM-DD
-    final year = date.year.toString();
-    final month = date.month.toString().padLeft(2, '0');
-    final day = date.day.toString().padLeft(2, '0');
-    return '$year-$month-$day';
+    // Send in multiple formats to ensure backend can parse
+    // JavaScript Date constructor prefers ISO 8601 format
+    // Format: YYYY-MM-DDT00:00:00.000Z
+    final utcDate = DateTime.utc(date.year, date.month, date.day);
+    return utcDate.toIso8601String(); // Returns: 2025-11-19T00:00:00.000Z
   }
 
   Future<void> _submit() async {
@@ -115,21 +116,62 @@ class _NewLeaveRequestScreenState extends State<NewLeaveRequestScreen> {
       );
       return;
     }
+    
+    // Validate that end date is not before start date
+    if (_endDate!.isBefore(_startDate!)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('End date cannot be before start date'),
+          backgroundColor: Colors.red.shade600,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+    
     setState(() => _submitting = true);
     try {
-      // Format dates as YYYY-MM-DD
+      // Format dates as YYYY-MM-DD (ensure proper format)
       final startDateStr = _formatDateForApi(_startDate!);
       final endDateStr = _formatDateForApi(_endDate!);
+      
+      // Get policy_id from selected leave type
+      final selectedLeaveType = _leaveTypes.firstWhere(
+        (type) => type['value'] == _leaveType,
+        orElse: () => _leaveTypes[0],
+      );
+      final policyId = selectedLeaveType['policy_id'] ?? 1;
+      
+      // Debug logging
+      safePrint('=== Leave Request Debug ===');
+      safePrint('Start Date Object: $_startDate');
+      safePrint('Start Date Type: ${_startDate.runtimeType}');
+      safePrint('End Date Object: $_endDate');
+      safePrint('End Date Type: ${_endDate.runtimeType}');
+      safePrint('Start Date Formatted: $startDateStr');
+      safePrint('Start Date Formatted Type: ${startDateStr.runtimeType}');
+      safePrint('End Date Formatted: $endDateStr');
+      safePrint('End Date Formatted Type: ${endDateStr.runtimeType}');
+      safePrint('Reason: "${_reason.trim()}"');
+      safePrint('Reason length: ${_reason.trim().length}');
+      safePrint('Leave Type: $_leaveType');
+      safePrint('Policy ID: $policyId');
+      safePrint('Policy ID Type: ${policyId.runtimeType}');
       
       final payload = {
         'start_date': startDateStr,
         'end_date': endDateStr,
         'reason': _reason.trim(),
-        'leave_type': _leaveType,
-        'policy_id': 1, // Default policy_id - adjust based on your leave policies
+        'policy_id': policyId,
       };
       
-      safePrint('Submitting leave request with payload: $payload');
+      safePrint('Full Payload: $payload');
+      safePrint('Payload Type: ${payload.runtimeType}');
+      safePrint('Payload Keys: ${payload.keys.toList()}');
+      safePrint('Payload Values: ${payload.values.toList()}');
+      safePrint('JSON Encoded Payload: ${json.encode(payload)}');
+      safePrint('========================');
+      
       final res = await ApiService.createLeaveRequest(payload);
       safePrint('Create leave response: $res');
       
@@ -200,9 +242,9 @@ class _NewLeaveRequestScreenState extends State<NewLeaveRequestScreen> {
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
+                      boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
+                        color: Colors.black.withAlpha(13),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),
@@ -217,7 +259,7 @@ class _NewLeaveRequestScreenState extends State<NewLeaveRequestScreen> {
                         child: Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: isSelected ? type['color'].withOpacity(0.1) : Colors.transparent,
+                            color: isSelected ? (type['color'] as Color).withAlpha((0.1 * 255).round()) : Colors.transparent,
                             borderRadius: BorderRadius.circular(16),
                             border: isSelected
                                 ? Border.all(color: type['color'], width: 2)
@@ -228,7 +270,7 @@ class _NewLeaveRequestScreenState extends State<NewLeaveRequestScreen> {
                               Container(
                                 padding: const EdgeInsets.all(10),
                                 decoration: BoxDecoration(
-                                  color: type['color'].withOpacity(0.15),
+                                  color: (type['color'] as Color).withAlpha((0.15 * 255).round()),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Icon(
@@ -283,7 +325,7 @@ class _NewLeaveRequestScreenState extends State<NewLeaveRequestScreen> {
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
+                          color: Colors.black.withAlpha(13),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),
@@ -338,7 +380,7 @@ class _NewLeaveRequestScreenState extends State<NewLeaveRequestScreen> {
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
+                          color: Colors.black.withAlpha(13),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),
@@ -424,9 +466,9 @@ class _NewLeaveRequestScreenState extends State<NewLeaveRequestScreen> {
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
+                      boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
+                        color: Colors.black.withAlpha(13),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),

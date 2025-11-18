@@ -17,16 +17,16 @@ class ApiService {
   // `10.0.2.2:3000` in environments where that service doesn't exist.
   static const String leaveBaseUrl = String.fromEnvironment('LEAVE_BASE_URL', defaultValue: '');
   // The API Gateway URL is provided by the generated config file
-  // `lib/config/api_gateway.dart` as `GENERATED_API_GATEWAY_URL` when you run
+  // `lib/config/api_gateway.dart` as `generatedApiGatewayUrl` when you run
   // `scripts/run_with_api_gateway.ps1`. We rely on that generated constant here
   // instead of compile-time dart-defines to avoid accidental localhost fallbacks.
 
   // Effective base runtime selection helper: prefer explicit API gateway if set
   static String effectiveLeaveBase() {
     // Priority:
-    // 1. GENERATED_API_GATEWAY_URL (written by run helper after deploy)
+    // 1. generatedApiGatewayUrl (written by run helper after deploy)
     // 2. --dart-define=LEAVE_BASE_URL (explicit custom backend)
-    if (GENERATED_API_GATEWAY_URL.isNotEmpty) return GENERATED_API_GATEWAY_URL;
+    if (generatedApiGatewayUrl.isNotEmpty) return generatedApiGatewayUrl;
     if (leaveBaseUrl.isNotEmpty) return leaveBaseUrl;
     final msg = 'No leave service URL configured. Ensure lib/config/api_gateway.dart contains the deployed ApiUrl or pass --dart-define=LEAVE_BASE_URL=<url> when running.';
     safePrint(msg);
@@ -324,7 +324,7 @@ class ApiService {
       final idToken = tokens.idToken.toJson();
 
       final uri = Uri.parse('${effectiveLeaveBase()}/api/v1/leave/requests');
-      safePrint('ApiService.createLeaveRequest -> ${uri}');
+      safePrint('ApiService.createLeaveRequest -> $uri');
       final headers = {
         'Authorization': 'Bearer $idToken',
         'Content-Type': 'application/json',

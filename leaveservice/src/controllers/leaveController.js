@@ -47,10 +47,33 @@ export async function listLeaveRequests(req, res) {
 
 export async function createLeaveRequest(req, res) {
   try {
-    const payload = Object.assign({}, req.body);
-    if (req.user && req.user.sub) payload.user_id = req.user.sub;
+    // IMPORTANT: Don't deep-copy req.body immediately, log it first
+    log('createLeaveRequest: RAW req.body type:', typeof req.body);
+    log('createLeaveRequest: RAW req.body:', req.body);
+    
+    // Create a shallow copy to avoid mutating Express's req.body
+    const payload = { ...req.body };
+    
+    // Set user_id from authenticated token
+    if (req.user && req.user.sub) {
+      payload.user_id = req.user.sub;
+    }
 
     log('Creating leave request for user:', payload.user_id);
+    log('Payload keys:', Object.keys(payload));
+    log('start_date value:', payload.start_date, 'type:', typeof payload.start_date);
+    log('end_date value:', payload.end_date, 'type:', typeof payload.end_date);
+    log('policy_id value:', payload.policy_id, 'type:', typeof payload.policy_id);
+    log('reason value:', payload.reason);
+
+    // Validate required fields are present
+    if (!payload.start_date || !payload.end_date) {
+      log('❌ Missing date fields in payload');
+      return res.status(400).json({ 
+        error: 'start_date and end_date are required',
+        received: { start_date: payload.start_date, end_date: payload.end_date }
+      });
+    }
 
     // Server-side validation: do not allow creating leave requests with a start_date in the past.
     try {
@@ -66,15 +89,16 @@ export async function createLeaveRequest(req, res) {
         }
       }
     } catch (e) {
-      // ignore parsing errors and let service layer handle them
+      log('Warning: could not validate start_date for past check:', e.message);
     }
 
     const result = await leaveService.submitLeaveRequest(payload);
-    log('Leave request created successfully:', result);
+    log('✅ Leave request created successfully:', result.id);
 
     return res.status(201).json(result);
   } catch (err) {
     log('❌ Error in createLeaveRequest:', err);
+    log('❌ Error stack:', err.stack);
     return res.status(400).json({ error: err.message });
   }
 }

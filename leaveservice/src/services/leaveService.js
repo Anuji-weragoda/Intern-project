@@ -11,33 +11,62 @@ function daysBetween(startDate, endDate) {
   return diff > 0 ? diff : 0;
 }
 
-// Submit a leave request: basic overlap and balance check, then create request and audit
+function tryParseDate(input) {
+  // Accept Date objects, numbers (timestamps), or strings in several common formats.
+  if (!input && input !== 0) return null;
+  if (input instanceof Date) return input;
+  if (typeof input === 'number') return new Date(input);
+  const s = String(input).trim();
+  // Try native parsing first
+  let d = new Date(s);
+  if (!Number.isNaN(d.getTime())) return d;
+  // Try common fallbacks: append time, append Z, replace - with /
+  const candidates = [s + 'T00:00:00', s + 'T00:00:00Z', s.replace(/-/g, '/'), s.replace(/-/g, '/') + 'T00:00:00'];
+  for (const c of candidates) {
+    d = new Date(c);
+    if (!Number.isNaN(d.getTime())) return d;
+  }
+  return null;
+}
+
+
 export async function submitLeaveRequest(data) {
-  // Trim incoming string fields to avoid trailing whitespace/newlines from callers
-  data = trimStringsDeep(data);
+  
   let { user_id, policy_id, start_date, end_date, reason } = data;
-  // user_id may be filled by controller from authenticated token; policy_id may be omitted by clients
+  
+  // Manually trim only string fields
+  if (typeof reason === 'string') reason = reason.trim();
+  if (typeof user_id === 'string') user_id = user_id.trim();
+  
   if (!user_id) {
-    // caller should normally be authenticated and controller will set user_id; if not present, reject
     throw new Error('user_id is required');
   }
 
-  // Normalize incoming date values to ISO date-only (YYYY-MM-DD) to avoid locale timezone strings
-  // Accept either ISO date strings or Date objects; produce safe date-only strings for DATE/DATEONLY columns
+  // Normalize incoming date values to ISO date-only (YYYY-MM-DD)
   try {
-    const s = new Date(start_date);
-    const e = new Date(end_date);
-    if (Number.isNaN(s.getTime()) || Number.isNaN(e.getTime())) throw new Error('Invalid date');
+    console.log('submitLeaveRequest: raw start_date=', start_date, 'type:', typeof start_date);
+    console.log('submitLeaveRequest: raw end_date=', end_date, 'type:', typeof end_date);
+    
+    const s = tryParseDate(start_date);
+    const e = tryParseDate(end_date);
+    
+    if (!s || !e) {
+      console.log('submitLeaveRequest: parsing failed - s=', s, 'e=', e);
+      throw new Error(`Invalid start_date or end_date - received types: start(${typeof start_date}), end(${typeof end_date})`);
+    }
+    
+    console.log('submitLeaveRequest: parsed successfully - start=', s.toISOString(), 'end=', e.toISOString());
     start_date = s.toISOString().slice(0, 10);
     end_date = e.toISOString().slice(0, 10);
   } catch (err) {
+    console.log('submitLeaveRequest: error during date parsing:', err.message);
     throw new Error('Invalid start_date or end_date');
   }
 
   const days = daysBetween(start_date, end_date);
   if (days <= 0) throw new Error('Invalid date range');
 
-  // check overlapping approved or pending requests using parameterized where clauses
+  // Check overlapping requests
   const overlap = await LeaveRequest.findOne({
     where: {
       user_id,
@@ -53,8 +82,7 @@ export async function submitLeaveRequest(data) {
 
   if (overlap) throw new Error('Overlapping leave request exists');
 
-  // check balance
-  // If policy_id not provided, attempt to use a default policy
+  // Check balance
   if (!policy_id) {
     const defaultPol = await LeavePolicy.findOne();
     if (defaultPol) policy_id = defaultPol.id;
@@ -62,28 +90,46 @@ export async function submitLeaveRequest(data) {
   }
 
   let balance = await LeaveBalance.findOne({ where: { user_id, policy_id } });
-  // If no balance exists for this user/policy, attempt to create a default balance from the policy
+  
   if (!balance) {
     const pol = await LeavePolicy.findByPk(policy_id);
     if (pol) {
-      // create a balance for the current year with the policy's allocation
-      balance = await LeaveBalance.create({ user_id, policy_id, total_allocated: pol.max_days_per_year || 0, total_used: 0, year: new Date().getFullYear() });
+      balance = await LeaveBalance.create({ 
+        user_id, 
+        policy_id, 
+        total_allocated: pol.max_days_per_year || 0, 
+        total_used: 0, 
+        year: new Date().getFullYear() 
+      });
     }
   }
+  
   if (!balance) throw new Error('Leave balance not found for user and policy');
+  
   const available = (balance.total_allocated || 0) - (balance.total_used || 0);
   if (available < days) throw new Error('Insufficient leave balance');
 
-  // create request and audit in transaction
+  // Create request and audit in transaction
   return await sequelize.transaction(async (t) => {
-    // Create with normalized date-only strings so PG sees 'YYYY-MM-DD' for DATE fields
-    const req = await LeaveRequest.create({ user_id, policy_id, start_date, end_date, reason }, { transaction: t });
-    await LeaveAudit.create({ action: 'create_request', user_id, request_id: req.id, details: { days, reason } }, { transaction: t });
+    const req = await LeaveRequest.create({ 
+      user_id, 
+      policy_id, 
+      start_date, 
+      end_date, 
+      reason: reason || '' 
+    }, { transaction: t });
+    
+    await LeaveAudit.create({ 
+      action: 'create_request', 
+      user_id, 
+      request_id: req.id, 
+      details: { days, reason: reason || '' } 
+    }, { transaction: t });
+    
     return req;
   });
 }
 
-// Approve a leave request: update status, decrement balance, write audit in a transaction
 export async function approveLeaveRequest(id, data) {
   // Trim data payload string fields
   data = trimStringsDeep(data);
