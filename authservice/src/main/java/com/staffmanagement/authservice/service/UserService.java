@@ -3,7 +3,6 @@ package com.staffmanagement.authservice.service;
 import com.staffmanagement.authservice.dto.request.UpdateProfileRequest;
 import com.staffmanagement.authservice.dto.response.UserProfileDTO;
 import com.staffmanagement.authservice.entity.AppUser;
-import com.staffmanagement.authservice.entity.Role;
 import com.staffmanagement.authservice.repository.AppUserRepository;
 import com.staffmanagement.authservice.repository.RoleRepository;
 import com.staffmanagement.authservice.repository.UserRoleRepository;

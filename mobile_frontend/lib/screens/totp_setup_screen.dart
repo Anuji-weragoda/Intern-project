@@ -147,7 +147,7 @@ class _TotpSetupScreenState extends State<TotpSetupScreen> {
                         borderRadius: BorderRadius.circular(24),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF3B82F6).withOpacity(0.3),
+                            color: Color(0xFF3B82F6).withAlpha(77),
                             blurRadius: 24,
                             offset: const Offset(0, 12),
                           ),
@@ -174,7 +174,7 @@ class _TotpSetupScreenState extends State<TotpSetupScreen> {
                           : 'Scan the QR code in Google Authenticator / Authy then enter the first 6-digit code to finish setup.',
                       style: TextStyle(
                         fontSize: 16,
-                        color: const Color(0xFFA5B4FC).withOpacity(0.8),
+                        color: Color(0xFFA5B4FC).withAlpha(204),
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -185,7 +185,7 @@ class _TotpSetupScreenState extends State<TotpSetupScreen> {
                       child: Text(
                         '1. Install',
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.9),
+                          color: Colors.white.withAlpha(230),
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
                         ),
@@ -196,7 +196,7 @@ class _TotpSetupScreenState extends State<TotpSetupScreen> {
                       alignment: Alignment.centerLeft,
                       child: Text(
                         'Install an authenticator app on your device (Google Authenticator, Authy, etc.)',
-                        style: TextStyle(color: Colors.white.withOpacity(0.85), fontSize: 14),
+                        style: TextStyle(color: Colors.white.withAlpha(217), fontSize: 14),
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -206,7 +206,7 @@ class _TotpSetupScreenState extends State<TotpSetupScreen> {
                       child: Text(
                         '2. Scan QR code',
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.9),
+                          color: Colors.white.withAlpha(230),
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
                         ),
@@ -221,7 +221,7 @@ class _TotpSetupScreenState extends State<TotpSetupScreen> {
                           borderRadius: BorderRadius.circular(24),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.15),
+                              color: Colors.black.withAlpha(38),
                               blurRadius: 20,
                               offset: const Offset(0, 10),
                             ),
@@ -349,7 +349,7 @@ class _TotpSetupScreenState extends State<TotpSetupScreen> {
                         child: Text(
                           '3. Enter code',
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.9),
+                            color: Colors.white.withAlpha(230),
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
                           ),
@@ -366,7 +366,7 @@ class _TotpSetupScreenState extends State<TotpSetupScreen> {
                             borderRadius: BorderRadius.circular(16),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.1),
+                                color: Colors.black.withAlpha(26),
                                 blurRadius: 20,
                                 offset: const Offset(0, 10),
                               ),

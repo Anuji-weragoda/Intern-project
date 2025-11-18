@@ -34,7 +34,9 @@ class _MFAVerificationScreenState extends State<MFAVerificationScreen> {
         confirmationValue: _codeController.text.trim(),
       );
 
-      if (result.isSignedIn && mounted) {
+      if (!mounted) return;
+
+      if (result.isSignedIn) {
         safePrint('✓ MFA verification successful');
 
         // Sync user with backend database
@@ -46,6 +48,8 @@ class _MFAVerificationScreenState extends State<MFAVerificationScreen> {
           safePrint('⚠ Backend sync failed: $syncError');
           // Continue anyway - user is authenticated with Cognito
         }
+
+        if (!mounted) return;
 
         // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
@@ -63,7 +67,8 @@ class _MFAVerificationScreenState extends State<MFAVerificationScreen> {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (_) => const DashboardScreen()),
         );
-      } else if (mounted) {
+      } else {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text('Verification failed. Please try again.'),
@@ -161,7 +166,7 @@ class _MFAVerificationScreenState extends State<MFAVerificationScreen> {
                           borderRadius: BorderRadius.circular(24),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFF3B82F6).withOpacity(0.3),
+                              color: Color(0xFF3B82F6).withAlpha(77),
                               blurRadius: 24,
                               offset: const Offset(0, 12),
                             ),
@@ -190,9 +195,9 @@ class _MFAVerificationScreenState extends State<MFAVerificationScreen> {
                       const SizedBox(height: 12),
                       Text(
                         _getMfaLabel(),
-                        style: TextStyle(
+                          style: TextStyle(
                           fontSize: 16,
-                          color: const Color(0xFFA5B4FC).withOpacity(0.8),
+                          color: Color(0xFFA5B4FC).withAlpha(204),
                         ),
                         textAlign: TextAlign.center,
                       ),
@@ -207,7 +212,7 @@ class _MFAVerificationScreenState extends State<MFAVerificationScreen> {
                             borderRadius: BorderRadius.circular(16),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.1),
+                                color: Colors.black.withAlpha(26),
                                 blurRadius: 20,
                                 offset: const Offset(0, 10),
                               ),
@@ -270,7 +275,7 @@ class _MFAVerificationScreenState extends State<MFAVerificationScreen> {
                                 borderRadius: BorderRadius.circular(16),
                               ),
                               elevation: 0,
-                              shadowColor: const Color(0xFF3B82F6).withOpacity(0.5),
+                              shadowColor: Color(0xFF3B82F6).withAlpha(128),
                             ),
                             child: _verifying
                                 ? const SizedBox(
@@ -281,11 +286,11 @@ class _MFAVerificationScreenState extends State<MFAVerificationScreen> {
                                       strokeWidth: 2.5,
                                     ),
                                   )
-                                : const Text(
+                                : Text(
                                     'Verify Code',
                                     style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                      color: Color(0xFFA5B4FC).withAlpha(204),
                                     ),
                                   ),
                           ),
@@ -298,13 +303,13 @@ class _MFAVerificationScreenState extends State<MFAVerificationScreen> {
                         onPressed: () {
                           Navigator.of(context).pop();
                         },
-                        child: const Text(
-                          'Back to Login',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                          ),
-                        ),
+                                child: const Text(
+                                  'Back to Login',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                  ),
+                                ),
                       ),
                     ],
                   ),

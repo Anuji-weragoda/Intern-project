@@ -142,89 +142,89 @@ class _DashboardScreenState extends State<DashboardScreen> {
               Semantics(
                 label: 'dashboard_header',
                 child: Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      Color(0xFF0F172A), // slate-900
-                      Color(0xFF1E3A8A), // blue-900
-                      Color(0xFF0F172A), // slate-900
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Color(0xFF0F172A), // slate-900
+                        Color(0xFF1E3A8A), // blue-900
+                        Color(0xFF0F172A), // slate-900
+                      ],
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withAlpha(51),
+                        blurRadius: 20,
+                        offset: const Offset(0, 5),
+                      ),
                     ],
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.2),
-                      blurRadius: 20,
-                      offset: const Offset(0, 5),
-                    ),
-                  ],
-                ),
-                padding: const EdgeInsets.all(32),
-                child: Column(
-                  children: [
-                    // Logo
-                    Container(
-                      width: 80,
-                      height: 80,
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            Color(0xFF3B82F6), // blue-500
-                            Color(0xFF4F46E5), // indigo-600
+                  padding: const EdgeInsets.all(32),
+                  child: Column(
+                    children: [
+                      // Logo
+                      Container(
+                        width: 80,
+                        height: 80,
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              Color(0xFF3B82F6), // blue-500
+                              Color(0xFF4F46E5), // indigo-600
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Color(0xFF3B82F6).withAlpha(128),
+                              blurRadius: 20,
+                              offset: const Offset(0, 5),
+                            ),
                           ],
                         ),
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFF3B82F6).withOpacity(0.5),
-                            blurRadius: 20,
-                            offset: const Offset(0, 5),
+                        child: const Center(
+                          child: Text(
+                            'S',
+                            style: TextStyle(
+                              fontSize: 48,
+                              fontWeight: FontWeight.w900,
+                              color: Colors.white,
+                            ),
                           ),
-                        ],
+                        ),
                       ),
-                      child: const Center(
+                      const SizedBox(height: 24),
+                      Semantics(
+                        label: 'dashboard_title',
                         child: Text(
-                          'S',
+                          'Staff Management',
                           style: TextStyle(
-                            fontSize: 48,
-                            fontWeight: FontWeight.w900,
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
                             color: Colors.white,
                           ),
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 24),
-                    Semantics(
-                      label: 'dashboard_title',
-                      child: Text(
-                        'Staff Management',
-                        style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                      const SizedBox(height: 8),
+                      Semantics(
+                        label: 'dashboard_welcome_text',
+                        value: 'Welcome',
+                        child: Text(
+                          'Welcome, ${_displayName ?? _userEmail ?? 'User'}!',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.white.withAlpha(230),
+                          ),
+                          textAlign: TextAlign.center,
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    Semantics(
-                      label: 'dashboard_welcome_text',
-                      value: 'Welcome',
-                      child: Text(
-                        'Welcome, ${_displayName ?? _userEmail ?? 'User'}!',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.white.withOpacity(0.9),
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  ],
-                ),
-              ), // end Container
+                    ],
+                  ),
+                ), // end Container
               ), // end Semantics
 
               // Menu Items
@@ -386,7 +386,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withAlpha(13),
               blurRadius: 10,
               offset: const Offset(0, 2),
             ),
@@ -397,7 +397,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
+                color: color.withAlpha(26),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Icon(

@@ -138,8 +138,8 @@ class _MyLeavesScreenState extends State<MyLeavesScreen> {
             const SizedBox(width: 4),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: isSelected ? Colors.white.withOpacity(0.3) : color.withOpacity(0.2),
+                decoration: BoxDecoration(
+                  color: isSelected ? Colors.white.withAlpha(77) : color.withAlpha(51),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Text(
@@ -197,9 +197,9 @@ class _MyLeavesScreenState extends State<MyLeavesScreen> {
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: Colors.white,
-              boxShadow: [
+                boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withAlpha(13),
                   blurRadius: 4,
                   offset: const Offset(0, 2),
                 ),
@@ -279,7 +279,7 @@ class _MyLeavesScreenState extends State<MyLeavesScreen> {
                                 borderRadius: BorderRadius.circular(16),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withOpacity(0.05),
+                                    color: Colors.black.withAlpha(13),
                                     blurRadius: 10,
                                     offset: const Offset(0, 4),
                                   ),
@@ -336,7 +336,7 @@ class _MyLeavesScreenState extends State<MyLeavesScreen> {
                                             Container(
                                               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                                               decoration: BoxDecoration(
-                                                color: statusColor.withOpacity(0.1),
+                                                color: statusColor.withAlpha(26),
                                                 borderRadius: BorderRadius.circular(20),
                                               ),
                                               child: Row(

@@ -126,7 +126,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         borderRadius: BorderRadius.circular(24),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF3B82F6).withOpacity(0.3),
+                            color: Color(0xFF3B82F6).withAlpha(77),
                             blurRadius: 20,
                             offset: const Offset(0, 10),
                           ),
@@ -163,7 +163,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             _userEmail ?? '',
                             style: TextStyle(
                               fontSize: 14,
-                              color: Colors.white.withOpacity(0.9),
+                              color: Colors.white.withAlpha(230),
                             ),
                           ),
                           const SizedBox(height: 20),
@@ -271,7 +271,7 @@ class _HomeScreenState extends State<HomeScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withAlpha(13),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -281,8 +281,8 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           Container(
             padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: const Color(0xFF3B82F6).withOpacity(0.1),
+              decoration: BoxDecoration(
+              color: Color(0xFF3B82F6).withAlpha(26),
               borderRadius: BorderRadius.circular(12),
             ),
             child: const Icon(
@@ -386,7 +386,7 @@ class _HomeScreenState extends State<HomeScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withAlpha(13),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -396,8 +396,8 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           Container(
             padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: const Color(0xFF3B82F6).withOpacity(0.1),
+              decoration: BoxDecoration(
+              color: Color(0xFF3B82F6).withAlpha(26),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(

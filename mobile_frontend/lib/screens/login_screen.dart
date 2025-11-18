@@ -344,7 +344,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           borderRadius: BorderRadius.circular(24),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFF3B82F6).withOpacity(0.3),
+                              color: Color(0xFF3B82F6).withAlpha(77),
                               blurRadius: 24,
                               offset: const Offset(0, 12),
                             ),
@@ -378,7 +378,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         'Sign in to continue',
                         style: TextStyle(
                           fontSize: 18,
-                          color: const Color(0xFFA5B4FC).withOpacity(0.8), // indigo-300
+                          color: Color(0xFFA5B4FC).withAlpha(204), // indigo-300
                         ),
                       ),
                       const SizedBox(height: 48),
@@ -390,7 +390,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
+                              color: Colors.black.withAlpha(26),
                               blurRadius: 20,
                               offset: const Offset(0, 10),
                             ),
@@ -444,7 +444,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             borderRadius: BorderRadius.circular(16),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.1),
+                                color: Colors.black.withAlpha(26),
                                 blurRadius: 20,
                                 offset: const Offset(0, 10),
                               ),
@@ -547,7 +547,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 borderRadius: BorderRadius.circular(16),
                               ),
                               elevation: 0,
-                              shadowColor: const Color(0xFF3B82F6).withOpacity(0.5),
+                              shadowColor: Color(0xFF3B82F6).withAlpha(128),
                             ),
                             child: _loading
                                 ? const SizedBox(
@@ -577,7 +577,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           Text(
                             "Don't have an account? ",
                             style: TextStyle(
-                              color: Colors.white.withOpacity(0.8),
+                              color: Colors.white.withAlpha(204),
                               fontSize: 15,
                             ),
                           ),
