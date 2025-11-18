@@ -361,6 +361,36 @@ class ApiService {
     }
   }
 
+  /// Cancel a leave request by id (issues a PATCH with action='cancel')
+  static Future<void> cancelLeaveRequest(dynamic id) async {
+    try {
+      final result = await Amplify.Auth.fetchAuthSession();
+      final cognitoSession = result as CognitoAuthSession;
+      final tokens = cognitoSession.userPoolTokensResult.value;
+      final idToken = tokens.idToken.toJson();
+
+      final uri = Uri.parse('${effectiveLeaveBase()}/api/v1/leave/requests/$id');
+      safePrint('ApiService.cancelLeaveRequest -> $uri');
+      final response = await http.patch(uri,
+          headers: {
+            'Authorization': 'Bearer $idToken',
+            'Content-Type': 'application/json',
+          },
+          body: json.encode({'action': 'cancel'})).timeout(const Duration(seconds: 10));
+
+      safePrint('Cancel leave response: ${response.statusCode} - ${response.body}');
+
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        return;
+      } else {
+        throw Exception('Failed to cancel leave: ${response.statusCode} - ${response.body}');
+      }
+    } catch (e) {
+      safePrint('Error cancelling leave request: $e');
+      rethrow;
+    }
+  }
+
   /// Get attendance logs for the current user
   static Future<List<dynamic>> getMyAttendance({int limit = 100}) async {
     try {

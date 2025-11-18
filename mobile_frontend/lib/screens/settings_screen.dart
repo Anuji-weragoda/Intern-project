@@ -273,7 +273,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               Switch(
                                 value: _profileData?['mfaEnabled'] ?? false,
                                 onChanged: _updatingMfa ? null : (value) => _toggleMfa(value),
-                                activeColor: const Color(0xFF3B82F6),
+                                activeThumbColor: const Color(0xFF3B82F6),
                               ),
                             ],
                           ),

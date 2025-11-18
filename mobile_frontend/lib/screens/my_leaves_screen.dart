@@ -14,6 +14,7 @@ class _MyLeavesScreenState extends State<MyLeavesScreen> {
   bool _loading = true;
   List<dynamic> _leaves = [];
   String _selectedFilter = 'all'; // all, pending, approved, rejected
+  final Set<int> _cancellingLeaves = {}; // Track which leaves are being cancelled
 
   @override
   void initState() {
@@ -29,12 +30,11 @@ class _MyLeavesScreenState extends State<MyLeavesScreen> {
         // Sort by most recently created first (by created_at/createdAt)
         list.sort((a, b) {
           try {
-            // Try different field names for created date
             final createdA = a['created_at'] ?? a['createdAt'] ?? a['created'] ?? a['start_date'] ?? a['startDate'] ?? '1900-01-01';
             final createdB = b['created_at'] ?? b['createdAt'] ?? b['created'] ?? b['start_date'] ?? b['startDate'] ?? '1900-01-01';
             final dateA = DateTime.parse(createdA.toString());
             final dateB = DateTime.parse(createdB.toString());
-            return dateB.compareTo(dateA); // Descending order (most recent first)
+            return dateB.compareTo(dateA);
           } catch (e) {
             return 0;
           }
@@ -54,6 +54,70 @@ class _MyLeavesScreenState extends State<MyLeavesScreen> {
       }
     } finally {
       if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _cancelLeaveRequest(dynamic leave) async {
+    final leaveId = leave['id'];
+    if (leaveId == null) return;
+
+    // Show confirmation dialog
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Cancel Leave Request'),
+        content: const Text('Are you sure you want to cancel this leave request?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('No'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Yes, Cancel'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    setState(() => _cancellingLeaves.add(leaveId));
+
+    try {
+      await ApiService.cancelLeaveRequest(leaveId);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.white),
+                SizedBox(width: 8),
+                Text('Leave request cancelled successfully'),
+              ],
+            ),
+            backgroundColor: Colors.green.shade600,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        await _loadLeaves();
+      }
+    } catch (e) {
+      safePrint('Error cancelling leave: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to cancel leave: ${e.toString()}'),
+            backgroundColor: Colors.red.shade600,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _cancellingLeaves.remove(leaveId));
+      }
     }
   }
 
@@ -81,6 +145,8 @@ class _MyLeavesScreenState extends State<MyLeavesScreen> {
         return Colors.orange;
       case 'rejected':
         return Colors.red;
+      case 'cancelled':
+        return Colors.grey;
       default:
         return Colors.grey;
     }
@@ -94,6 +160,8 @@ class _MyLeavesScreenState extends State<MyLeavesScreen> {
         return Icons.access_time;
       case 'rejected':
         return Icons.cancel;
+      case 'cancelled':
+        return Icons.block;
       default:
         return Icons.help_outline;
     }
@@ -119,12 +187,24 @@ class _MyLeavesScreenState extends State<MyLeavesScreen> {
     }
   }
 
+  String _formatDateTime(String? dateTime) {
+    if (dateTime == null) return 'Unknown';
+    try {
+      final dt = DateTime.parse(dateTime).toLocal();
+      final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      final hour = dt.hour > 12 ? dt.hour - 12 : (dt.hour == 0 ? 12 : dt.hour);
+      final minute = dt.minute.toString().padLeft(2, '0');
+      final period = dt.hour >= 12 ? 'PM' : 'AM';
+      return '${months[dt.month - 1]} ${dt.day}, ${dt.year} at $hour:$minute $period';
+    } catch (e) {
+      return dateTime;
+    }
+  }
+
   Widget _buildFilterChip(String label, String value, IconData icon) {
     final isSelected = _selectedFilter == value;
     final count = _getStatusCount(value);
-    final color = value == 'all' 
-        ? Colors.blue 
-        : _getStatusColor(value);
+    final color = value == 'all' ? Colors.blue : _getStatusColor(value);
 
     return FilterChip(
       selected: isSelected,
@@ -138,8 +218,8 @@ class _MyLeavesScreenState extends State<MyLeavesScreen> {
             const SizedBox(width: 4),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: isSelected ? Colors.white.withAlpha(77) : color.withAlpha(51),
+              decoration: BoxDecoration(
+                color: isSelected ? Colors.white.withAlpha(77) : color.withAlpha(51),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Text(
@@ -178,8 +258,8 @@ class _MyLeavesScreenState extends State<MyLeavesScreen> {
       backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: const Color.fromARGB(255, 250, 250, 250),
-        foregroundColor: const Color.fromARGB(255, 5, 0, 0),
+        backgroundColor: Colors.blue.shade700,
+        foregroundColor: Colors.white,
         title: const Text('My Leave Requests', style: TextStyle(fontWeight: FontWeight.w600)),
         actions: [
           IconButton(
@@ -197,7 +277,7 @@ class _MyLeavesScreenState extends State<MyLeavesScreen> {
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: Colors.white,
-                boxShadow: [
+              boxShadow: [
                 BoxShadow(
                   color: Colors.black.withAlpha(13),
                   blurRadius: 4,
@@ -220,7 +300,7 @@ class _MyLeavesScreenState extends State<MyLeavesScreen> {
               ),
             ),
           ),
-          
+
           // Leaves List
           Expanded(
             child: _loading
@@ -231,8 +311,8 @@ class _MyLeavesScreenState extends State<MyLeavesScreen> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Icon(
-                              _selectedFilter == 'all' 
-                                  ? Icons.event_busy_rounded 
+                              _selectedFilter == 'all'
+                                  ? Icons.event_busy_rounded
                                   : Icons.filter_list_off_rounded,
                               size: 80,
                               color: Colors.grey.shade400,
@@ -265,12 +345,23 @@ class _MyLeavesScreenState extends State<MyLeavesScreen> {
                           itemCount: filteredLeaves.length,
                           itemBuilder: (context, i) {
                             final r = filteredLeaves[i];
+                            final leaveId = r['id'];
                             final start = r['start_date'] ?? r['startDate'] ?? '';
                             final end = r['end_date'] ?? r['endDate'] ?? '';
                             final status = r['status'] ?? 'unknown';
                             final reason = r['reason'] ?? 'No reason provided';
                             final days = _calculateDays(start, end);
                             final statusColor = _getStatusColor(status);
+                            
+                            // Approval/rejection info
+                            final approvedAt = r['approved_at'] ?? r['approvedAt'];
+                            final approverName = r['approver_name'] ?? r['approverName'] ?? 'Admin';
+                            final rejectionNote = r['rejection_note'] ?? r['note'];
+                            
+                            final isPending = status.toLowerCase() == 'pending';
+                            final isApproved = status.toLowerCase() == 'approved';
+                            final isRejected = status.toLowerCase() == 'rejected';
+                            final isCancelling = _cancellingLeaves.contains(leaveId);
 
                             return Container(
                               margin: const EdgeInsets.only(bottom: 12),
@@ -377,6 +468,95 @@ class _MyLeavesScreenState extends State<MyLeavesScreen> {
                                             ],
                                           ),
                                         ),
+                                        
+                                        // Show approver info for approved requests
+                                        if (isApproved && approvedAt != null) ...[
+                                          const SizedBox(height: 12),
+                                          Container(
+                                            padding: const EdgeInsets.all(10),
+                                            decoration: BoxDecoration(
+                                              color: Colors.green.shade50,
+                                              borderRadius: BorderRadius.circular(8),
+                                            ),
+                                            child: Row(
+                                              children: [
+                                                Icon(Icons.person_rounded, size: 16, color: Colors.green.shade700),
+                                                const SizedBox(width: 8),
+                                                Expanded(
+                                                  child: Text(
+                                                    'Approved by $approverName on ${_formatDateTime(approvedAt)}',
+                                                    style: TextStyle(fontSize: 13, color: Colors.green.shade700),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                        
+                                        // Show rejection info for rejected requests
+                                        if (isRejected) ...[
+                                          if (approvedAt != null) ...[
+                                            const SizedBox(height: 12),
+                                            Container(
+                                              padding: const EdgeInsets.all(10),
+                                              decoration: BoxDecoration(
+                                                color: Colors.red.shade50,
+                                                borderRadius: BorderRadius.circular(8),
+                                              ),
+                                              child: Row(
+                                                children: [
+                                                  Icon(Icons.person_rounded, size: 16, color: Colors.red.shade700),
+                                                  const SizedBox(width: 8),
+                                                  Expanded(
+                                                    child: Text(
+                                                      'Rejected by $approverName on ${_formatDateTime(approvedAt)}',
+                                                      style: TextStyle(fontSize: 13, color: Colors.red.shade700),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                          if (rejectionNote != null && rejectionNote.toString().isNotEmpty) ...[
+                                            const SizedBox(height: 8),
+                                            Container(
+                                              padding: const EdgeInsets.all(10),
+                                              decoration: BoxDecoration(
+                                                color: Colors.red.shade50,
+                                                borderRadius: BorderRadius.circular(8),
+                                                border: Border.all(color: Colors.red.shade200),
+                                              ),
+                                              child: Row(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  Icon(Icons.info_outline_rounded, size: 16, color: Colors.red.shade700),
+                                                  const SizedBox(width: 8),
+                                                  Expanded(
+                                                    child: Column(
+                                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                                      children: [
+                                                        Text(
+                                                          'Rejection Reason:',
+                                                          style: TextStyle(
+                                                            fontSize: 12,
+                                                            fontWeight: FontWeight.bold,
+                                                            color: Colors.red.shade700,
+                                                          ),
+                                                        ),
+                                                        const SizedBox(height: 4),
+                                                        Text(
+                                                          rejectionNote.toString(),
+                                                          style: TextStyle(fontSize: 13, color: Colors.red.shade700),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                        ],
+                                        
                                         if (days > 0) ...[
                                           const SizedBox(height: 10),
                                           Row(
@@ -392,6 +572,32 @@ class _MyLeavesScreenState extends State<MyLeavesScreen> {
                                                 ),
                                               ),
                                             ],
+                                          ),
+                                        ],
+                                        
+                                        // Cancel button for pending requests
+                                        if (isPending) ...[
+                                          const SizedBox(height: 12),
+                                          SizedBox(
+                                            width: double.infinity,
+                                            child: OutlinedButton.icon(
+                                              onPressed: isCancelling ? null : () => _cancelLeaveRequest(r),
+                                              icon: isCancelling
+                                                  ? const SizedBox(
+                                                      width: 16,
+                                                      height: 16,
+                                                      child: CircularProgressIndicator(strokeWidth: 2),
+                                                    )
+                                                  : const Icon(Icons.cancel_outlined, size: 18),
+                                              label: Text(isCancelling ? 'Cancelling...' : 'Cancel Request'),
+                                              style: OutlinedButton.styleFrom(
+                                                foregroundColor: Colors.red.shade600,
+                                                side: BorderSide(color: Colors.red.shade300),
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius: BorderRadius.circular(8),
+                                                ),
+                                              ),
+                                            ),
                                           ),
                                         ],
                                       ],
@@ -415,8 +621,8 @@ class _MyLeavesScreenState extends State<MyLeavesScreen> {
           if (res == true) _loadLeaves();
         },
         backgroundColor: Colors.blue.shade700,
-        icon: const Icon(Icons.add_rounded, color: Colors.white),
-        label: const Text('New Request', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.white)),
+        icon: const Icon(Icons.add_rounded),
+        label: const Text('New Request', style: TextStyle(fontWeight: FontWeight.w600)),
       ),
     );
   }

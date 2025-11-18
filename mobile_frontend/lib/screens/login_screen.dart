@@ -81,6 +81,7 @@ class _LoginScreenState extends State<LoginScreen> {
         username: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
+      if (!mounted) return;
       safePrint('[Login] initial signIn nextStep: ${result.nextStep.signInStep}');
       safePrint('[Login] allowed MFA types: ${result.nextStep.allowedMfaTypes}');
       safePrint('[Login] has totpSetupDetails? ${result.nextStep.totpSetupDetails != null}');
@@ -235,13 +236,14 @@ class _LoginScreenState extends State<LoginScreen> {
       }
 
       // If signed in (no MFA required)
-      if (result.isSignedIn && mounted) {
+        if (result.isSignedIn && mounted) {
         safePrint('✓ Cognito authentication successful');
 
         // Step 2: Sync user with backend database
         safePrint('Syncing user with backend...');
         try {
           await ApiService.syncUserAfterLogin();
+          if (!mounted) return;
           safePrint('✓ Backend sync successful');
         } catch (syncError) {
           safePrint('⚠ Backend sync failed: $syncError');

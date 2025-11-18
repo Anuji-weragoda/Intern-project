@@ -319,7 +319,7 @@ class _HomeScreenState extends State<HomeScreen> {
           Switch(
             value: mfaEnabled,
             onChanged: _updatingMfa ? null : (value) => _toggleMfa(value),
-            activeColor: const Color(0xFF3B82F6),
+            activeThumbColor: const Color(0xFF3B82F6),
           ),
         ],
       ),

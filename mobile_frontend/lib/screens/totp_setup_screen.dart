@@ -52,7 +52,7 @@ class _TotpSetupScreenState extends State<TotpSetupScreen> {
         confirmationValue: _codeController.text.trim(),
       );
 
-      if (result.isSignedIn && mounted) {
+        if (result.isSignedIn && mounted) {
         safePrint('✓ TOTP setup + sign in complete');
         // Sync with backend
         try {
@@ -60,6 +60,7 @@ class _TotpSetupScreenState extends State<TotpSetupScreen> {
         } catch (e) {
           safePrint('Backend sync failed (continuing): $e');
         }
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text('TOTP configured successfully!'),
@@ -121,12 +122,12 @@ class _TotpSetupScreenState extends State<TotpSetupScreen> {
                   left: 32,
                   right: 32,
                   // Keep extra bottom space above keyboard so button never gets hidden
-                  bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+                  bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
                   top: 12,
                 ),
                 child: ConstrainedBox(
                   constraints: BoxConstraints(
-                    minHeight: constraints.maxHeight - (MediaQuery.of(context).viewInsets.bottom),
+                    minHeight: constraints.maxHeight - (MediaQuery.of(ctx).viewInsets.bottom),
                   ),
                   child: Form(
                     key: _formKey,

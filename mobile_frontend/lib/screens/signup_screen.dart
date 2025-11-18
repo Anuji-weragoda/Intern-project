@@ -97,6 +97,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
         ),
       );
 
+      if (!mounted) return;
+
       if (!result.isSignUpComplete && mounted) {
         setState(() => _codeSent = true);
         ScaffoldMessenger.of(context).showSnackBar(
@@ -150,13 +152,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
         confirmationCode: _codeController.text.trim(),
       );
 
+      if (!mounted) return;
+
       if (result.isSignUpComplete && mounted) {
         // Auto sign-in to continue MFA/TOTP setup immediately using a compact handler.
-        try {
+          try {
           final signInRes = await Amplify.Auth.signIn(
             username: _emailController.text.trim(),
             password: _passwordController.text.trim(),
           );
+          if (!mounted) return;
           final step = signInRes.nextStep.signInStep;
           safePrint('[Signup] auto sign-in nextStep: $step');
 
@@ -188,6 +193,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
           if (step == AuthSignInStep.continueSignInWithTotpSetup) {
             final setupDetails = await Amplify.Auth.setUpTotp();
+            if (!mounted) return;
             Navigator.of(context).pushReplacement(
               MaterialPageRoute(
                 builder: (_) => TotpSetupScreen(
@@ -205,6 +211,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
               // Prefer provided secret; else attempt setup directly.
               final details = signInRes.nextStep.totpSetupDetails;
               if (details != null) {
+                if (!mounted) return;
                 Navigator.of(context).pushReplacement(
                   MaterialPageRoute(
                     builder: (_) => TotpSetupScreen(
@@ -218,6 +225,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
               }
               try {
                 final setupDetails = await Amplify.Auth.setUpTotp();
+                if (!mounted) return;
                 Navigator.of(context).pushReplacement(
                   MaterialPageRoute(
                     builder: (_) => TotpSetupScreen(
