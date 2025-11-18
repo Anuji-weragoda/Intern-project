@@ -62,9 +62,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           setState(() {
             _profileData = profile;
             _username = profile['username'] ?? user.username;
-            _userRoles = profile['roles'] != null
-                ? List<String>.from(profile['roles'])
-                : [];
+            _userRoles = profile['roles'] != null ? List<String>.from(profile['roles']) : [];
             _populateControllers();
             _loading = false;
           });
@@ -97,10 +95,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _populateControllers() {
-    _displayNameController.text =
-        _profileData?['displayName'] ?? _username ?? '';
-    _phoneController.text =
-        _profileData?['phone'] ?? _profileData?['phoneNumber'] ?? '';
+    _displayNameController.text = _profileData?['displayName'] ?? _username ?? '';
+    _phoneController.text = _profileData?['phone'] ?? _profileData?['phoneNumber'] ?? '';
   }
 
   Future<void> _saveProfile() async {
@@ -270,6 +266,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         child: Padding(
                           padding: const EdgeInsets.all(24.0),
                           child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -290,7 +287,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                       icon: Container(
                                         padding: const EdgeInsets.all(8),
                                         decoration: BoxDecoration(
-                                          color: Colors.white.withOpacity(0.2),
+                                          color: Colors.white.withAlpha((0.2 * 255).round()),
                                           borderRadius: BorderRadius.circular(12),
                                         ),
                                         child: const Icon(Icons.edit, color: Colors.white, size: 20),
@@ -315,7 +312,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   border: Border.all(color: Colors.white, width: 4),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: const Color(0xFF3B82F6).withOpacity(0.3),
+                                      color: const Color(0xFF3B82F6).withAlpha((0.3 * 255).round()),
                                       blurRadius: 24,
                                       offset: const Offset(0, 12),
                                     ),
@@ -333,6 +330,48 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 ),
                               ),
                               const SizedBox(height: 8),
+
+                              if (_error != null)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 8.0),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                    decoration: BoxDecoration(
+                                      color: Colors.red.withAlpha((0.9 * 255).round()),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(Icons.error_outline, color: Colors.white, size: 16),
+                                        const SizedBox(width: 8),
+                                        Flexible(
+                                          child: Text(
+                                            _error!,
+                                            style: const TextStyle(color: Colors.white),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+
+                              if (_userRoles != null && _userRoles!.isNotEmpty)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 10.0),
+                                  child: Wrap(
+                                    spacing: 8,
+                                    runSpacing: 6,
+                                    children: _userRoles!
+                                        .map((r) => Chip(
+                                              label: Text(r, style: const TextStyle(color: Colors.white)),
+                                              backgroundColor: Colors.white.withAlpha((0.08 * 255).round()),
+                                              visualDensity: VisualDensity.compact,
+                                            ))
+                                        .toList(),
+                                  ),
+                                ),
                             ],
                           ),
                         ),
@@ -511,9 +550,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     value ?? controller?.text ?? 'Not set',
                     style: TextStyle(
                       fontSize: 16,
-                      color: (value ?? controller?.text ?? '').isEmpty
-                          ? Colors.grey.shade400
-                          : Colors.black87,
+                      color: (value ?? controller?.text ?? '').isEmpty ? Colors.grey.shade400 : Colors.black87,
                       fontWeight: FontWeight.w500,
                     ),
                   ),

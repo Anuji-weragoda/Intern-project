@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:amplify_flutter/amplify_flutter.dart';
 import 'dart:convert';
 import '../services/api_service.dart';
+import '../theme/app_theme.dart';
 
 class NewLeaveRequestScreen extends StatefulWidget {
   const NewLeaveRequestScreen({super.key});
@@ -15,17 +16,16 @@ class _NewLeaveRequestScreenState extends State<NewLeaveRequestScreen> {
   DateTime? _startDate;
   DateTime? _endDate;
   String _reason = '';
-  String _leaveType = 'Annual';
+  String _leaveType = 'annual';
   bool _submitting = false;
 
   final List<Map<String, dynamic>> _leaveTypes = [
-    {'value': 'Annual', 'label': 'Annual Leave', 'icon': Icons.beach_access_rounded, 'color': Colors.blue, 'policy_id': 1},
-    {'value': 'Sick', 'label': 'Sick Leave', 'icon': Icons.local_hospital_rounded, 'color': Colors.red, 'policy_id': 2},
-    {'value': 'Casual', 'label': 'Casual Leave', 'icon': Icons.event_rounded, 'color': Colors.orange, 'policy_id': 3},
-    {'value': 'Emergency', 'label': 'Emergency Leave', 'icon': Icons.warning_rounded, 'color': Colors.deepOrange, 'policy_id': 4},
-    {'value': 'Maternity', 'label': 'Maternity Leave', 'icon': Icons.child_care_rounded, 'color': Colors.pink, 'policy_id': 5},
-    {'value': 'Paternity', 'label': 'Paternity Leave', 'icon': Icons.family_restroom_rounded, 'color': Colors.indigo, 'policy_id': 6},
-    {'value': 'Unpaid', 'label': 'Unpaid Leave', 'icon': Icons.money_off_rounded, 'color': Colors.grey, 'policy_id': 7},
+    {'value': 'annual', 'label': 'Annual Leave', 'icon': Icons.beach_access_rounded, 'color': Colors.blue, 'policy_id': 1},
+    {'value': 'sick', 'label': 'Sick Leave', 'icon': Icons.local_hospital_rounded, 'color': Colors.red, 'policy_id': 2},
+    {'value': 'casual', 'label': 'Casual Leave', 'icon': Icons.event_rounded, 'color': Colors.orange, 'policy_id': 3},
+    {'value': 'no_pay', 'label': 'No Pay Leave', 'icon': Icons.money_off_rounded, 'color': Colors.grey, 'policy_id': 4},
+    {'value': 'maternity', 'label': 'Maternity Leave', 'icon': Icons.child_care_rounded, 'color': Colors.pink, 'policy_id': 5},
+    {'value': 'paternity', 'label': 'Paternity Leave', 'icon': Icons.family_restroom_rounded, 'color': Colors.indigo, 'policy_id': 6},
   ];
 
   Future<void> _pickStart() async {
@@ -39,7 +39,7 @@ class _NewLeaveRequestScreenState extends State<NewLeaveRequestScreen> {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: ColorScheme.light(
-              primary: Colors.purple.shade700,
+              primary: AppColors.primary,
               onPrimary: Colors.white,
               surface: Colors.white,
               onSurface: Colors.black,
@@ -72,7 +72,7 @@ class _NewLeaveRequestScreenState extends State<NewLeaveRequestScreen> {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: ColorScheme.light(
-              primary: Colors.purple.shade700,
+              primary: AppColors.primary,
               onPrimary: Colors.white,
               surface: Colors.white,
               onSurface: Colors.black,
@@ -110,7 +110,7 @@ class _NewLeaveRequestScreenState extends State<NewLeaveRequestScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text('Please select start and end dates'),
-          backgroundColor: Colors.orange.shade700,
+          backgroundColor: AppColors.warning,
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -122,7 +122,7 @@ class _NewLeaveRequestScreenState extends State<NewLeaveRequestScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text('End date cannot be before start date'),
-          backgroundColor: Colors.red.shade600,
+          backgroundColor: AppColors.danger,
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -179,7 +179,7 @@ class _NewLeaveRequestScreenState extends State<NewLeaveRequestScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text('Leave request submitted successfully'),
-            backgroundColor: Colors.green.shade600,
+            backgroundColor: AppColors.success,
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -191,7 +191,7 @@ class _NewLeaveRequestScreenState extends State<NewLeaveRequestScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to create leave: ${e.toString()}'),
-            backgroundColor: Colors.red.shade600,
+            backgroundColor: AppColors.danger,
             behavior: SnackBarBehavior.floating,
             duration: const Duration(seconds: 4),
           ),
@@ -207,11 +207,11 @@ class _NewLeaveRequestScreenState extends State<NewLeaveRequestScreen> {
     final days = _calculateDays();
 
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: Colors.purple.shade700,
-        foregroundColor: Colors.white,
+        backgroundColor: const Color.fromARGB(255, 252, 252, 252),
+        foregroundColor: const Color.fromARGB(255, 0, 0, 0),
         title: const Text('New Leave Request', style: TextStyle(fontWeight: FontWeight.w600)),
       ),
       body: SafeArea(
@@ -234,13 +234,13 @@ class _NewLeaveRequestScreenState extends State<NewLeaveRequestScreen> {
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: Colors.grey.shade800,
+                    color: AppColors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 12),
                 Container(
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: AppColors.surface,
                     borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                       BoxShadow(
@@ -286,7 +286,7 @@ class _NewLeaveRequestScreenState extends State<NewLeaveRequestScreen> {
                                   style: TextStyle(
                                     fontSize: 15,
                                     fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                                    color: isSelected ? type['color'] : Colors.grey.shade700,
+                                    color: isSelected ? type['color'] : AppColors.textSecondary,
                                   ),
                                 ),
                               ),
@@ -429,21 +429,21 @@ class _NewLeaveRequestScreenState extends State<NewLeaveRequestScreen> {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.purple.shade50,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.purple.shade200),
-                    ),
+                        color: AppColors.primary.withAlpha((0.06 * 255).round()),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: AppColors.primary.withAlpha((0.18 * 255).round())),
+                      ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.calendar_month_rounded, color: Colors.purple.shade700, size: 20),
+                          Icon(Icons.calendar_month_rounded, color: AppColors.primary, size: 20),
                         const SizedBox(width: 8),
                         Text(
                           'Total: $days ${days == 1 ? 'day' : 'days'}',
                           style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.bold,
-                            color: Colors.purple.shade700,
+                              color: AppColors.primary,
                           ),
                         ),
                       ],
@@ -458,7 +458,7 @@ class _NewLeaveRequestScreenState extends State<NewLeaveRequestScreen> {
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: Colors.grey.shade800,
+                    color: AppColors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -477,7 +477,7 @@ class _NewLeaveRequestScreenState extends State<NewLeaveRequestScreen> {
                   child: TextFormField(
                     decoration: InputDecoration(
                       hintText: 'Briefly explain your reason for leave...',
-                      hintStyle: TextStyle(color: Colors.grey.shade400),
+                      hintStyle: TextStyle(color: AppColors.textSecondary),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
                         borderSide: BorderSide.none,
@@ -487,7 +487,7 @@ class _NewLeaveRequestScreenState extends State<NewLeaveRequestScreen> {
                       contentPadding: const EdgeInsets.all(16),
                       prefixIcon: Padding(
                         padding: const EdgeInsets.all(12),
-                        child: Icon(Icons.notes_rounded, color: Colors.grey.shade600),
+                        child: Icon(Icons.notes_rounded, color: AppColors.textSecondary),
                       ),
                     ),
                     maxLines: 4,
@@ -504,7 +504,7 @@ class _NewLeaveRequestScreenState extends State<NewLeaveRequestScreen> {
                   child: ElevatedButton(
                     onPressed: _submitting ? null : _submit,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.purple.shade700,
+                      backgroundColor: AppColors.primary,
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),

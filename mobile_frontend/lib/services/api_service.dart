@@ -33,6 +33,23 @@ class ApiService {
     throw Exception(msg);
   }
 
+  // Extract the `sub` claim from a JWT id token (returns null on failure)
+  static String? _getSubFromIdToken(String idToken) {
+    try {
+      final parts = idToken.split('.');
+      if (parts.length < 2) return null;
+      var payload = parts[1];
+      final mod = payload.length % 4;
+      if (mod != 0) payload = payload + '=' * (4 - mod);
+      final decoded = utf8.decode(base64Url.decode(payload));
+      final Map<String, dynamic> map = json.decode(decoded);
+      return map['sub']?.toString();
+    } catch (e) {
+      safePrint('Failed to extract sub from id token: $e');
+      return null;
+    }
+  }
+
   /// Call this immediately after login to sync user with database
   static Future<Map<String, dynamic>> syncUserAfterLogin() async {
     try {
@@ -371,6 +388,78 @@ class ApiService {
       }
     } catch (e) {
       safePrint('Error fetching attendance: $e');
+      rethrow;
+    }
+  }
+
+  /// Clock in for the current user (optionally include geo/method)
+  static Future<Map<String, dynamic>> clockIn({Map<String, dynamic>? body}) async {
+    try {
+      final result = await Amplify.Auth.fetchAuthSession();
+      final cognitoSession = result as CognitoAuthSession;
+      final tokens = cognitoSession.userPoolTokensResult.value;
+      final idToken = tokens.idToken.toJson();
+
+      // Try to extract the user's sub (UUID) from the id token and include it in the body
+      final userSub = _getSubFromIdToken(idToken);
+      final sendBody = Map<String, dynamic>.from(body ?? {});
+      if (userSub != null && (sendBody['user_id'] == null || sendBody['user_id'].toString().isEmpty)) {
+        sendBody['user_id'] = userSub;
+      }
+
+      final uri = Uri.parse('${effectiveLeaveBase()}/api/attendance/clock-in');
+      safePrint('ApiService.clockIn -> $uri');
+      safePrint('Attendance sendBody (clockIn): ${json.encode(sendBody)}');
+      final response = await http.post(uri, headers: {
+        'Authorization': 'Bearer $idToken',
+        'Content-Type': 'application/json',
+      }, body: json.encode(sendBody)).timeout(const Duration(seconds: 10));
+
+      safePrint('Attendance response (clockIn): ${response.statusCode} - ${response.body}');
+
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        return json.decode(response.body) as Map<String, dynamic>;
+      } else {
+        throw Exception('Failed to clock in: ${response.statusCode} - ${response.body}');
+      }
+    } catch (e) {
+      safePrint('Error clocking in: $e');
+      rethrow;
+    }
+  }
+
+  /// Clock out for the current user
+  static Future<Map<String, dynamic>> clockOut({Map<String, dynamic>? body}) async {
+    try {
+      final result = await Amplify.Auth.fetchAuthSession();
+      final cognitoSession = result as CognitoAuthSession;
+      final tokens = cognitoSession.userPoolTokensResult.value;
+      final idToken = tokens.idToken.toJson();
+
+      // Include authenticated user's sub in the body to satisfy backend validation
+      final userSub = _getSubFromIdToken(idToken);
+      final sendBody = Map<String, dynamic>.from(body ?? {});
+      if (userSub != null && (sendBody['user_id'] == null || sendBody['user_id'].toString().isEmpty)) {
+        sendBody['user_id'] = userSub;
+      }
+
+      final uri = Uri.parse('${effectiveLeaveBase()}/api/attendance/clock-out');
+      safePrint('ApiService.clockOut -> $uri');
+      safePrint('Attendance sendBody (clockOut): ${json.encode(sendBody)}');
+      final response = await http.post(uri, headers: {
+        'Authorization': 'Bearer $idToken',
+        'Content-Type': 'application/json',
+      }, body: json.encode(sendBody)).timeout(const Duration(seconds: 10));
+
+      safePrint('Attendance response (clockOut): ${response.statusCode} - ${response.body}');
+
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        return json.decode(response.body) as Map<String, dynamic>;
+      } else {
+        throw Exception('Failed to clock out: ${response.statusCode} - ${response.body}');
+      }
+    } catch (e) {
+      safePrint('Error clocking out: $e');
       rethrow;
     }
   }
