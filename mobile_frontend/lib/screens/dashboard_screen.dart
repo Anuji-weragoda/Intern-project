@@ -5,6 +5,8 @@ import 'profile_edit_screen.dart';
 import 'settings_screen.dart';
 import 'login_screen.dart';
 import '../services/api_service.dart';
+import 'my_leaves_screen.dart';
+import 'attendance_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   /// When true, the widget will skip loading remote user info (Amplify/API)
@@ -288,6 +290,36 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             MaterialPageRoute(
                               builder: (_) => const SettingsScreen(),
                             ),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 16),
+
+                      // My Leave Card
+                      _buildMenuCard(
+                        icon: Icons.calendar_month,
+                        title: 'My Leave',
+                        description: 'View and request your leaves',
+                        color: const Color(0xFF06B6D4), // cyan
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const MyLeavesScreen()),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 16),
+
+                      // My Attendance Card
+                      _buildMenuCard(
+                        icon: Icons.access_time,
+                        title: 'My Attendance',
+                        description: 'View your clock-ins and outs',
+                        color: const Color(0xFFF59E0B), // amber
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const AttendanceScreen()),
                           );
                         },
                       ),

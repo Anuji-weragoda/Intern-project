@@ -1,0 +1,503 @@
+import 'package:flutter/material.dart';
+import 'package:amplify_flutter/amplify_flutter.dart';
+import '../services/api_service.dart';
+
+class NewLeaveRequestScreen extends StatefulWidget {
+  const NewLeaveRequestScreen({super.key});
+
+  @override
+  State<NewLeaveRequestScreen> createState() => _NewLeaveRequestScreenState();
+}
+
+class _NewLeaveRequestScreenState extends State<NewLeaveRequestScreen> {
+  final _formKey = GlobalKey<FormState>();
+  DateTime? _startDate;
+  DateTime? _endDate;
+  String _reason = '';
+  String _leaveType = 'Annual';
+  bool _submitting = false;
+
+  final List<Map<String, dynamic>> _leaveTypes = [
+    {'value': 'Annual', 'label': 'Annual Leave', 'icon': Icons.beach_access_rounded, 'color': Colors.blue},
+    {'value': 'Sick', 'label': 'Sick Leave', 'icon': Icons.local_hospital_rounded, 'color': Colors.red},
+    {'value': 'Casual', 'label': 'Casual Leave', 'icon': Icons.event_rounded, 'color': Colors.orange},
+    {'value': 'Emergency', 'label': 'Emergency Leave', 'icon': Icons.warning_rounded, 'color': Colors.deepOrange},
+    {'value': 'Maternity', 'label': 'Maternity Leave', 'icon': Icons.child_care_rounded, 'color': Colors.pink},
+    {'value': 'Paternity', 'label': 'Paternity Leave', 'icon': Icons.family_restroom_rounded, 'color': Colors.indigo},
+    {'value': 'Unpaid', 'label': 'Unpaid Leave', 'icon': Icons.money_off_rounded, 'color': Colors.grey},
+  ];
+
+  Future<void> _pickStart() async {
+    final now = DateTime.now();
+    final res = await showDatePicker(
+      context: context,
+      initialDate: now,
+      firstDate: now,
+      lastDate: DateTime(now.year + 2),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(
+              primary: Colors.purple.shade700,
+              onPrimary: Colors.white,
+              surface: Colors.white,
+              onSurface: Colors.black,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (res != null) {
+      setState(() {
+        _startDate = res;
+        // Reset end date if it's before start date
+        if (_endDate != null && _endDate!.isBefore(res)) {
+          _endDate = null;
+        }
+      });
+    }
+  }
+
+  Future<void> _pickEnd() async {
+    final now = DateTime.now();
+    final init = _startDate ?? now;
+    final res = await showDatePicker(
+      context: context,
+      initialDate: init,
+      firstDate: init,
+      lastDate: DateTime(now.year + 2),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(
+              primary: Colors.purple.shade700,
+              onPrimary: Colors.white,
+              surface: Colors.white,
+              onSurface: Colors.black,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (res != null) setState(() => _endDate = res);
+  }
+
+  String _formatDate(DateTime date) {
+    final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    final weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    return '${weekdays[date.weekday - 1]}, ${months[date.month - 1]} ${date.day}, ${date.year}';
+  }
+
+  int _calculateDays() {
+    if (_startDate == null || _endDate == null) return 0;
+    return _endDate!.difference(_startDate!).inDays + 1;
+  }
+
+  String _formatDateForApi(DateTime date) {
+    // Format: YYYY-MM-DD
+    final year = date.year.toString();
+    final month = date.month.toString().padLeft(2, '0');
+    final day = date.day.toString().padLeft(2, '0');
+    return '$year-$month-$day';
+  }
+
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) return;
+    if (_startDate == null || _endDate == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Please select start and end dates'),
+          backgroundColor: Colors.orange.shade700,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+    setState(() => _submitting = true);
+    try {
+      // Format dates as YYYY-MM-DD
+      final startDateStr = _formatDateForApi(_startDate!);
+      final endDateStr = _formatDateForApi(_endDate!);
+      
+      final payload = {
+        'start_date': startDateStr,
+        'end_date': endDateStr,
+        'reason': _reason.trim(),
+        'leave_type': _leaveType,
+        'policy_id': 1, // Default policy_id - adjust based on your leave policies
+      };
+      
+      safePrint('Submitting leave request with payload: $payload');
+      final res = await ApiService.createLeaveRequest(payload);
+      safePrint('Create leave response: $res');
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Leave request submitted successfully'),
+            backgroundColor: Colors.green.shade600,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        Navigator.pop(context, true);
+      }
+    } catch (e) {
+      safePrint('Error creating leave: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to create leave: ${e.toString()}'),
+            backgroundColor: Colors.red.shade600,
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _submitting = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final days = _calculateDays();
+
+    return Scaffold(
+      backgroundColor: Colors.grey.shade50,
+      appBar: AppBar(
+        elevation: 0,
+        backgroundColor: Colors.purple.shade700,
+        foregroundColor: Colors.white,
+        title: const Text('New Leave Request', style: TextStyle(fontWeight: FontWeight.w600)),
+      ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          padding: EdgeInsets.only(
+            left: 20,
+            right: 20,
+            top: 20,
+            bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+          ),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Leave Type Section
+                Text(
+                  'Leave Type',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey.shade800,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    children: _leaveTypes.map((type) {
+                      final isSelected = _leaveType == type['value'];
+                      return InkWell(
+                        onTap: () => setState(() => _leaveType = type['value']),
+                        borderRadius: BorderRadius.circular(16),
+                        child: Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: isSelected ? type['color'].withOpacity(0.1) : Colors.transparent,
+                            borderRadius: BorderRadius.circular(16),
+                            border: isSelected
+                                ? Border.all(color: type['color'], width: 2)
+                                : null,
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: type['color'].withOpacity(0.15),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Icon(
+                                  type['icon'],
+                                  color: type['color'],
+                                  size: 24,
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Text(
+                                  type['label'],
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                                    color: isSelected ? type['color'] : Colors.grey.shade700,
+                                  ),
+                                ),
+                              ),
+                              if (isSelected)
+                                Icon(Icons.check_circle_rounded, color: type['color'], size: 24)
+                              else
+                                Icon(Icons.circle_outlined, color: Colors.grey.shade400, size: 24),
+                            ],
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // Date Selection Section
+                Text(
+                  'Duration',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey.shade800,
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                // Start Date
+                InkWell(
+                  onTap: _pickStart,
+                  borderRadius: BorderRadius.circular(16),
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: Colors.green.shade50,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(Icons.event_rounded, color: Colors.green.shade700, size: 24),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Start Date',
+                                style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                _startDate == null ? 'Select start date' : _formatDate(_startDate!),
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                  color: _startDate == null ? Colors.grey.shade400 : Colors.grey.shade800,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Icon(Icons.chevron_right_rounded, color: Colors.grey.shade400),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                // End Date
+                InkWell(
+                  onTap: _pickEnd,
+                  borderRadius: BorderRadius.circular(16),
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: Colors.red.shade50,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(Icons.event_available_rounded, color: Colors.red.shade700, size: 24),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'End Date',
+                                style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                _endDate == null ? 'Select end date' : _formatDate(_endDate!),
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                  color: _endDate == null ? Colors.grey.shade400 : Colors.grey.shade800,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Icon(Icons.chevron_right_rounded, color: Colors.grey.shade400),
+                      ],
+                    ),
+                  ),
+                ),
+
+                // Duration Display
+                if (days > 0) ...[
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.purple.shade50,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.purple.shade200),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.calendar_month_rounded, color: Colors.purple.shade700, size: 20),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Total: $days ${days == 1 ? 'day' : 'days'}',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.purple.shade700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 24),
+
+                // Reason Section
+                Text(
+                  'Reason',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey.shade800,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: TextFormField(
+                    decoration: InputDecoration(
+                      hintText: 'Briefly explain your reason for leave...',
+                      hintStyle: TextStyle(color: Colors.grey.shade400),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide.none,
+                      ),
+                      filled: true,
+                      fillColor: Colors.white,
+                      contentPadding: const EdgeInsets.all(16),
+                      prefixIcon: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Icon(Icons.notes_rounded, color: Colors.grey.shade600),
+                      ),
+                    ),
+                    maxLines: 4,
+                    onChanged: (v) => _reason = v,
+                    validator: (v) => (v == null || v.trim().isEmpty) ? 'Please provide a reason' : null,
+                  ),
+                ),
+                const SizedBox(height: 32),
+
+                // Submit Button
+                SizedBox(
+                  width: double.infinity,
+                  height: 56,
+                  child: ElevatedButton(
+                    onPressed: _submitting ? null : _submit,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.purple.shade700,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      elevation: 0,
+                      disabledBackgroundColor: Colors.grey.shade300,
+                    ),
+                    child: _submitting
+                        ? const SizedBox(
+                            height: 24,
+                            width: 24,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.5,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          )
+                        : const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.send_rounded, size: 20),
+                              SizedBox(width: 8),
+                              Text(
+                                'Submit Request',
+                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                              ),
+                            ],
+                          ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

@@ -43,7 +43,7 @@ export const ToastProvider: React.FC<{ children?: React.ReactNode }> = ({ childr
             role="status"
           >
             {t.title && <div className="font-semibold text-slate-900">{t.title}</div>}
-            <div className={`mt-1 ${t.title ? 'text-slate-700' : 'text-slate-800'}`}>{t.message}</div>
+            <div className={`mt-1 ${t.title ? 'text-slate-700' : 'text-slate-800'} whitespace-pre-wrap`}>{t.message}</div>
             <div className="mt-2 text-xs text-slate-400">{t.type.toUpperCase()}</div>
           </div>
         ))}

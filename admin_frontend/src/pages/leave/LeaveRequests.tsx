@@ -203,13 +203,17 @@ const LeaveManagementSystem = () => {
       const body: any = { action };
       const res = await leavePatch(id, body);
       if (!res.ok) {
-        const t = await res.text();
-        throw new Error(`Failed to ${actionText} leave request: ${res.status} ${res.statusText}: ${t.slice(0,400)}`);
+        const t = await res.text().catch(() => '');
+        let formatted = t || `${res.status} ${res.statusText}`;
+        try { const j = JSON.parse(t); formatted = JSON.stringify(j, null, 2); } catch (e) {}
+        toast.error(`Failed to ${actionText} leave request: ${res.status} ${res.statusText}\n${formatted}`);
+        return;
       }
       await loadData();
       toast.success(`Leave request ${actionText}ed successfully!`);
     } catch (error) {
-      toast.error(`Failed to ${actionText} request: ` + ((error as any)?.message || error));
+      const msg = (error as any)?.message || String(error);
+      toast.error(`Failed to ${actionText} request: ${msg}`);
     }
   };
 
@@ -219,8 +223,11 @@ const LeaveManagementSystem = () => {
     try {
       const res = await leavePatch(rejectTarget, { action: 'reject', note: rejectReason.trim() });
       if (!res.ok) {
-        const t = await res.text();
-        throw new Error(`Failed to reject leave request: ${res.status} ${res.statusText}: ${t.slice(0,400)}`);
+        const t = await res.text().catch(() => '');
+        let formatted = t || `${res.status} ${res.statusText}`;
+        try { const j = JSON.parse(t); formatted = JSON.stringify(j, null, 2); } catch (e) {}
+        toast.error(`Failed to reject leave request: ${res.status} ${res.statusText}\n${formatted}`);
+        return;
       }
       setShowRejectModal(false);
       setRejectTarget(null);
@@ -228,7 +235,8 @@ const LeaveManagementSystem = () => {
       await loadData();
       toast.success('Leave request rejected successfully!');
     } catch (e) {
-      toast.error('Failed to reject request: ' + ((e as any)?.message || e));
+      const msg = (e as any)?.message || String(e);
+      toast.error('Failed to reject request: ' + msg);
     }
   };
 

@@ -1,10 +1,37 @@
 import 'dart:convert';
+import 'dart:async';
 import 'package:http/http.dart' as http;
 import 'package:amplify_flutter/amplify_flutter.dart';
 import 'package:amplify_auth_cognito/amplify_auth_cognito.dart';
+import '../config/api_gateway.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://10.0.2.2:8081';
+  // Resolve base URLs at compile time using --dart-define so the app can target
+  // local emulator values during development or the AWS API Gateway URL for prod.
+  // Usage:
+  //   flutter run --dart-define=AUTH_BASE_URL=https://auth.example.com --dart-define=LEAVE_BASE_URL=https://abcd123.execute-api.eu-west-1.amazonaws.com/Prod
+  // Defaults keep local emulator values when `--dart-define` is not set.
+  static const String baseUrl = String.fromEnvironment('AUTH_BASE_URL', defaultValue: 'http://10.0.2.2:8081');
+  // Do NOT default to a local emulator leave service. Require explicit
+  // configuration via --dart-define to avoid accidentally calling
+  // `10.0.2.2:3000` in environments where that service doesn't exist.
+  static const String leaveBaseUrl = String.fromEnvironment('LEAVE_BASE_URL', defaultValue: '');
+  // The API Gateway URL is provided by the generated config file
+  // `lib/config/api_gateway.dart` as `GENERATED_API_GATEWAY_URL` when you run
+  // `scripts/run_with_api_gateway.ps1`. We rely on that generated constant here
+  // instead of compile-time dart-defines to avoid accidental localhost fallbacks.
+
+  // Effective base runtime selection helper: prefer explicit API gateway if set
+  static String effectiveLeaveBase() {
+    // Priority:
+    // 1. GENERATED_API_GATEWAY_URL (written by run helper after deploy)
+    // 2. --dart-define=LEAVE_BASE_URL (explicit custom backend)
+    if (GENERATED_API_GATEWAY_URL.isNotEmpty) return GENERATED_API_GATEWAY_URL;
+    if (leaveBaseUrl.isNotEmpty) return leaveBaseUrl;
+    final msg = 'No leave service URL configured. Ensure lib/config/api_gateway.dart contains the deployed ApiUrl or pass --dart-define=LEAVE_BASE_URL=<url> when running.';
+    safePrint(msg);
+    throw Exception(msg);
+  }
 
   /// Call this immediately after login to sync user with database
   static Future<Map<String, dynamic>> syncUserAfterLogin() async {
@@ -233,7 +260,7 @@ class ApiService {
       return {
         'idToken': tokens.idToken.toJson(),
         'accessToken': tokens.accessToken.toJson(),
-        'refreshToken': tokens.refreshToken ?? 'N/A',
+        'refreshToken': tokens.refreshToken,
       };
     } catch (e) {
       safePrint('Error fetching tokens: $e');
@@ -253,6 +280,98 @@ class ApiService {
     } catch (e) {
       safePrint('Backend not reachable: $e');
       return false;
+    }
+  }
+
+  /// Get leave requests for the currently logged in user
+  static Future<List<dynamic>> getMyLeaves({int limit = 50}) async {
+    try {
+      final result = await Amplify.Auth.fetchAuthSession();
+      final cognitoSession = result as CognitoAuthSession;
+      final tokens = cognitoSession.userPoolTokensResult.value;
+      final idToken = tokens.idToken.toJson();
+
+      final uri = Uri.parse('${effectiveLeaveBase()}/api/v1/leave/requests?limit=$limit&mine=true');
+      safePrint('ApiService.getMyLeaves -> $uri');
+      final headers = {
+        'Authorization': 'Bearer $idToken',
+        'Content-Type': 'application/json',
+      };
+      http.Response response;
+      response = await http.get(uri, headers: headers).timeout(const Duration(seconds: 10));
+      // removed stray legacy code
+
+      if (response.statusCode == 200) {
+        final body = json.decode(response.body);
+        // Expect array or { items: [] }
+        if (body is List) return body;
+        return (body['items'] ?? body['data'] ?? body['requests'] ?? []) as List<dynamic>;
+      } else {
+        throw Exception('Failed to load leaves: ${response.statusCode} - ${response.body}');
+      }
+    } catch (e) {
+      safePrint('Error fetching my leaves: $e');
+      rethrow;
+    }
+  }
+
+  /// Create a new leave request for the logged-in user
+  static Future<Map<String, dynamic>> createLeaveRequest(Map<String, dynamic> payload) async {
+    try {
+      final result = await Amplify.Auth.fetchAuthSession();
+      final cognitoSession = result as CognitoAuthSession;
+      final tokens = cognitoSession.userPoolTokensResult.value;
+      final idToken = tokens.idToken.toJson();
+
+      final uri = Uri.parse('${effectiveLeaveBase()}/api/v1/leave/requests');
+      safePrint('ApiService.createLeaveRequest -> ${uri}');
+      final headers = {
+        'Authorization': 'Bearer $idToken',
+        'Content-Type': 'application/json',
+      };
+      http.Response response;
+      response = await http.post(uri, headers: headers, body: json.encode(payload)).timeout(const Duration(seconds: 10));
+      // removed stray legacy code
+
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        return json.decode(response.body) as Map<String, dynamic>;
+      } else {
+        throw Exception('Failed to create leave: ${response.statusCode} - ${response.body}');
+      }
+    } catch (e) {
+      safePrint('Error creating leave request: $e');
+      rethrow;
+    }
+  }
+
+  /// Get attendance logs for the current user
+  static Future<List<dynamic>> getMyAttendance({int limit = 100}) async {
+    try {
+      final result = await Amplify.Auth.fetchAuthSession();
+      final cognitoSession = result as CognitoAuthSession;
+      final tokens = cognitoSession.userPoolTokensResult.value;
+      final idToken = tokens.idToken.toJson();
+
+      final uri = Uri.parse('${effectiveLeaveBase()}/api/attendance?limit=$limit&mine=true');
+      safePrint('ApiService.getMyAttendance -> $uri');
+      final headers = {
+        'Authorization': 'Bearer $idToken',
+        'Content-Type': 'application/json',
+      };
+      http.Response response;
+      response = await http.get(uri, headers: headers).timeout(const Duration(seconds: 10));
+      // removed stray legacy code
+
+      if (response.statusCode == 200) {
+        final body = json.decode(response.body);
+        if (body is List) return body;
+        return (body['items'] ?? body['data'] ?? body['rows'] ?? []) as List<dynamic>;
+      } else {
+        throw Exception('Failed to load attendance: ${response.statusCode} - ${response.body}');
+      }
+    } catch (e) {
+      safePrint('Error fetching attendance: $e');
+      rethrow;
     }
   }
 
