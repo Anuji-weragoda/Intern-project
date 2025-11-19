@@ -258,8 +258,8 @@ class _MyLeavesScreenState extends State<MyLeavesScreen> {
       backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: Colors.blue.shade700,
-        foregroundColor: Colors.white,
+        backgroundColor:Colors.white,
+        foregroundColor: Colors.black,
         title: const Text('My Leave Requests', style: TextStyle(fontWeight: FontWeight.w600)),
         actions: [
           IconButton(

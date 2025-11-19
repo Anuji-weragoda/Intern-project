@@ -8,6 +8,7 @@ import {
 import { getUserBySub } from '../../api/userApi';
 import BalanceView from './BalanceView';
 import Attendance from './Attendance';
+import Reports from './Reports';
 import { useToast } from '../../components/ui/ToastProvider';
 
 
@@ -18,6 +19,7 @@ const LeaveManagementSystem = () => {
   // Admin panel: no creation of new requests from this UI (approve/reject only)
   const [activeTab, setActiveTab] = useState('requests');
   const [filterStatus, setFilterStatus] = useState('all');
+  
   const [currentUser, setCurrentUser] = useState<{ id?: string; email?: string } | null>(null);
   const [rawBalances, setRawBalances] = useState<Array<any>>([]);
   const [loadingUsersBalances, setLoadingUsersBalances] = useState(false);
@@ -360,6 +362,17 @@ const LeaveManagementSystem = () => {
             <FileText className="w-4 h-4 inline mr-2" />
             Leave Balances
           </button>
+          <button
+            onClick={() => setActiveTab('reports')}
+            className={`px-6 py-3 font-medium transition-all ${
+              activeTab === 'reports'
+                ? 'text-indigo-600 border-b-2 border-indigo-600'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <FileText className="w-4 h-4 inline mr-2" />
+            Reports
+          </button>
         </div>
 
         {/* Leave Requests Tab */}
@@ -525,6 +538,11 @@ const LeaveManagementSystem = () => {
         {/* Leave Balances Tab */}
         {activeTab === 'balances' && (
           <BalanceView rawBalances={rawBalances} loadingUsersBalances={loadingUsersBalances} />
+        )}
+        {activeTab === 'reports' && (
+          <div>
+            <Reports />
+          </div>
         )}
       </div>
     </div>

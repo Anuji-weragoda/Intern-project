@@ -6,26 +6,13 @@ import 'package:amplify_auth_cognito/amplify_auth_cognito.dart';
 import '../config/api_gateway.dart';
 
 class ApiService {
-  // Resolve base URLs at compile time using --dart-define so the app can target
-  // local emulator values during development or the AWS API Gateway URL for prod.
-  // Usage:
-  //   flutter run --dart-define=AUTH_BASE_URL=https://auth.example.com --dart-define=LEAVE_BASE_URL=https://abcd123.execute-api.eu-west-1.amazonaws.com/Prod
-  // Defaults keep local emulator values when `--dart-define` is not set.
+  
   static const String baseUrl = String.fromEnvironment('AUTH_BASE_URL', defaultValue: 'http://10.0.2.2:8081');
-  // Do NOT default to a local emulator leave service. Require explicit
-  // configuration via --dart-define to avoid accidentally calling
-  // `10.0.2.2:3000` in environments where that service doesn't exist.
+ 
   static const String leaveBaseUrl = String.fromEnvironment('LEAVE_BASE_URL', defaultValue: '');
-  // The API Gateway URL is provided by the generated config file
-  // `lib/config/api_gateway.dart` as `generatedApiGatewayUrl` when you run
-  // `scripts/run_with_api_gateway.ps1`. We rely on that generated constant here
-  // instead of compile-time dart-defines to avoid accidental localhost fallbacks.
-
-  // Effective base runtime selection helper: prefer explicit API gateway if set
+  
   static String effectiveLeaveBase() {
-    // Priority:
-    // 1. generatedApiGatewayUrl (written by run helper after deploy)
-    // 2. --dart-define=LEAVE_BASE_URL (explicit custom backend)
+ 
     if (generatedApiGatewayUrl.isNotEmpty) return generatedApiGatewayUrl;
     if (leaveBaseUrl.isNotEmpty) return leaveBaseUrl;
     final msg = 'No leave service URL configured. Ensure lib/config/api_gateway.dart contains the deployed ApiUrl or pass --dart-define=LEAVE_BASE_URL=<url> when running.';
@@ -33,7 +20,7 @@ class ApiService {
     throw Exception(msg);
   }
 
-  // Extract the `sub` claim from a JWT id token (returns null on failure)
+
   static String? _getSubFromIdToken(String idToken) {
     try {
       final parts = idToken.split('.');
@@ -50,7 +37,6 @@ class ApiService {
     }
   }
 
-  /// Call this immediately after login to sync user with database
   static Future<Map<String, dynamic>> syncUserAfterLogin() async {
     try {
       final result = await Amplify.Auth.fetchAuthSession();
@@ -95,7 +81,7 @@ class ApiService {
     }
   }
 
-  /// Verify that JWT token is valid
+
   static Future<Map<String, dynamic>> verifyToken() async {
     try {
       final result = await Amplify.Auth.fetchAuthSession();
@@ -125,7 +111,7 @@ class ApiService {
     }
   }
 
-  /// Get user profile
+
   static Future<Map<String, dynamic>> getUserProfile() async {
     try {
       final result = await Amplify.Auth.fetchAuthSession();
@@ -418,6 +404,44 @@ class ApiService {
       }
     } catch (e) {
       safePrint('Error fetching attendance: $e');
+      rethrow;
+    }
+  }
+
+  /// Get leave balance for the current user
+  static Future<double> getMyLeaveBalance() async {
+    try {
+      final result = await Amplify.Auth.fetchAuthSession();
+      final cognitoSession = result as CognitoAuthSession;
+      final tokens = cognitoSession.userPoolTokensResult.value;
+      final idToken = tokens.idToken.toJson();
+
+      final uri = Uri.parse('${effectiveLeaveBase()}/api/v1/leave/balance');
+      safePrint('ApiService.getMyLeaveBalance -> $uri');
+      final headers = {
+        'Authorization': 'Bearer $idToken',
+        'Content-Type': 'application/json',
+      };
+      final response = await http.get(uri, headers: headers).timeout(const Duration(seconds: 10));
+
+      safePrint('getMyLeaveBalance response: ${response.statusCode} - ${response.body}');
+
+      if (response.statusCode == 200) {
+        final body = json.decode(response.body);
+        // Expect numeric balance or object with `balance`/`available` field
+        if (body is num) return body.toDouble();
+        if (body is Map) {
+          final val = body['balance'] ?? body['available'] ?? body['remaining'] ?? body['leave_balance'];
+          if (val is num) return val.toDouble();
+          final parsed = double.tryParse(val?.toString() ?? '');
+          if (parsed != null) return parsed;
+        }
+        throw Exception('Unexpected leave balance payload');
+      } else {
+        throw Exception('Failed to load leave balance: ${response.statusCode} - ${response.body}');
+      }
+    } catch (e) {
+      safePrint('Error fetching leave balance: $e');
       rethrow;
     }
   }

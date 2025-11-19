@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 const STORAGE_KEYS = ['access_token', 'id_token', 'jwt_token', 'token'];
 

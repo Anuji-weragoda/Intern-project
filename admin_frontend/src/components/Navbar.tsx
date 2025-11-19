@@ -7,7 +7,6 @@ import {
   LogOut,
   Users,
   ClipboardList,
-  FileText,
   Menu,
   X,
   ChevronDown,
@@ -91,9 +90,6 @@ const Navbar: React.FC = () => {
                   </NavLink>
                   <NavLink to="/admin/leave" icon={ClipboardList}>
                     Leave & Attendance
-                  </NavLink>
-                  <NavLink to="/admin/leave/policies" icon={FileText}>
-                    Policies
                   </NavLink>
                 </div>
 
@@ -227,9 +223,6 @@ const Navbar: React.FC = () => {
 
               <NavLink to="/admin/leave" icon={ClipboardList}>
                 Leave and Attendance
-              </NavLink>
-              <NavLink to="/admin/leave/policies" icon={FileText}>
-                Policies
               </NavLink>
 
               <button

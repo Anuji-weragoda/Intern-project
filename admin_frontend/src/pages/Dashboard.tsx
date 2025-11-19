@@ -49,6 +49,7 @@ const getJWT = (): string | null => {
 const Dashboard: React.FC = () => {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [auditStats, setAuditStats] = useState<AuditStats | null>(null);
+  const [todaysLoggedHours, setTodaysLoggedHours] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -110,6 +111,51 @@ const Dashboard: React.FC = () => {
         }
       } catch (auditError) {
         console.log("Audit logs not accessible (may require admin role)");
+      }
+
+      // Fetch today's attendance summary (sum of logged hours)
+      try {
+        const today = new Date();
+        const dayStr = today.toISOString().split('T')[0];
+        const rangeStart = `${dayStr}T00:00:00Z`;
+        const rangeEnd = `${dayStr}T23:59:59Z`;
+        const attendanceRes = await apiFetch(`/api/attendance?range=${encodeURIComponent(rangeStart + ',' + rangeEnd)}&size=1000`, {
+          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
+        });
+        if (attendanceRes.ok) {
+          const items = await attendanceRes.json();
+          // items may be an array or an object with content/items
+          const rows = Array.isArray(items) ? items : (items?.content || items?.items || items?.data || []);
+          let total = 0;
+          for (const r of rows) {
+            // prefer explicit total_hours if provided by API
+            const th = r.total_hours ?? r.totalHours ?? null;
+            if (th !== undefined && th !== null && !Number.isNaN(Number(th))) {
+              total += Number(th);
+              continue;
+            }
+            // otherwise compute from clock_in/clock_out timestamps
+            const inTs = r.clock_in || r.clockIn || r.created_at || r.createdAt || null;
+            const outTs = r.clock_out || r.clockOut || r.updated_at || r.updatedAt || null;
+            try {
+              if (inTs && outTs) {
+                const inDate = new Date(inTs);
+                const outDate = new Date(outTs);
+                if (!Number.isNaN(inDate.getTime()) && !Number.isNaN(outDate.getTime())) {
+                  const hrs = (outDate.getTime() - inDate.getTime()) / (1000 * 60 * 60);
+                  if (!Number.isNaN(hrs) && isFinite(hrs) && hrs > 0) total += hrs;
+                }
+              }
+            } catch (e) {
+              // ignore parse errors per-row
+            }
+          }
+          setTodaysLoggedHours(Number(total.toFixed(2)));
+        } else {
+          // ignore attendance fetch failures
+        }
+      } catch (e) {
+        // ignore
       }
 
     } catch (err) {
@@ -352,6 +398,15 @@ const Dashboard: React.FC = () => {
                   <div>
                     <p className="text-xs text-gray-600">Total Logins</p>
                     <p className="text-sm font-semibold text-gray-900">{user.loginCount}</p>
+                  </div>
+                </div>
+              )}
+              {todaysLoggedHours !== null && (
+                <div className="flex items-center gap-3 p-3 bg-yellow-50 rounded-lg">
+                  <Clock className="w-5 h-5 text-yellow-700" />
+                  <div>
+                    <p className="text-xs text-gray-600">Today Logged Hours</p>
+                    <p className="text-sm font-semibold text-gray-900">{todaysLoggedHours !== null ? `${todaysLoggedHours} hrs` : '—'}</p>
                   </div>
                 </div>
               )}
