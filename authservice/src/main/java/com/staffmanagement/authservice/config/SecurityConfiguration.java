@@ -14,7 +14,7 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtGra
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.logout.LogoutHandler;
 
-@Configuration
+@Configuration(proxyBeanMethods = false)
 @EnableWebSecurity
 @RequiredArgsConstructor
 public class SecurityConfiguration {
@@ -32,6 +32,8 @@ public class SecurityConfiguration {
                 .requestMatchers("/", "/public/**", "/healthz").permitAll()
                 // Allow unauthenticated access to authentication endpoints (login, refresh, etc.)
                 .requestMatchers("/api/v1/auth/**").permitAll()
+                // Legacy mobile client uses /auth/* paths — allow those as well
+                .requestMatchers("/auth/**").permitAll()
                 .requestMatchers("/api/v1/admin/**").hasRole("ADMIN") 
                 .anyRequest().authenticated()
             )

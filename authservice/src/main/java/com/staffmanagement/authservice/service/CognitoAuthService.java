@@ -12,8 +12,18 @@ import software.amazon.awssdk.services.cognitoidentityprovider.model.GetUserRequ
 import software.amazon.awssdk.services.cognitoidentityprovider.model.GetUserResponse;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.InitiateAuthRequest;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.InitiateAuthResponse;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.SignUpRequest;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.SignUpResponse;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.ConfirmSignUpRequest;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.ConfirmSignUpResponse;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.ResendConfirmationCodeRequest;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.ResendConfirmationCodeResponse;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AuthFlowType;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.CognitoIdentityProviderException;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.ConfirmSignUpRequest;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.ConfirmSignUpResponse;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.ResendConfirmationCodeRequest;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.ResendConfirmationCodeResponse;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.Mac;
@@ -108,6 +118,90 @@ public class CognitoAuthService {
         }
     }
 
+    public com.staffmanagement.authservice.dto.SignupResponse signUp(String email, String password, String givenName, String familyName) {
+        try {
+            Map<String, String> userAttrs = new HashMap<>();
+            userAttrs.put("email", email);
+            if (givenName != null && !givenName.isBlank()) userAttrs.put("given_name", givenName);
+            if (familyName != null && !familyName.isBlank()) userAttrs.put("family_name", familyName);
+
+            SignUpRequest.Builder signUpBuilder = SignUpRequest.builder()
+                    .clientId(this.clientId)
+                    .username(email)
+                    .password(password);
+
+            if (this.clientSecret != null && !this.clientSecret.isBlank()) {
+                String secretHash = calculateSecretHash(email, this.clientId, this.clientSecret);
+                Map<String, String> authParams = new HashMap<>();
+                authParams.put("SECRET_HASH", secretHash);
+                signUpBuilder.secretHash(secretHash);
+            }
+
+            // add user attributes
+            if (!userAttrs.isEmpty()) {
+                for (Map.Entry<String, String> e : userAttrs.entrySet()) {
+                    signUpBuilder.userAttributes(software.amazon.awssdk.services.cognitoidentityprovider.model.AttributeType.builder()
+                            .name(e.getKey()).value(e.getValue()).build());
+                }
+            }
+
+            SignUpRequest req = signUpBuilder.build();
+            SignUpResponse resp = client.signUp(req);
+
+            String userSub = resp.userSub();
+            boolean confirmed = resp.userConfirmed() != null ? resp.userConfirmed() : false;
+
+            return new com.staffmanagement.authservice.dto.SignupResponse(userSub, confirmed, "User signup successful");
+        } catch (CognitoIdentityProviderException e) {
+            String msg = e.awsErrorDetails() != null ? e.awsErrorDetails().errorMessage() : e.getMessage();
+            log.warn("Cognito signup failed: {}", msg);
+            throw new RuntimeException(msg);
+        }
+    }
+
+    public com.staffmanagement.authservice.dto.SignupResponse confirmSignUp(String email, String confirmationCode) {
+        try {
+            ConfirmSignUpRequest.Builder builder = ConfirmSignUpRequest.builder()
+                    .clientId(this.clientId)
+                    .username(email)
+                    .confirmationCode(confirmationCode);
+
+            if (this.clientSecret != null && !this.clientSecret.isBlank()) {
+                String secretHash = calculateSecretHash(email, this.clientId, this.clientSecret);
+                builder = builder.secretHash(secretHash);
+            }
+
+            ConfirmSignUpRequest req = builder.build();
+            ConfirmSignUpResponse resp = client.confirmSignUp(req);
+            return new com.staffmanagement.authservice.dto.SignupResponse(null, true, "User confirmed");
+        } catch (CognitoIdentityProviderException e) {
+            String msg = e.awsErrorDetails() != null ? e.awsErrorDetails().errorMessage() : e.getMessage();
+            log.warn("Cognito confirmSignUp failed: {}", msg);
+            throw new RuntimeException(msg);
+        }
+    }
+
+    public com.staffmanagement.authservice.dto.SignupResponse resendConfirmation(String email) {
+        try {
+            ResendConfirmationCodeRequest.Builder builder = ResendConfirmationCodeRequest.builder()
+                    .clientId(this.clientId)
+                    .username(email);
+
+            if (this.clientSecret != null && !this.clientSecret.isBlank()) {
+                String secretHash = calculateSecretHash(email, this.clientId, this.clientSecret);
+                builder = builder.secretHash(secretHash);
+            }
+
+            ResendConfirmationCodeRequest req = builder.build();
+            ResendConfirmationCodeResponse resp = client.resendConfirmationCode(req);
+            return new com.staffmanagement.authservice.dto.SignupResponse(null, false, "Confirmation code resent");
+        } catch (CognitoIdentityProviderException e) {
+            String msg = e.awsErrorDetails() != null ? e.awsErrorDetails().errorMessage() : e.getMessage();
+            log.warn("Cognito resendConfirmation failed: {}", msg);
+            throw new RuntimeException(msg);
+        }
+    }
+
     private static String calculateSecretHash(String username, String clientId, String clientSecret) {
         try {
             String message = username + clientId;
@@ -119,4 +213,5 @@ public class CognitoAuthService {
             throw new RuntimeException("Failed to calculate SECRET_HASH", ex);
         }
     }
+
 }

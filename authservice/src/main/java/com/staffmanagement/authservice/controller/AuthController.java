@@ -2,6 +2,10 @@ package com.staffmanagement.authservice.controller;
 
 import com.staffmanagement.authservice.dto.LoginRequest;
 import com.staffmanagement.authservice.dto.LoginResponse;
+import com.staffmanagement.authservice.dto.SignupRequest;
+import com.staffmanagement.authservice.dto.SignupResponse;
+import com.staffmanagement.authservice.dto.ConfirmRequest;
+import com.staffmanagement.authservice.dto.ResendRequest;
 import com.staffmanagement.authservice.service.CognitoAuthService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -31,6 +35,45 @@ public class AuthController {
             return ResponseEntity.ok(resp);
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Collections.singletonMap("error", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/signup")
+    public ResponseEntity<?> signup(@RequestBody SignupRequest request) {
+        try {
+            String fullName = request.fullName();
+            String givenName = null;
+            String familyName = null;
+            if (fullName != null && !fullName.isBlank()) {
+                String[] parts = fullName.trim().split("\\s+", 2);
+                givenName = parts[0];
+                if (parts.length > 1) familyName = parts[1];
+            }
+
+            SignupResponse resp = cognitoAuthService.signUp(request.email(), request.password(), givenName, familyName);
+            return ResponseEntity.status(HttpStatus.CREATED).body(resp);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Collections.singletonMap("error", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/confirm")
+    public ResponseEntity<?> confirm(@RequestBody ConfirmRequest request) {
+        try {
+            SignupResponse resp = cognitoAuthService.confirmSignUp(request.email(), request.confirmationCode());
+            return ResponseEntity.ok(resp);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Collections.singletonMap("error", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/resend")
+    public ResponseEntity<?> resend(@RequestBody ResendRequest request) {
+        try {
+            SignupResponse resp = cognitoAuthService.resendConfirmation(request.email());
+            return ResponseEntity.ok(resp);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Collections.singletonMap("error", e.getMessage()));
         }
     }
 }
