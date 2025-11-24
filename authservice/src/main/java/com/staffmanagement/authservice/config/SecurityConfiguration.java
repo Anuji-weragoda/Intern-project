@@ -30,6 +30,8 @@ public class SecurityConfiguration {
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(authz -> authz
                 .requestMatchers("/", "/public/**", "/healthz").permitAll()
+                // Allow unauthenticated access to authentication endpoints (login, refresh, etc.)
+                .requestMatchers("/api/v1/auth/**").permitAll()
                 .requestMatchers("/api/v1/admin/**").hasRole("ADMIN") 
                 .anyRequest().authenticated()
             )
