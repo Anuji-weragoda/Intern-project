@@ -45,6 +45,9 @@ dependencies:
   # HTTP and secure storage
   flutter_secure_storage: ^9.0.0
   http: ^1.1.0
+  get_it: ^7.2.0
+  equatable: ^2.0.5
+  flutter_bloc: ^8.1.2
 
 dev_dependencies:
   flutter_test:

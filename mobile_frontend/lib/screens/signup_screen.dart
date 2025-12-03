@@ -4,7 +4,7 @@ import 'dart:async';
 import 'package:amplify_flutter/amplify_flutter.dart';
 import 'mfa_verification_screen.dart';
 import 'totp_setup_screen.dart';
-import 'dashboard_screen.dart';
+import '../features/dashboard/presentation/pages/dashboard_page.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -175,7 +175,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
               ),
             );
             Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (_) => const DashboardScreen()),
+              MaterialPageRoute(builder: (_) => const DashboardPage()),
             );
             return;
           }

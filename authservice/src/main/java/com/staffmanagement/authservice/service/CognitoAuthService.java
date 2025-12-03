@@ -4,6 +4,10 @@ import com.staffmanagement.authservice.dto.LoginResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.auth.credentials.EnvironmentVariableCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
+import org.springframework.core.env.Environment;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.cognitoidentityprovider.CognitoIdentityProviderClient;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AuthenticationResultType;
@@ -43,26 +47,46 @@ public class CognitoAuthService {
     private final String userPoolId;
     private final String clientSecret; // optional
 
-    public CognitoAuthService() {
-        String region = System.getenv("AWS_REGION");
+    public CognitoAuthService(Environment env) {
+        // Prefer Spring properties, fall back to environment variables
+        String region = firstNonEmpty(env.getProperty("aws.region"), System.getenv("AWS_REGION"));
         if (region == null || region.isBlank()) {
-            throw new IllegalStateException("Environment variable AWS_REGION must be set");
+            throw new IllegalStateException("AWS region must be configured via 'aws.region' property or AWS_REGION env var");
         }
+
+        String accessKey = firstNonEmpty(env.getProperty("aws.accessKeyId"), System.getenv("AWS_ACCESS_KEY_ID"));
+        String secretKey = firstNonEmpty(env.getProperty("aws.secretAccessKey"), System.getenv("AWS_SECRET_ACCESS_KEY"));
+
+        software.amazon.awssdk.auth.credentials.AwsCredentialsProvider credentialsProvider;
+        if (accessKey != null && !accessKey.isBlank() && secretKey != null && !secretKey.isBlank()) {
+            credentialsProvider = StaticCredentialsProvider.create(AwsBasicCredentials.create(accessKey, secretKey));
+            log.info("Using static AWS credentials from properties for Cognito client (recommended only for local dev)");
+        } else {
+            credentialsProvider = DefaultCredentialsProvider.create();
+        }
+
         this.client = CognitoIdentityProviderClient.builder()
                 .region(Region.of(region))
-                .credentialsProvider(EnvironmentVariableCredentialsProvider.create())
+                .credentialsProvider(credentialsProvider)
                 .build();
 
-        this.clientId = System.getenv("COGNITO_APP_CLIENT_ID");
-        this.userPoolId = System.getenv("COGNITO_USER_POOL_ID");
-        this.clientSecret = System.getenv("COGNITO_CLIENT_SECRET");
+        this.clientId = firstNonEmpty(env.getProperty("cognito.appClientId"), System.getenv("COGNITO_APP_CLIENT_ID"));
+        this.userPoolId = firstNonEmpty(env.getProperty("cognito.userPoolId"), System.getenv("COGNITO_USER_POOL_ID"));
+        this.clientSecret = firstNonEmpty(env.getProperty("cognito.clientSecret"), System.getenv("COGNITO_CLIENT_SECRET"));
+
         if (this.clientId == null || this.clientId.isBlank() || this.userPoolId == null || this.userPoolId.isBlank()) {
-            throw new IllegalStateException("Environment variables COGNITO_APP_CLIENT_ID and COGNITO_USER_POOL_ID must be set");
+            throw new IllegalStateException("COGNITO_APP_CLIENT_ID and COGNITO_USER_POOL_ID must be configured via properties or env vars");
         }
 
         if (this.clientSecret != null && !this.clientSecret.isBlank()) {
             log.info("COGNITO_CLIENT_SECRET is configured; SECRET_HASH will be included for auth requests");
         }
+    }
+
+    private static String firstNonEmpty(String a, String b) {
+        if (a != null && !a.isBlank()) return a;
+        if (b != null && !b.isBlank()) return b;
+        return null;
     }
 
     public LoginResponse authenticate(String email, String password) {

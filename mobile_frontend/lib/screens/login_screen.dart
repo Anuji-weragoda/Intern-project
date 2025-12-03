@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:amplify_flutter/amplify_flutter.dart';
 import '../services/api_service.dart';
 import 'signup_screen.dart';
-import 'dashboard_screen.dart';
+import '../features/dashboard/presentation/pages/dashboard_page.dart';
 import 'forgot_password_screen.dart';
 import 'mfa_verification_screen.dart';
 import 'totp_setup_screen.dart';
@@ -54,7 +54,7 @@ class _LoginScreenState extends State<LoginScreen> {
         
         if (mounted) {
           Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => const DashboardScreen()),
+            MaterialPageRoute(builder: (_) => const DashboardPage()),
           );
         }
       }
@@ -264,7 +264,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
         // Step 3: Navigate to dashboard screen
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const DashboardScreen()),
+          MaterialPageRoute(builder: (_) => const DashboardPage()),
         );
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

@@ -3,7 +3,7 @@ import 'package:amplify_flutter/amplify_flutter.dart';
 import 'package:flutter/services.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../services/api_service.dart';
-import 'dashboard_screen.dart';
+import '../features/dashboard/presentation/pages/dashboard_page.dart';
 
 /// Screen shown when Cognito requires TOTP setup during sign in.
 /// Expects a shared secret returned from the sign-in nextStep.
@@ -70,7 +70,7 @@ class _TotpSetupScreenState extends State<TotpSetupScreen> {
           ),
         );
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const DashboardScreen()),
+          MaterialPageRoute(builder: (_) => const DashboardPage()),
         );
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

@@ -3,8 +3,10 @@ import 'package:amplify_flutter/amplify_flutter.dart';
 import 'package:amplify_auth_cognito/amplify_auth_cognito.dart';
 import 'amplifyconfiguration.dart';
 import 'screens/login_screen.dart';
+import 'core/di/injection_container.dart' as di;
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   ErrorWidget.builder = (FlutterErrorDetails details) {
     return MaterialApp(
       home: Scaffold(
@@ -14,7 +16,9 @@ void main() {
       ),
     );
   };
-  runApp(const MyApp());
+
+  // Initialize dependency injection before the app starts
+  di.init().then((_) => runApp(const MyApp()));
 }
 
 class MyApp extends StatefulWidget {

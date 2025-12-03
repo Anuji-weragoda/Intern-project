@@ -2,12 +2,19 @@ import 'dart:convert';
 import 'dart:async';
 import 'package:http/http.dart' as http;
 import 'package:amplify_flutter/amplify_flutter.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:amplify_auth_cognito/amplify_auth_cognito.dart';
 import '../config/api_gateway.dart';
 
 class ApiService {
   
-  static const String baseUrl = String.fromEnvironment('AUTH_BASE_URL', defaultValue: 'http://10.0.2.2:8081');
+  static String get baseUrl {
+    const env = String.fromEnvironment('AUTH_BASE_URL', defaultValue: '');
+    if (env.isNotEmpty) return env;
+    // On web/desktop use localhost; on Android emulator use 10.0.2.2
+    if (kIsWeb) return 'http://localhost:8081';
+    return 'http://10.0.2.2:8081';
+  }
  
   static const String leaveBaseUrl = String.fromEnvironment('LEAVE_BASE_URL', defaultValue: '');
   

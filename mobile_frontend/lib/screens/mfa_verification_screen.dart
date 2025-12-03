@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:amplify_flutter/amplify_flutter.dart';
 import '../services/api_service.dart';
-import 'dashboard_screen.dart';
+import '../features/dashboard/presentation/pages/dashboard_page.dart';
 
 class MFAVerificationScreen extends StatefulWidget {
   final AuthSignInStep mfaStep;
@@ -65,7 +65,7 @@ class _MFAVerificationScreenState extends State<MFAVerificationScreen> {
 
         // Navigate to dashboard
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const DashboardScreen()),
+          MaterialPageRoute(builder: (_) => const DashboardPage()),
         );
       } else {
         if (!mounted) return;
