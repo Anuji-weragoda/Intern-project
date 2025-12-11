@@ -88,4 +88,43 @@ public class AdyenService {
             throw new RuntimeException("Unexpected error: " + ex.getMessage(), ex);
         }
     }
+
+    /**
+     * Finalize a payment by forwarding the Drop-in/redirect result to Adyen's /payments/details API.
+     * The caller should pass the JSON object received from the Drop-in (e.g. containing
+     * `details` and/or `paymentData`/`action` as provided by the client).
+     */
+    public AdyenPaymentResponse finalizePayment(Map<String, Object> detailsRequest) {
+
+        if (properties.getApiKey() == null || properties.getApiKey().isEmpty()) {
+            log.error("Adyen API key is not configured (adyen.apiKey)");
+            throw new IllegalStateException("Adyen API key is not configured");
+        }
+
+        String url = properties.getCheckoutUrl() + "/payments/details";
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set("X-API-Key", properties.getApiKey());
+
+        log.debug("Calling Adyen /payments/details at {} payloadKeys={}", url, detailsRequest != null ? detailsRequest.keySet() : null);
+
+        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(detailsRequest, headers);
+
+        try {
+            ResponseEntity<Map> resp = restTemplate.postForEntity(url, entity, Map.class);
+            log.debug("Adyen /payments/details response status={} body={}", resp.getStatusCodeValue(), resp.getBody());
+            return new AdyenPaymentResponse(resp.getBody());
+
+        } catch (HttpStatusCodeException ex) {
+            String respBody = ex.getResponseBodyAsString();
+            int status = ex.getRawStatusCode();
+            log.error("Adyen /payments/details API error: status={} body={}", status, respBody);
+            throw new RuntimeException("Adyen API error: " + status + " - " + respBody);
+
+        } catch (Exception ex) {
+            log.error("Unexpected error when calling Adyen /payments/details", ex);
+            throw new RuntimeException("Unexpected error: " + ex.getMessage(), ex);
+        }
+    }
 }
